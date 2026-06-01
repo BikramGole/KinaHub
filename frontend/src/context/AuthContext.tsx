@@ -35,8 +35,8 @@ interface RegisterPayload {
   business_name?: string;
 }
 
-const ACCESS_KEY = 'dukan_access_token';
-const REFRESH_KEY = 'dukan_refresh_token';
+const ACCESS_KEY = 'kinahub_access_token';
+const REFRESH_KEY = 'kinahub_refresh_token';
 
 const AuthContext = createContext<AuthContextType | null>(null);
 

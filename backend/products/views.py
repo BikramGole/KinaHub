@@ -1,6 +1,7 @@
 from django.db.models import Q, DecimalField
 from django.db.models.functions import Coalesce
 from rest_framework import viewsets, permissions
+from rest_framework.decorators import action
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -117,6 +118,61 @@ class ProductViewSet(viewsets.ModelViewSet):
         if product.store_id != getattr(store, "id", None):
             raise PermissionDenied("You can only manage your own store products.")
         serializer.save(store=store)
+
+    @action(detail=True, methods=["get"], url_path="similar")
+    def similar_products(self, request, slug=None):
+        product = self.get_object()
+        base_price = float(product.discount_price or product.price or 0)
+        candidates = (
+            Product.objects.filter(is_active=True)
+            .exclude(pk=product.pk)
+            .select_related("store", "category", "brand")
+            .prefetch_related("images")
+        )
+
+        scored = []
+        for candidate in candidates:
+            score = 0.0
+            if candidate.category_id == product.category_id:
+                score += 60
+            if candidate.brand_id and candidate.brand_id == product.brand_id:
+                score += 30
+            if candidate.store_id and candidate.store_id == product.store_id:
+                score += 20
+
+            candidate_price = float(candidate.discount_price or candidate.price or 0)
+            if base_price and candidate_price:
+                price_gap = abs(candidate_price - base_price) / max(base_price, candidate_price)
+                score += max(0.0, 20 - (price_gap * 100))
+
+            score += min(float(candidate.rating or 0) * 2.5, 12)
+            if candidate.is_featured:
+                score += 5
+            if candidate.category_id == product.category_id and candidate.brand_id == product.brand_id:
+                score += 8
+
+            scored.append((score, candidate))
+
+        scored.sort(key=lambda item: (item[0], item[1].rating, item[1].created_at), reverse=True)
+        ranked = [candidate for score, candidate in scored[:12] if score > 0]
+
+        if len(ranked) < 6:
+            fallback = (
+                Product.objects.filter(is_active=True)
+                .exclude(pk=product.pk)
+                .select_related("store", "category", "brand")
+                .prefetch_related("images")
+                .order_by("-rating", "-created_at")[:12]
+            )
+            existing_ids = {item.pk for item in ranked}
+            for candidate in fallback:
+                if candidate.pk not in existing_ids:
+                    ranked.append(candidate)
+                if len(ranked) >= 12:
+                    break
+
+        serializer = self.get_serializer(ranked[:12], many=True)
+        return Response(serializer.data)
 
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Category.objects.all()

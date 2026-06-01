@@ -21,7 +21,9 @@ export default function ProductDetails() {
   const [quantity, setQuantity] = useState(1);
   const [added, setAdded] = useState(false);
   const [reviews, setReviews] = useState<ReviewType[]>([]);
+  const [similarProducts, setSimilarProducts] = useState<ProductType[]>([]);
   const [reviewLoading, setReviewLoading] = useState(true);
+  const [similarLoading, setSimilarLoading] = useState(true);
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
   const [reviewError, setReviewError] = useState('');
   const [reviewForm, setReviewForm] = useState({
@@ -66,6 +68,17 @@ export default function ProductDetails() {
       .then((data: ReviewType[]) => setReviews(Array.isArray(data) ? data : []))
       .catch(() => setReviews([]))
       .finally(() => setReviewLoading(false));
+  }, [slug]);
+
+  useEffect(() => {
+    if (!slug) return;
+
+    setSimilarLoading(true);
+    fetch(`${API}/items/${slug}/similar/`)
+      .then((response) => response.json())
+      .then((data: ProductType[]) => setSimilarProducts(Array.isArray(data) ? data : []))
+      .catch(() => setSimilarProducts([]))
+      .finally(() => setSimilarLoading(false));
   }, [slug]);
 
   const reviewStats = useMemo(() => {
@@ -214,7 +227,7 @@ export default function ProductDetails() {
                 <div className="min-w-0">
                   <p className="text-xs font-semibold uppercase tracking-wide text-secondary">{t('products.sellerStore', { defaultValue: 'Seller store' })}</p>
                   <p className="truncate font-bold text-primary">{product.store.name}</p>
-                  <p className="text-xs text-secondary">{t('products.platformDelivery', { defaultValue: 'Ordered through Dukan, fulfilled by this local shop.' })}</p>
+                  <p className="text-xs text-secondary">{t('products.platformDelivery', { defaultValue: 'Ordered through KinaHub, fulfilled by this local shop.' })}</p>
                 </div>
               </Link>
             )}
@@ -518,6 +531,55 @@ export default function ProductDetails() {
             )}
           </div>
         </div>
+      </section>
+
+      <section className="mt-8 rounded-lg border border-border bg-surface p-5 shadow-sm sm:mt-10 sm:p-6">
+        <div className="flex items-center justify-between gap-4">
+          <div>
+            <h2 className="text-xl font-black tracking-tight">
+              {t('products.similarProducts', { defaultValue: 'Similar products' })}
+            </h2>
+            <p className="mt-1 text-sm text-secondary">
+              {t('products.similarProductsHint', { defaultValue: 'Recommended by category, brand, store, and price.' })}
+            </p>
+          </div>
+          <Link to="/products" className="text-sm font-semibold text-accent hover:underline">
+            {t('products.browseAll', { defaultValue: 'Browse all' })}
+          </Link>
+        </div>
+
+        {similarLoading ? (
+          <div className="mt-6 rounded-lg border border-border bg-background p-4 text-sm text-secondary">
+            {t('common.loading', { defaultValue: 'Loading...' })}
+          </div>
+        ) : similarProducts.length > 0 ? (
+          <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 xl:grid-cols-4">
+            {similarProducts.map((item) => (
+              <Link key={item.id} to={`/product/${item.slug}`} className="group overflow-hidden rounded-lg border border-border bg-background transition-colors hover:border-accent hover:bg-accent/5">
+                <div className="aspect-[4/3] overflow-hidden bg-muted">
+                  <img src={productImage(item)} alt={item.name} className="h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-105" loading="lazy" />
+                </div>
+                <div className="p-4">
+                  <p className="text-[11px] font-semibold uppercase tracking-wide text-secondary">
+                    {item.store?.name || t('products.localShopProduct', { defaultValue: 'Local shop product' })}
+                  </p>
+                  <h3 className="mt-1 line-clamp-2 text-sm font-bold text-primary">{item.name}</h3>
+                  <div className="mt-2 flex items-center justify-between gap-3">
+                    <span className="text-sm font-black text-primary">{formatPrice(price(item))}</span>
+                    <span className="flex items-center gap-1 text-xs font-semibold text-secondary">
+                      <Star className="h-3.5 w-3.5 fill-warning text-warning" />
+                      {Number(item.average_rating ?? item.rating).toFixed(1)}
+                    </span>
+                  </div>
+                </div>
+              </Link>
+            ))}
+          </div>
+        ) : (
+          <div className="mt-6 rounded-lg border border-border bg-background p-4 text-sm text-secondary">
+            {t('products.noSimilarProducts', { defaultValue: 'No similar products found right now.' })}
+          </div>
+        )}
       </section>
     </div>
   );

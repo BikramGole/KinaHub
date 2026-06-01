@@ -5,6 +5,7 @@ import { Menu, Search, ShoppingBag, Sparkles, User, X } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import ThemeToggle from './ThemeToggle';
+import { useTheme } from '../context/ThemeContext';
 import { API_BASE } from '../lib/api';
 import { useTranslation } from '../i18n/LocaleContext';
 
@@ -177,6 +178,7 @@ export default function Navbar() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { totalCount } = useCart();
   const { user } = useAuth();
+  const { theme } = useTheme();
   const { t, locale, setLocale } = useTranslation();
 
   function closeMenu() {
@@ -192,11 +194,11 @@ export default function Navbar() {
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-14 items-center gap-3 md:h-16 md:gap-4">
           <Link to="/" className="flex shrink-0 items-center gap-2">
-            <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-background shadow-sm md:h-12 md:w-12">
+            <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-background shadow-sm">
               <img
-                src="/logo.png"
-                alt="Dukan Logo"
-                className="h-[130%] w-[130%] object-cover object-center"
+                src={theme === 'dark' ? '/logo-dark.png' : '/logo-light.png'}
+                alt="KinaHub Logo"
+                className="h-[132%] w-[132%] object-cover object-center"
               />
             </span>
           </Link>

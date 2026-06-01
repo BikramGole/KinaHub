@@ -80,7 +80,7 @@ export default function Cart() {
                     <div className="mb-2 flex items-start justify-between gap-3">
                       <div>
                         <p className="mb-1 text-xs font-bold uppercase tracking-wider text-accent">
-                          {product.brand?.name || 'Dukan'}
+                          {product.brand?.name || 'KinaHub'}
                         </p>
                         <h3 className="text-lg font-semibold sm:text-xl">{product.name}</h3>
                         <p className="text-sm text-secondary">{product.category ? categoryName(t, product.category.slug, product.category.name) : ''}</p>

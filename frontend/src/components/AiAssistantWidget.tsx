@@ -8,6 +8,7 @@ import { askOpenRouter, cartAiOverview } from '../lib/ai';
 import { Link } from 'react-router-dom';
 import { API, productImage, price, formatPrice } from '../lib/products';
 import type { ProductType } from '../lib/products';
+import type { CartItem } from '../context/CartContext';
 
 interface ChatMessage {
   role: 'assistant' | 'user';
@@ -16,7 +17,7 @@ interface ChatMessage {
 
 const starterPrompts = ['Summarize my cart', 'Find best deals', 'Explain delivery', 'How sellers work'];
 
-const MOBILE_DOCK_KEY = 'dukan-ai-mobile-dock';
+const MOBILE_DOCK_KEY = 'kinahub-ai-mobile-dock';
 const LAUNCHER_SIZE = 48;
 const MOBILE_GAP = 16;
 const MOBILE_BOTTOM_OFFSET = 88;
@@ -329,7 +330,7 @@ export default function AiAssistantWidget() {
                     <Sparkles className="h-4 w-4" aria-hidden="true" />
                   </span>
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-black text-primary">Dukan AI</p>
+                    <p className="truncate text-sm font-black text-primary">KinaHub AI</p>
                     <p className="text-xs text-secondary">Local commerce assistant</p>
                     <p className="mt-1 inline-flex items-center rounded-full border border-accent/20 bg-accent/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent">
                       Ready
@@ -402,7 +403,7 @@ export default function AiAssistantWidget() {
                     <input
                       value={message}
                       onChange={(event) => setMessage(event.target.value)}
-                      placeholder="Ask Dukan AI"
+                      placeholder="Ask KinaHub AI"
                       className="h-11 min-w-0 flex-1 rounded-full border border-border bg-background px-4 text-sm text-primary outline-none focus:border-accent"
                     />
                     <button

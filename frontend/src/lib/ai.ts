@@ -276,7 +276,7 @@ export async function askOpenRouter(
   const messages = [
     {
       role: 'system',
-      content: `You are Dukan AI, a helpful and knowledgeable local commerce shopping assistant for a Nepali e-commerce platform called Kina. ${languageInstruction} Keep your answers brief (2-4 sentences max), friendly, and highly relevant to e-commerce. You can use markdown like **bold** for emphasis.\n${cartContext}${catalogContext}`
+      content: `You are KinaHub AI, a helpful and knowledgeable local commerce shopping assistant for a Nepali e-commerce platform called Kina. ${languageInstruction} Keep your answers brief (2-4 sentences max), friendly, and highly relevant to e-commerce. You can use markdown like **bold** for emphasis.\n${cartContext}${catalogContext}`
     },
     ...chatHistory.map(msg => ({
       role: msg.role,

@@ -5,7 +5,7 @@ export default function PrivacyPolicy() {
       
       <div className="prose prose-sm sm:prose-base dark:prose-invert prose-p:text-secondary prose-headings:text-primary">
         <p className="lead text-lg text-secondary mb-8">
-          Your privacy is important to us. It is Dukan's policy to respect your privacy regarding any information we may collect from you across our website and applications.
+          Your privacy is important to us. It is KinaHub's policy to respect your privacy regarding any information we may collect from you across our website and applications.
         </p>
 
         <h2 className="text-xl font-bold mt-8 mb-4">1. Information We Collect</h2>
