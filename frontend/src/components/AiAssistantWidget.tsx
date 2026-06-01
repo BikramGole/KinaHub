@@ -6,7 +6,7 @@ import { useCart } from '../context/CartContext';
 import { useTranslation } from '../i18n/LocaleContext';
 import { askOpenRouter, cartAiOverview } from '../lib/ai';
 import { Link } from 'react-router-dom';
-import { API, primaryImage, price, formatPrice } from '../lib/products';
+import { API, productImage, price, formatPrice } from '../lib/products';
 import type { ProductType } from '../lib/products';
 
 interface ChatMessage {
@@ -20,6 +20,18 @@ const MOBILE_DOCK_KEY = 'dukan-ai-mobile-dock';
 const LAUNCHER_SIZE = 48;
 const MOBILE_GAP = 16;
 const MOBILE_BOTTOM_OFFSET = 88;
+
+export function aiChatReply(message: string, items: CartItem[]) {
+  const input = message.toLowerCase();
+  const cart = cartAiOverview(items);
+
+  if (input.includes('cart') || input.includes('checkout') || input.includes('delivery') || input.includes('summarize') || input.includes('summary')) {
+    const summary = cart.map((item) => item.body).join(' ');
+    const productTags = items.map(i => `[PRODUCT:${i.product.slug}]`).join('\n');
+    return items.length > 0 ? `${summary}\n\n${productTags}` : summary;
+  }
+  return "";
+}
 
 export default function AiAssistantWidget() {
   const { items } = useCart();
@@ -57,10 +69,14 @@ export default function AiAssistantWidget() {
     mobileQuery.addEventListener('change', syncMobileState);
 
     // Fetch product catalog for AI context
-    fetch(API)
+    fetch(`${API}/items/`)
       .then(res => res.json())
-      .then(data => setCatalog(data))
-      .catch(console.error);
+      .then(data => {
+        // Handle paginated responses (e.g. { results: [...] }) or direct arrays
+        const items = Array.isArray(data) ? data : Array.isArray(data?.results) ? data.results : [];
+        setCatalog(items);
+      })
+      .catch(() => setCatalog([]));
 
     return () => mobileQuery.removeEventListener('change', syncMobileState);
   }, []);
@@ -105,15 +121,34 @@ export default function AiAssistantWidget() {
     ];
     setMessages(newMessages);
     setMessage('');
+
+    // Fast-path for common offline queries
+    const fastReply = aiChatReply(trimmed, items);
+    if (fastReply) {
+      setMessages(current => [
+        ...current,
+        { role: 'assistant', text: fastReply },
+      ]);
+      return;
+    }
+
     setLoading(true);
 
-    const replyText = await askOpenRouter(newMessages, items, locale, catalog);
-    
-    setMessages(current => [
-      ...current,
-      { role: 'assistant', text: replyText },
-    ]);
-    setLoading(false);
+    try {
+      const replyText = await askOpenRouter(newMessages, items, locale, catalog);
+      setMessages(current => [
+        ...current,
+        { role: 'assistant', text: replyText },
+      ]);
+    } catch (e) {
+      console.error("AI Error:", e);
+      setMessages(current => [
+        ...current,
+        { role: 'assistant', text: "Sorry, something went wrong. Please try again." },
+      ]);
+    } finally {
+      setLoading(false);
+    }
   }
 
   function submit(event: FormEvent<HTMLFormElement>) {
@@ -180,9 +215,24 @@ export default function AiAssistantWidget() {
     setOpen((current) => !current);
   }
 
+  // Build a lookup of all known products (catalog + cart items)
+  const allProducts = useMemo(() => {
+    const map = new Map<string, ProductType>();
+    // 1. Load cart items (which might have stale data from localStorage)
+    for (const ci of items) {
+      const p = ci.product;
+      if (p.slug) map.set(p.slug, p);
+    }
+    // 2. Overwrite with fresh catalog data fetched from the API
+    for (const p of catalog) {
+      if (p.slug) map.set(p.slug, p);
+    }
+    return map;
+  }, [catalog, items]);
+
   const renderMessage = (text: string) => {
     // Basic markdown for **bold** and [PRODUCT:slug]
-    const parts = text.split(/(\*\*.*?\*\*|\[PRODUCT:[a-zA-Z0-9-]+\])/g);
+    const parts = text.split(/(\*\*.*?\*\*|\[PRODUCT:[a-zA-Z0-9_-]+\])/g);
 
     return parts.map((part, index) => {
       if (part.startsWith('**') && part.endsWith('**')) {
@@ -190,8 +240,11 @@ export default function AiAssistantWidget() {
       }
       if (part.startsWith('[PRODUCT:') && part.endsWith(']')) {
         const slug = part.slice(9, -1);
-        const product = catalog.find(p => p.slug === slug);
+        const product = allProducts.get(slug);
         if (!product) return null;
+
+        // Check if this item is in the cart to show quantity
+        const cartItem = items.find(ci => ci.product.slug === slug);
 
         return (
           <Link
@@ -200,13 +253,16 @@ export default function AiAssistantWidget() {
             className="my-2 flex items-center gap-3 rounded-lg border border-border bg-background p-2 transition-colors hover:border-accent hover:bg-surface"
           >
             <img 
-              src={primaryImage(product.images)} 
+              src={productImage(product)} 
               alt={product.name}
               className="h-12 w-12 rounded-md object-cover" 
             />
             <div className="flex-1 min-w-0">
               <p className="truncate text-sm font-semibold text-primary">{product.name}</p>
-              <p className="text-xs font-bold text-accent">{formatPrice(price(product))}</p>
+              <p className="text-xs font-bold text-accent">
+                {formatPrice(price(product))}
+                {cartItem ? ` × ${cartItem.quantity}` : ''}
+              </p>
             </div>
           </Link>
         );

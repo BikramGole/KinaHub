@@ -215,12 +215,14 @@ export function aiShoppingShortcuts(products: ProductType[]): AiShortcut[] {
 }
 
 // Basic offline AI fallback
-export function aiChatReply(message: string, items: CartItem[]) {
+export function aiChatReply(message: string, items: CartItem[]): string | null {
   const input = message.toLowerCase();
   const cart = cartAiOverview(items);
 
-  if (input.includes('cart') || input.includes('checkout') || input.includes('delivery')) {
-    return cart.map((item) => item.body).join(' ');
+  if (input.includes('cart') || input.includes('checkout') || input.includes('delivery') || input.includes('summary') || input.includes('summarize')) {
+    const summary = cart.map((item) => item.body).join(' ');
+    const productTags = items.map(i => `[PRODUCT:${i.product.slug}]`).join('\n');
+    return items.length > 0 ? `${summary}\n\n${productTags}` : summary;
   }
   if (input.includes('deal') || input.includes('discount') || input.includes('cheap')) {
     return 'Use product filters for price low-to-high and check products with sale badges. I can also compare the items already in your cart.';
@@ -232,7 +234,7 @@ export function aiChatReply(message: string, items: CartItem[]) {
     return 'Checkout supports COD, wallets, QR, card-style entry, and local delivery methods. Choose the method first and fill the matching details.';
   }
 
-  return 'I can help compare products, explain your cart, suggest seller grouping, and guide checkout. Ask about deals, delivery, sellers, or payment.';
+  return null;
 }
 
 // Ordered by preference — will try each until one succeeds
@@ -252,18 +254,19 @@ export async function askOpenRouter(
   const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
   const lastMessage = chatHistory[chatHistory.length - 1]?.text || '';
   
-  if (!apiKey || apiKey.trim() === '') {
+  if (!apiKey || typeof apiKey !== 'string' || apiKey.trim() === '') {
     // Fallback to basic offline AI
-    return aiChatReply(lastMessage, items);
+    return aiChatReply(lastMessage, items) || 'I can help compare products, explain your cart, suggest seller grouping, and guide checkout. Ask about deals, delivery, sellers, or payment.';
   }
 
   const cartContext = items.length === 0
     ? "The user's cart is currently empty."
-    : `The user currently has the following items in their cart:\n${items.map(i => `- ${i.quantity}x ${i.product.name} (${formatPrice(price(i.product))} each)`).join('\n')}`;
+    : `The user currently has the following items in their cart:\n${items.map(i => `- ${i.quantity}x ${i.product.name} (${formatPrice(price(i.product))} each) (Slug: ${i.product.slug})`).join('\n')}\n\nIMPORTANT: When summarizing or talking about items in the cart, you MUST include the exact tag [PRODUCT:slug] for each item so the UI can render a clickable product card with its photo.`;
 
-  const catalogContext = catalog.length === 0
+  const catalogList = Array.isArray(catalog) ? catalog : [];
+  const catalogContext = catalogList.length === 0
     ? ""
-    : `\nHere are some products available in the store:\n${catalog.slice(0, 100).map(p => `- ${p.name} (Price: Rs. ${p.price || p.discount_price}, Slug: ${p.slug})`).join('\n')}\n\nIMPORTANT: If you recommend a product from this list, you MUST include the exact tag [PRODUCT:slug] (e.g. [PRODUCT:samsung-t7-shield]) in your message so the UI can render a clickable card.`;
+    : `\nHere are some products available in the store:\n${catalogList.slice(0, 100).map(p => `- ${p.name} (Price: Rs. ${p.price || p.discount_price}, Slug: ${p.slug})`).join('\n')}\n\nIMPORTANT: If you recommend a product from this list, you MUST include the exact tag [PRODUCT:slug] (e.g. [PRODUCT:samsung-t7-shield]) in your message so the UI can render a clickable card.`;
 
   let languageInstruction = "Reply entirely in English.";
   if (locale === 'np') {

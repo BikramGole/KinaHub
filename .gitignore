@@ -1,3 +1,72 @@
-# Ignore local environment files
+# ──────────────────────────────────────────
+#  Dukan .gitignore
+# ──────────────────────────────────────────
+
+# Local environment & secrets (NEVER commit these)
+.env
 .env.local
+.env.*.local
 frontend/.env.local
+backend/.env
+
+# ── Python / Django ────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+*.pdb
+
+# Virtual environment
+# (The user explicitly requested to commit venv to avoid reinstalling dependencies)
+# venv/
+# env/
+# .venv/
+# backend/venv/
+
+# Django
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+backend/media/
+backend/staticfiles/
+backend/static_root/
+
+# Migrations (optional — remove if you want to commit them)
+# backend/**/migrations/
+
+# ── Node / Vite ────────────────────────────
+node_modules/
+frontend/node_modules/
+dist/
+frontend/dist/
+.vite/
+frontend/.vite/
+
+# Build output
+build/
+*.local
+
+# ── Dev server logs ────────────────────────
+logs/
+*.log
+
+# ── OS & Editor ────────────────────────────
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ── Misc ───────────────────────────────────
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+coverage/
+.coverage
+htmlcov/
