@@ -10,6 +10,9 @@ import { useTranslation } from '../i18n/LocaleContext';
 import { categoryName } from '../lib/categoryText';
 import AiInsightPanel from '../components/AiInsightPanel';
 import { productAiSummary } from '../lib/ai';
+import Seo from '../components/Seo';
+import ProductCard from '../components/ProductCard';
+import { addRecentlyViewedProduct, getRecentlyViewedProducts } from '../lib/recentlyViewed';
 
 export default function ProductDetails() {
   const { slug } = useParams();
@@ -22,6 +25,7 @@ export default function ProductDetails() {
   const [added, setAdded] = useState(false);
   const [reviews, setReviews] = useState<ReviewType[]>([]);
   const [similarProducts, setSimilarProducts] = useState<ProductType[]>([]);
+  const [recentlyViewed, setRecentlyViewed] = useState<ProductType[]>([]);
   const [reviewLoading, setReviewLoading] = useState(true);
   const [similarLoading, setSimilarLoading] = useState(true);
   const [reviewSubmitting, setReviewSubmitting] = useState(false);
@@ -59,6 +63,13 @@ export default function ProductDetails() {
       .catch(() => setProduct(null))
       .finally(() => setLoading(false));
   }, [slug]);
+
+  useEffect(() => {
+    if (!product) return;
+
+    addRecentlyViewedProduct(product);
+    setRecentlyViewed(getRecentlyViewedProducts().filter((item) => item.slug !== product.slug).slice(0, 4));
+  }, [product]);
 
   useEffect(() => {
     if (!slug) return;
@@ -181,7 +192,13 @@ export default function ProductDetails() {
   }
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 sm:py-8 lg:px-8">
+    <div className="mx-auto max-w-7xl px-4 pb-28 pt-6 sm:px-6 sm:py-8 lg:px-8">
+      <Seo
+        title={product.name}
+        description={product.description}
+        image={image}
+        type="product"
+      />
       <Link to="/products" className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-secondary hover:text-primary sm:mb-6">
         <ArrowLeft className="h-4 w-4" />
         {t('products.backToProducts', { defaultValue: 'Back to products' })}
@@ -335,6 +352,29 @@ export default function ProductDetails() {
           )}
         </aside>
       </div>
+
+      {recentlyViewed.length > 0 && (
+        <section className="mt-8 rounded-lg border border-border bg-surface p-5 shadow-sm sm:mt-10 sm:p-6">
+          <div className="mb-5 flex items-center justify-between gap-4">
+            <div>
+              <h2 className="text-xl font-black tracking-tight">
+                {t('products.recentlyViewed', { defaultValue: 'Recently viewed' })}
+              </h2>
+              <p className="mt-1 text-sm text-secondary">
+                {t('products.recentlyViewedHint', { defaultValue: 'Jump back to products you checked earlier.' })}
+              </p>
+            </div>
+            <Link to="/products" className="text-sm font-semibold text-accent hover:underline">
+              {t('products.browseAll', { defaultValue: 'Browse all' })}
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            {recentlyViewed.map((item) => (
+              <ProductCard key={item.slug} product={item} compact />
+            ))}
+          </div>
+        </section>
+      )}
 
       <section className="mt-8 rounded-lg border border-border bg-surface p-5 shadow-sm sm:mt-10 sm:p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
@@ -581,6 +621,25 @@ export default function ProductDetails() {
           </div>
         )}
       </section>
+
+      <div className="fixed inset-x-0 bottom-16 z-40 border-t border-border bg-surface/95 px-4 py-3 shadow-[0_-8px_24px_rgba(0,0,0,0.12)] backdrop-blur md:hidden">
+        <div className="mx-auto flex max-w-7xl items-center gap-3">
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-bold text-primary">{product.name}</p>
+            <p className="text-sm font-black text-accent">{formatPrice(subtotal)}</p>
+          </div>
+          <button
+            type="button"
+            onClick={handleAddToCart}
+            disabled={product.stock === 0}
+            className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-lg bg-accent px-4 text-sm font-bold text-background transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
+            aria-label={product.stock === 0 ? t('products.outOfStock', { defaultValue: 'Out of stock' }) : t('products.addToCart', { defaultValue: 'Add to cart' })}
+          >
+            <ShoppingBag className="h-4 w-4" />
+            {product.stock === 0 ? t('products.outOfStock', { defaultValue: 'Out of stock' }) : t('products.addToCart', { defaultValue: 'Add to cart' })}
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

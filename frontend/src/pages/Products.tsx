@@ -10,6 +10,7 @@ import { getCategoryIcon } from '../lib/categoryIcons';
 import { categoryDescription, categoryName } from '../lib/categoryText';
 import type { CategoryType, ProductType } from '../lib/products';
 import { useTranslation } from '../i18n/LocaleContext';
+import Seo from '../components/Seo';
 
 export default function Products() {
   const { t } = useTranslation();
@@ -163,6 +164,10 @@ export default function Products() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+      <Seo
+        title={query ? `Search results for ${query}` : categoryTitle}
+        description="Browse KinaHub products by category, price, rating, seller store, and search."
+      />
       <div className="mb-4 rounded-lg border border-border bg-surface p-4 sm:mb-6">
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div>
