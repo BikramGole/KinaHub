@@ -1,4 +1,4 @@
-# KinaHub (formerly Dukan) 🛍️
+# KinaHub 🛍️
 
 KinaHub is a modern, local-first e-commerce and CRM platform designed to bridge the gap between local seller stores and customers. Built as an On-the-Job Training (OJT) project, it supports multi-seller storefronts, localized delivery estimations, full customer relations dashboards, and client-side AI integration to guide customer shopping decisions.
 
