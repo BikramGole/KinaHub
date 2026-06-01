@@ -9,7 +9,7 @@ interface AiInsightPanelProps {
   compact?: boolean;
 }
 
-export default function AiInsightPanel({ eyebrow = 'Dukan AI', title, insights, compact = false }: AiInsightPanelProps) {
+export default function AiInsightPanel({ eyebrow = 'KinaHub AI', title, insights, compact = false }: AiInsightPanelProps) {
   return (
     <section className="rounded-lg border border-accent/30 bg-surface p-4 shadow-sm sm:p-5">
       <div className="mb-4 flex items-center gap-3">

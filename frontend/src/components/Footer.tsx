@@ -2,10 +2,12 @@ import { useTranslation } from '../i18n/LocaleContext';
 import { Mail, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import { useTheme } from '../context/ThemeContext';
 
 export default function Footer() {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const { theme } = useTheme();
   const accountLink = user ? '/dashboard' : '/login';
   const accountLabel = user ? t('footer.account', { defaultValue: 'Dashboard' }) : t('footer.login', { defaultValue: 'Login' });
   const secondaryAccountLink = user ? '/dashboard/orders' : '/register';
@@ -17,8 +19,14 @@ export default function Footer() {
         <div className="grid grid-cols-1 gap-8 md:grid-cols-4">
           <div>
             <Link to="/" className="mb-4 flex items-center gap-2">
-              <img src="/logo.png" alt="Dukan Logo" className="h-11 w-auto object-contain md:h-12" />
-              <span className="text-xl font-black tracking-tight">Dukan</span>
+              <span className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-background shadow-sm md:h-12 md:w-12">
+                <img
+                  src={theme === 'dark' ? '/logo-dark.png' : '/logo-light.png'}
+                  alt="KinaHub Logo"
+                  className="h-[132%] w-[132%] object-cover object-center"
+                />
+              </span>
+              <span className="text-xl font-black tracking-tight">KinaHub</span>
             </Link>
             <p className="text-sm leading-6 text-secondary">{t('footer.description', { defaultValue: 'Products, deals, delivery, checkout.' })}</p>
           </div>
@@ -75,7 +83,7 @@ export default function Footer() {
         </div>
 
         <div className="mt-10 border-t border-border pt-6 text-sm text-secondary">
-          &copy; {new Date().getFullYear()} Dukan.
+          &copy; {new Date().getFullYear()} KinaHub.
         </div>
       </div>
     </footer>

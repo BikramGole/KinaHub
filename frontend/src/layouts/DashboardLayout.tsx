@@ -3,9 +3,11 @@ import { BarChart3, Bell, ClipboardList, LayoutDashboard, Package, Settings, Spa
 import { useAuth } from '../context/AuthContext';
 import ThemeToggle from '../components/ThemeToggle';
 import { useTranslation } from '../i18n/LocaleContext';
+import { useTheme } from '../context/ThemeContext';
 
 export default function DashboardLayout() {
   const { user, logout } = useAuth();
+  const { theme } = useTheme();
   const { t } = useTranslation();
   const role = user?.effective_role || 'customer';
 
@@ -40,7 +42,13 @@ export default function DashboardLayout() {
       <div className="border-b border-border bg-surface">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <Link to="/" className="flex items-center">
-            <img src="/logo.png" alt="Dukan" className="h-10 w-auto md:h-11 object-contain" />
+            <span className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-border bg-background shadow-sm md:h-11 md:w-11">
+              <img
+                src={theme === 'dark' ? '/logo-dark.png' : '/logo-light.png'}
+                alt="KinaHub"
+                className="h-[132%] w-[132%] object-cover object-center"
+              />
+            </span>
           </Link>
           <div className="flex items-center gap-4 text-sm">
             <span className="hidden text-secondary sm:inline">{user?.email}</span>

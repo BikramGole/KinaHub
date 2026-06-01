@@ -3,7 +3,6 @@ import { Link } from 'react-router-dom';
 import { ArrowRight, BadgePercent, Truck, ShieldCheck, RefreshCw, Flame } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ProductCard from '../components/ProductCard';
-import ProductCardSkeleton from '../components/ProductCardSkeleton';
 import AiInsightPanel from '../components/AiInsightPanel';
 import { API, formatPrice, price, productImage } from '../lib/products';
 import { marketAiOverview } from '../lib/ai';
@@ -18,7 +17,6 @@ export default function Home() {
   const { t } = useTranslation();
   const [products, setProducts] = useState<ProductType[]>([]);
   const [categories, setCategories] = useState<CategoryType[]>([]);
-  const [loading, setLoading] = useState(true);
   const [heroReady, setHeroReady] = useState(false);
 
   const trustBadges = [
@@ -28,7 +26,6 @@ export default function Home() {
   ];
 
   useEffect(() => {
-    setLoading(true);
     fetch(`${API}/items/?random=true`)
       .then((response) => response.json())
       .then((data: ProductType[]) => {
@@ -36,10 +33,11 @@ export default function Home() {
         // Give the image a moment to start loading before revealing the hero (delayed longer per user request)
         setTimeout(() => {
           setHeroReady(true);
-          setLoading(false);
         }, 2500);
       })
-      .catch(() => setLoading(false));
+      .catch(() => {
+        setHeroReady(true); // Still show hero even if fetch fails
+      });
 
     fetch(`${API}/categories/`)
       .then((response) => response.json())

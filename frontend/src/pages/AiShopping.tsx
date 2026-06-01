@@ -43,7 +43,7 @@ export default function AiShopping() {
           <div className="max-w-2xl">
             <p className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-accent">
               <Bot className="h-4 w-4" />
-              {t('ai.eyebrow', { defaultValue: 'Dukan AI' })}
+              {t('ai.eyebrow', { defaultValue: 'KinaHub AI' })}
             </p>
             <h1 className="text-3xl font-black tracking-tight sm:text-4xl">
               {t('ai.title', { defaultValue: 'Shopping navigation that feels specific' })}

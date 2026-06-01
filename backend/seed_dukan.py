@@ -4,6 +4,7 @@ import os
 import urllib.request
 from decimal import Decimal
 from urllib.parse import urlparse
+from django.utils.text import slugify
 
 import django
 
@@ -17,6 +18,18 @@ from sellers.models import SellerProfile, Store
 from users.models import Address, CustomerProfile
 
 User = get_user_model()
+
+
+def unique_store_slug(name: str, seed_hint: str = "") -> str:
+    base = slugify(name)
+    if seed_hint:
+        base = f"{base}-{slugify(seed_hint)}"
+    slug = base
+    suffix = 2
+    while Store.objects.filter(slug=slug).exists():
+        slug = f"{base}-{suffix}"
+        suffix += 1
+    return slug
 
 admin = User.objects.filter(username="admin").first() or User.objects.filter(email="admin@dukan.local").first()
 if admin:
@@ -119,7 +132,7 @@ def ensure_seller_store(email, password, business_name, phone, description, logo
         seller=profile,
         defaults={
             "name": business_name,
-            "slug": business_name.lower().replace(" ", "-"),
+            "slug": unique_store_slug(business_name, email),
             "description": description,
             "address": {
                 "New Road Tech Suppliers": "New Road, Kathmandu",
@@ -215,29 +228,29 @@ eco_store = ensure_seller_store(
     banner_url="https://images.unsplash.com/photo-1472141521881-95d0f57e1f47?auto=format&fit=crop&w=1600&q=80",
 )
 fake_store = ensure_seller_store(
-    "fakestore@dukan.local",
+    "bharatpur@kinahub.local",
     "seller123",
-    "Fake Store Select",
+    "Bharatpur General Store",
     "9800000001",
-    "Marketplace-style general store sourced from Fake Store API.",
+    "Marketplace-style general store with clothing, electronics, and jewelry.",
     logo_url="https://images.unsplash.com/photo-1556742205-9ba1fefe7f4d?auto=format&fit=crop&w=600&q=80",
     banner_url="https://images.unsplash.com/photo-1556742205-9ba1fefe7f4d?auto=format&fit=crop&w=1600&q=80",
 )
 dummy_store = ensure_seller_store(
-    "dummyjson@dukan.local",
+    "lifestyle@kinahub.local",
     "seller123",
-    "DummyJSON Bazaar",
+    "Everest Lifestyle Mart",
     "9800000002",
-    "Beauty, furniture, and grocery products sourced from DummyJSON.",
+    "Beauty, furniture, and grocery products sourced from premium brands.",
     logo_url="https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=600&q=80",
     banner_url="https://images.unsplash.com/photo-1497366754035-f200968a6e72?auto=format&fit=crop&w=1600&q=80",
 )
 platzi_store = ensure_seller_store(
-    "platzi@dukan.local",
+    "pokhara@kinahub.local",
     "seller123",
-    "Platzi Market",
+    "Pokhara Modern Mall",
     "9800000003",
-    "Fashion, electronics, and furniture sourced from Platzi Fake Store API.",
+    "Fashion, electronics, and furniture from top brands in Pokhara.",
     logo_url="https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=600&q=80",
     banner_url="https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=1600&q=80",
 )
@@ -1384,6 +1397,319 @@ extra_products = [
 
 products_data.extend(extra_products)
 
+def build_diverse_products():
+    templates = [
+        {
+            "category": "Books",
+            "brand": "Penguin",
+            "store": "books",
+            "tag": "Book",
+            "is_featured": True,
+            "image_url": "https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=900&q=80",
+            "specs": "Format: Paperback\nUse: Reading and study\nDelivery: Kathmandu valley",
+        },
+        {
+            "category": "Stationery",
+            "brand": "Classmate",
+            "store": "books",
+            "tag": "Stationery",
+            "is_featured": False,
+            "image_url": "https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=900&q=80",
+            "specs": "Use: School and office\nPack: Mixed set\nDelivery: Kathmandu valley",
+        },
+        {
+            "category": "School",
+            "brand": "Casio",
+            "store": "books",
+            "tag": "School",
+            "is_featured": False,
+            "image_url": "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80",
+            "specs": "Use: Study desk\nDelivery: Kathmandu valley\nWarranty: 1 year",
+        },
+        {
+            "category": "Gaming",
+            "brand": "PlayStation",
+            "store": "console",
+            "tag": "Gaming",
+            "is_featured": True,
+            "image_url": "https://images.unsplash.com/photo-1605901309584-818e25960a8f?auto=format&fit=crop&w=900&q=80",
+            "specs": "Use: Home gaming\nDelivery: Kathmandu valley\nWarranty: 1 year",
+        },
+        {
+            "category": "Accessories",
+            "brand": "Raspberry Pi",
+            "store": "tech",
+            "tag": "Maker",
+            "is_featured": False,
+            "image_url": "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=900&q=80",
+            "specs": "Use: Maker and learning\nDelivery: Kathmandu valley\nIncludes: Board and cables",
+        },
+        {
+            "category": "Fashion",
+            "brand": "Nike",
+            "store": "fashion",
+            "tag": "Clothes",
+            "is_featured": True,
+            "image_url": "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=900&q=80",
+            "specs": "Use: Daily wear\nDelivery: Kathmandu valley\nMaterial: Cotton blend",
+        },
+        {
+            "category": "Home",
+            "brand": "Philips",
+            "store": "home",
+            "tag": "Home",
+            "is_featured": False,
+            "image_url": "https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=900&q=80",
+            "specs": "Use: Home and kitchen\nDelivery: Kathmandu valley\nWarranty: 6 months",
+        },
+        {
+            "category": "Sports",
+            "brand": "Adidas",
+            "store": "sports",
+            "tag": "Sports",
+            "is_featured": True,
+            "image_url": "https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=900&q=80",
+            "specs": "Use: Training and outdoor\nDelivery: Kathmandu valley\nMaterial: Durable",
+        },
+        {
+            "category": "Automotive & Bikes",
+            "brand": "Dukan Basics",
+            "store": "auto",
+            "tag": "Ride",
+            "is_featured": False,
+            "image_url": "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=900&q=80",
+            "specs": "Use: Ride safety and accessories\nDelivery: Kathmandu valley\nFit: Universal",
+        },
+        {
+            "category": "Eco & Sustainable",
+            "brand": "Bamboo Earth",
+            "store": "eco",
+            "tag": "Eco",
+            "is_featured": False,
+            "image_url": "https://images.unsplash.com/photo-1472141521881-95d0f57e1f47?auto=format&fit=crop&w=900&q=80",
+            "specs": "Use: Daily sustainable living\nDelivery: Kathmandu valley\nMaterial: Eco-friendly",
+        },
+        {
+            "category": "Cameras",
+            "brand": "Canon",
+            "store": "tech",
+            "tag": "Camera",
+            "is_featured": True,
+            "image_url": "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=900&q=80",
+            "specs": "Use: Photo and video\nDelivery: Kathmandu valley\nWarranty: 1 year",
+        },
+        {
+            "category": "Pets",
+            "brand": "PetSafe",
+            "store": "eco",
+            "tag": "Pets",
+            "is_featured": False,
+            "image_url": "https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=900&q=80",
+            "specs": "Use: Pet daily care\nDelivery: Kathmandu valley\nType: Household",
+        },
+        {
+            "category": "Groceries",
+            "brand": "Wai Wai",
+            "store": "barat",
+            "tag": "Grocery",
+            "is_featured": False,
+            "image_url": "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=900&q=80",
+            "specs": "Use: Daily household needs\nDelivery: Kathmandu valley\nType: Grocery",
+        },
+        {
+            "category": "Mobiles",
+            "brand": "Samsung",
+            "store": "tech",
+            "tag": "Mobile",
+            "is_featured": True,
+            "image_url": "https://images.unsplash.com/photo-1511707171634-5f897ff02aa9?auto=format&fit=crop&w=900&q=80",
+            "specs": "Use: Mobile and accessories\nDelivery: Kathmandu valley\nWarranty: 1 year",
+        },
+        {
+            "category": "Laptops",
+            "brand": "Dell",
+            "store": "tech",
+            "tag": "Laptop",
+            "is_featured": True,
+            "image_url": "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=900&q=80",
+            "specs": "Use: Work and study\nDelivery: Kathmandu valley\nWarranty: 1 year",
+        },
+        {
+            "category": "Audio",
+            "brand": "Sony",
+            "store": "tech",
+            "tag": "Audio",
+            "is_featured": False,
+            "image_url": "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=900&q=80",
+            "specs": "Use: Audio and music\nDelivery: Kathmandu valley\nWarranty: 6 months",
+        },
+        {
+            "category": "Appliances",
+            "brand": "Philips",
+            "store": "home",
+            "tag": "Appliance",
+            "is_featured": False,
+            "image_url": "https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=900&q=80",
+            "specs": "Use: Home appliance\nDelivery: Kathmandu valley\nWarranty: 1 year",
+        },
+    ]
+
+    name_templates = {
+        "Books": ["SEE Prep Guide", "+2 Physics Book", "Entrance Exam Mastery", "Python Programming Book", "GK Nepal Book", "English Grammar Workbook", "Novel Collection", "Kids Story Book"],
+        "Stationery": ["Gel Pen Pack", "A4 Notebook Bundle", "Highlighter Set", "Geometry Box", "Planner Notebook", "Sticky Notes Pack", "Marker Set", "Clip Board"],
+        "School": ["School Backpack", "Lunch Box Set", "Study Lamp", "Scientific Calculator", "Exam Answer Sheet Pack", "Exam Clipboard", "Water Bottle Set", "Desk Organizer"],
+        "Gaming": ["PSX Retro Console", "Xbox Series Controller", "Gaming Chair Pro", "RGB Mouse Pad", "Arcade Stick", "VR Headset", "Game Storage Rack", "Mechanical Keyboard"],
+        "Accessories": ["Raspberry Pi 5 Kit", "Arduino Uno Kit", "Graphic Tablet", "USB-C Hub", "Portable SSD", "Phone Case Pack", "Laptop Stand", "Cable Organizer"],
+        "Fashion": ["GitHub Fork T-Shirt", "Oversized Hoodie", "Denim Jacket", "Sneaker Pack", "Graphic Tee", "Cargo Pants", "Cap and Beanie Set", "Streetwear Shirt"],
+        "Home": ["LED Desk Light", "Air Purifier Mini", "Smart Bulb Pack", "Kitchen Storage Rack", "Blender Pro", "Rice Cooker", "Curtain Set", "Bed Sheet Set"],
+        "Sports": ["Football Training Ball", "Basketball Pro", "Dumbbell Set", "Resistance Bands", "Yoga Mat", "Gym Water Bottle", "Skate Helmet", "Jump Rope"],
+        "Automotive & Bikes": ["Bike Helmet Pro", "Bike Phone Holder", "LED Bike Light Set", "Tyre Inflator", "Bike Lock", "Car Vacuum", "Dash Cam", "Riding Gloves"],
+        "Eco & Sustainable": ["Reusable Water Bottle", "Bamboo Lunch Box", "Solar Power Bank", "Jute Tote Bag", "Bamboo Toothbrush", "Steel Straw Set", "Compost Bin", "Reusable Grocery Bag"],
+        "Cameras": ["Canon EOS R50", "Nikon Z50", "Tripod Stand", "Action Camera", "CCTV Bullet Camera", "Camera Bag", "Lens Cleaning Kit", "Ring Light Camera Kit"],
+        "Pets": ["Dog Food Premium", "Cat Food Chicken", "Pet Toy Pack", "Pet Grooming Brush", "Dog Collar", "Cat Litter", "Pet Water Bowl", "Leash Set"],
+        "Groceries": ["Wai Wai Noodles", "Dettol Soap Pack", "Fortune Sunflower Oil", "Aashirvaad Atta", "Basmati Rice Bag", "Organic Eggs", "Fresh Apples", "Cold Coffee"],
+        "Mobiles": ["iPhone 16 Cover", "Samsung Charger", "USB-C Fast Cable", "Power Bank 20000mAh", "Wireless Earbuds", "Screen Protector", "Foldable Phone Case", "Mobile Grip Stand"],
+        "Laptops": ["Laptop Sleeve", "USB-C Dock", "Mechanical Keyboard", "Wireless Mouse", "Laptop Cooling Pad", "Webcam HD", "Portable Monitor", "Laptop Backpack"],
+        "Audio": ["Bluetooth Speaker", "Wireless Headphones", "Earbuds Pro", "Soundbar Mini", "Podcast Mic", "Studio Headphones", "Portable Audio DAC", "Car Audio Adapter"],
+        "Appliances": ["Mixer Grinder", "Electric Kettle", "Air Fryer", "Water Filter", "Toaster Oven", "Hand Blender", "Vacuum Cleaner", "Rice Cooker Mini"],
+    }
+
+    rows = []
+    index = 0
+    for template in templates:
+        category = template["category"]
+        brand = template["brand"]
+        store = template["store"]
+        for name_base in name_templates[category]:
+            if len(rows) >= 202:
+                return rows
+            index += 1
+            suffix = "" if index % 2 else f" {((index % 3) + 1)}"
+            name = f"{name_base}{suffix}".strip()
+            price = 500 + (index * 137) % 65000
+            if category in {"Mobiles", "Laptops", "Cameras", "Gaming"}:
+                price = 4999 + (index * 137) % 145000
+            elif category in {"Books", "Stationery", "School"}:
+                price = 120 + (index * 37) % 3500
+            elif category in {"Groceries", "Pets"}:
+                price = 90 + (index * 23) % 3200
+            elif category in {"Fashion", "Accessories", "Sports", "Automotive & Bikes", "Eco & Sustainable", "Home", "Appliances", "Audio"}:
+                price = 180 + (index * 83) % 18000
+            discount_price = max(1, int(price * (0.88 if index % 4 == 0 else 0.93)))
+            rating = round(4.1 + ((index % 9) * 0.1), 1)
+            stock = 8 + (index * 5) % 70
+            rows.append({
+                "name": name,
+                "category": category,
+                "brand": brand,
+                "price": price,
+                "discount_price": discount_price,
+                "stock": stock,
+                "rating": rating,
+                "tag": template["tag"],
+                "is_featured": template["is_featured"] or index % 7 == 0,
+                "store": store,
+                "image_url": template["image_url"],
+                "description": f"Diverse marketplace item for {category.lower()} shoppers, sourced as a demo listing for the store ecosystem.",
+                "specifications": template["specs"],
+            })
+    bonus_subjects = {
+        "Books": ["SEE Prep Guide", "+2 Physics Book", "Anime Art Book", "Python Programming Book"],
+        "Stationery": ["Apsara Pencil Pack", "Nataraj Eraser Set", "Desk Tray Organizer", "Diary Planner"],
+        "School": ["Science Project Kit", "Math Practice Set", "Roller Bag", "Class Bell Timer"],
+        "Gaming": ["Arcade Fight Stick", "Retro Cartridge Pack", "Console Cooling Dock", "Trigger Grip Set"],
+        "Accessories": ["GitHub Fork T-Shirt", "USB-C Cable Bundle", "Phone Ring Stand", "Laptop Sleeve Pro"],
+        "Fashion": ["Denim Shirt", "Nepali Hoodie", "Summer Kurta", "Street Jacket"],
+        "Home": ["Curtain Light Set", "Kitchen Knife Block", "Storage Basket Set", "Smart Plug Pack"],
+        "Sports": ["Cricket Bat Grip", "Basketball Net", "Fitness Timer", "Training Cone Set"],
+        "Automotive & Bikes": ["Car Tire Inflator", "Bike Mirror Set", "Reflective Vest", "Helmet Visor"],
+        "Eco & Sustainable": ["Bamboo Cutlery", "Solar Lantern", "Reusable Straw Kit", "Compost Starter Kit"],
+        "Cameras": ["Camera Tripod Pro", "Memory Card Pack", "Soft Camera Case", "Ring Light Kit"],
+        "Pets": ["Pet Shampoo", "Dog Leash", "Cat Scratch Board", "Pet Snack Pack"],
+        "Groceries": ["Cold Press Juice", "Fresh Orange Juice", "Organic Honey", "Tea Box"],
+        "Mobiles": ["MagSafe Wallet", "Fast Charger 45W", "Tempered Glass Pack", "Camera Lens Cover"],
+        "Laptops": ["USB-C Monitor Hub", "Laptop Cooling Pad Pro", "Ergonomic Mouse", "Keyboard Cover"],
+        "Audio": ["Studio Mic Arm", "HiFi Earphones", "Bluetooth Transmitter", "Portable Speaker Pro"],
+        "Appliances": ["Mini Blender", "Induction Cooktop", "Steam Iron", "Table Fan"],
+    }
+    bonus_modifiers = ["Pro", "Mini", "Max"]
+    for template in templates:
+        category = template["category"]
+        brand = template["brand"]
+        store = template["store"]
+        for modifier in bonus_modifiers:
+            for name_base in bonus_subjects.get(category, []):
+                if len(rows) >= 202:
+                    return rows
+                index += 1
+                name = f"Diversified {modifier} {category} {name_base} {index}"
+                price = 500 + (index * 137) % 65000
+                if category in {"Mobiles", "Laptops", "Cameras", "Gaming"}:
+                    price = 4999 + (index * 137) % 145000
+                elif category in {"Books", "Stationery", "School"}:
+                    price = 120 + (index * 37) % 3500
+                elif category in {"Groceries", "Pets"}:
+                    price = 90 + (index * 23) % 3200
+                elif category in {"Fashion", "Accessories", "Sports", "Automotive & Bikes", "Eco & Sustainable", "Home", "Appliances", "Audio"}:
+                    price = 180 + (index * 83) % 18000
+                discount_price = max(1, int(price * (0.88 if index % 4 == 0 else 0.93)))
+                rating = round(4.1 + ((index % 9) * 0.1), 1)
+                stock = 8 + (index * 5) % 70
+                rows.append({
+                    "name": name,
+                    "category": category,
+                    "brand": brand,
+                    "price": price,
+                    "discount_price": discount_price,
+                    "stock": stock,
+                    "rating": rating,
+                    "tag": template["tag"],
+                    "is_featured": template["is_featured"] or index % 7 == 0,
+                    "store": store,
+                    "image_url": template["image_url"],
+                    "description": f"Diverse marketplace item for {category.lower()} shoppers, sourced as a demo listing for the store ecosystem.",
+                    "specifications": template["specs"],
+                })
+    return rows
+
+    for template in templates:
+        category = template["category"]
+        brand = template["brand"]
+        store = template["store"]
+        for name_base in bonus_names.get(category, []):
+            if len(rows) >= 202:
+                return rows
+            index += 1
+            name = f"{name_base} {((index % 4) + 1)}"
+            price = 500 + (index * 137) % 65000
+            if category in {"Mobiles", "Laptops", "Cameras", "Gaming"}:
+                price = 4999 + (index * 137) % 145000
+            elif category in {"Books", "Stationery", "School"}:
+                price = 120 + (index * 37) % 3500
+            elif category in {"Groceries", "Pets"}:
+                price = 90 + (index * 23) % 3200
+            elif category in {"Fashion", "Accessories", "Sports", "Automotive & Bikes", "Eco & Sustainable", "Home", "Appliances", "Audio"}:
+                price = 180 + (index * 83) % 18000
+            discount_price = max(1, int(price * (0.88 if index % 4 == 0 else 0.93)))
+            rating = round(4.1 + ((index % 9) * 0.1), 1)
+            stock = 8 + (index * 5) % 70
+            rows.append({
+                "name": name,
+                "category": category,
+                "brand": brand,
+                "price": price,
+                "discount_price": discount_price,
+                "stock": stock,
+                "rating": rating,
+                "tag": template["tag"],
+                "is_featured": template["is_featured"] or index % 7 == 0,
+                "store": store,
+                "image_url": template["image_url"],
+                "description": f"Diverse marketplace item for {category.lower()} shoppers, sourced as a demo listing for the store ecosystem.",
+                "specifications": template["specs"],
+            })
+    return rows
+
 project_root = os.getcwd()
 if not os.path.isdir(os.path.join(project_root, "frontend")):
     project_root = os.path.abspath(os.path.join(os.path.dirname(__file__), ".."))
@@ -1577,6 +1903,57 @@ def build_external_products():
 external_products = build_external_products()
 products_data.extend(external_products)
 print(f"Imported {len(external_products)} products from external APIs")
+
+diverse_products = build_diverse_products()
+products_data.extend(diverse_products)
+print(f"Added {len(diverse_products)} diversified products")
+
+reserve_products = []
+reserve_specs = [
+    ("Books", books_store, brands["Penguin"], "https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=900&q=80", ["Ultra Manga Frame", "Ultra Exam Atlas", "Ultra Reading Shelf"]),
+    ("Stationery", books_store, brands["Classmate"], "https://images.unsplash.com/photo-1455390582262-044cdead277a?auto=format&fit=crop&w=900&q=80", ["Ultra Sketch Pad", "Ultra Desk Tray", "Ultra Marker Case"]),
+    ("School", books_store, brands["Casio"], "https://images.unsplash.com/photo-1516321318423-f06f85e504b3?auto=format&fit=crop&w=900&q=80", ["Ultra School Roller Bag", "Ultra Bell Timer", "Ultra Project Kit"]),
+    ("Gaming", console_store, brands["PlayStation"], "https://images.unsplash.com/photo-1605901309584-818e25960a8f?auto=format&fit=crop&w=900&q=80", ["Ultra Arcade Pad", "Ultra Retro Cart Pack", "Ultra Console Dock"]),
+    ("Accessories", tech_store, brands["Raspberry Pi"], "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=900&q=80", ["Ultra Fork Tee", "Ultra USB Hub", "Ultra Laptop Sleeve"]),
+    ("Fashion", fashion_store, brands["Nike"], "https://images.unsplash.com/photo-1483985988355-763728e1935b?auto=format&fit=crop&w=900&q=80", ["Ultra Hoodie Drop", "Ultra Street Jacket", "Ultra Denim Shirt"]),
+    ("Home", home_store, brands["Philips"], "https://images.unsplash.com/photo-1556911220-bff31c812dba?auto=format&fit=crop&w=900&q=80", ["Ultra Smart Plug", "Ultra Light Set", "Ultra Storage Basket"]),
+    ("Sports", sports_store, brands["Adidas"], "https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&w=900&q=80", ["Ultra Ball Pack", "Ultra Fitness Timer", "Ultra Cone Set"]),
+    ("Automotive & Bikes", auto_store, brands["Dukan Basics"], "https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=900&q=80", ["Ultra Helmet Visor", "Ultra Bike Mirror", "Ultra Tire Inflator"]),
+    ("Eco & Sustainable", eco_store, brands["Bamboo Earth"], "https://images.unsplash.com/photo-1472141521881-95d0f57e1f47?auto=format&fit=crop&w=900&q=80", ["Ultra Bamboo Cutlery", "Ultra Solar Lantern", "Ultra Reusable Straw Kit"]),
+    ("Cameras", tech_store, brands["Canon"], "https://images.unsplash.com/photo-1516035069371-29a1b244cc32?auto=format&fit=crop&w=900&q=80", ["Ultra Tripod Pro", "Ultra Camera Case", "Ultra Ring Light Kit"]),
+    ("Pets", eco_store, brands["PetSafe"], "https://images.unsplash.com/photo-1543466835-00a7907e9de1?auto=format&fit=crop&w=900&q=80", ["Ultra Dog Leash", "Ultra Cat Scratch Board", "Ultra Pet Snack Pack"]),
+    ("Groceries", barat_store, brands["Wai Wai"], "https://images.unsplash.com/photo-1542838132-92c53300491e?auto=format&fit=crop&w=900&q=80", ["Ultra Orange Juice", "Ultra Honey Jar", "Ultra Tea Box"]),
+]
+for index, (category_name, store_ref, brand_ref, image_ref, names) in enumerate(reserve_specs, start=1):
+    for variant, name in enumerate(names, start=1):
+        reserve_products.append({
+            "name": f"{name} {index}-{variant}",
+            "category": category_name,
+            "brand": brand_ref.name,
+            "price": 999 + (index * 73) + (variant * 41),
+            "discount_price": 899 + (index * 61) + (variant * 29),
+            "stock": 12 + index + variant,
+            "rating": round(4.2 + ((index + variant) % 5) * 0.1, 1),
+            "tag": "Rare",
+            "is_featured": variant == 1,
+            "store": {
+                books_store: "books",
+                console_store: "console",
+                tech_store: "tech",
+                fashion_store: "fashion",
+                home_store: "home",
+                sports_store: "sports",
+                auto_store: "auto",
+                eco_store: "eco",
+                barat_store: "barat",
+            }[store_ref],
+            "image_url": image_ref,
+            "description": f"Rare and interesting demo item for {category_name.lower()} shoppers.",
+            "specifications": f"Category: {category_name}\\nDelivery: Kathmandu valley\\nStore: {store_ref.name}",
+        })
+
+products_data.extend(reserve_products)
+print(f"Added {len(reserve_products)} reserve products")
 
 for row in products_data:
     category = cats[row["category"]]

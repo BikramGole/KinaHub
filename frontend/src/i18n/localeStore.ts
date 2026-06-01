@@ -1,6 +1,6 @@
 export type Locale = 'en' | 'np';
 
-export const LOCALE_STORAGE_KEY = 'dukan_locale';
+export const LOCALE_STORAGE_KEY = 'kinahub_locale';
 
 const localeLabels: Record<Locale, string> = {
   en: 'English',
