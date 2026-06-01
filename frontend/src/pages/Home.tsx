@@ -10,6 +10,7 @@ import { getCategoryIcon } from '../lib/categoryIcons';
 import { categoryDescription, categoryName } from '../lib/categoryText';
 import type { CategoryType, ProductType } from '../lib/products';
 import { useTranslation } from '../i18n/LocaleContext';
+import Seo from '../components/Seo';
 
 const quickLinks = ['mobiles', 'fashion', 'groceries', 'gaming', 'appliances', 'books'];
 
@@ -30,10 +31,10 @@ export default function Home() {
       .then((response) => response.json())
       .then((data: ProductType[]) => {
         setProducts(data.slice(0, 30));
-        // Give the image a moment to start loading before revealing the hero (delayed longer per user request)
+        // Give the hero image a short preload window without making the page feel blocked.
         setTimeout(() => {
           setHeroReady(true);
-        }, 2500);
+        }, 600);
       })
       .catch(() => {
         setHeroReady(true); // Still show hero even if fetch fails
@@ -53,6 +54,10 @@ export default function Home() {
 
   return (
     <div className="min-h-screen">
+      <Seo
+        title="KinaHub"
+        description="Shop products from local seller stores with marketplace checkout, seller CRM, and delivery support."
+      />
       <section className="bg-background border-b border-border">
         <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:px-8">
           <motion.div
