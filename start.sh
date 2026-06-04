@@ -97,7 +97,17 @@ START_TIME=$(date +%s.%N)
 # 1. Backend
 echo -e "${BOLD}[1/2] Backend (Django)${NC}"
 cd backend || exit
-source venv/bin/activate
+
+# Create virtual environment if it doesn't exist
+if [ ! -d "venv" ]; then
+    echo -e "${YELLOW}  Creating virtual environment and installing dependencies...${NC}"
+    python3 -m venv venv
+    source venv/bin/activate
+    pip install -r requirements.txt > ../logs/backend_install.log 2>&1
+    echo -e "${GREEN}  ✓ Dependencies installed${NC}"
+else
+    source venv/bin/activate
+fi
 python manage.py runserver > ../logs/backend.log 2>&1 &
 BACKEND_PID=$!
 cd ..
