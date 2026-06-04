@@ -8,8 +8,11 @@ from rest_framework_simplejwt.views import (
 from django.conf import settings
 from django.conf.urls.static import static
 
+from products.views import curation_view
+
 urlpatterns = [
     path('', RedirectView.as_view(url='/api/products/')),
+    path('curation/', curation_view, name='curation_view'),
     path('admin/', admin.site.urls),
     path('api/auth/', include('users.urls')),
     path('api/products/', include('products.urls')),

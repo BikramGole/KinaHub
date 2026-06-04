@@ -1801,6 +1801,44 @@ def external_source_image(item, source_key):
     return ""
 
 
+def product_deal_tag(title, category_name, price, discount_price, rating, stock):
+    title_lower = title.lower()
+    category_lower = category_name.lower()
+    if discount_price and discount_price < price:
+        if any(word in title_lower for word in ["ssd", "monitor", "laptop", "headset", "camera", "mouse", "keyboard"]):
+            return "TECH DEAL"
+        if any(word in title_lower for word in ["hoodie", "jacket", "t-shirt", "shirt", "tee", "jogger", "sneaker", "cap"]):
+            return "STYLE DEAL"
+        if category_lower == "beauty":
+            return "BEAUTY DEAL"
+        if category_lower in {"home", "appliances"}:
+            return "HOME DEAL"
+        if category_lower == "groceries":
+            return "DAILY DEAL"
+        return "BEST DEAL"
+    if rating >= 4.7:
+        return "TOP RATED"
+    if stock <= 12:
+        return "LIMITED STOCK"
+    if any(word in title_lower for word in ["ssd", "drive", "monitor", "mouse", "keyboard", "laptop", "headset", "charger"]):
+        return "TECH PICK"
+    if any(word in title_lower for word in ["hoodie", "jacket", "shirt", "tee", "jogger", "sneaker", "cap", "shoes"]):
+        return "STYLE PICK"
+    if any(word in title_lower for word in ["perfume", "mascara", "lipstick", "nail", "palette", "powder"]):
+        return "BEAUTY PICK"
+    if category_lower == "groceries":
+        return "DAILY NEED"
+    if category_lower in {"home", "appliances"}:
+        return "HOME PICK"
+    if category_lower == "gaming":
+        return "GAMING PICK"
+    if category_lower == "audio":
+        return "AUDIO PICK"
+    if category_lower in {"school", "books", "stationery"}:
+        return "STUDY PICK"
+    return "SHOP PICK"
+
+
 def build_external_products():
     source_specs = [
         {
@@ -1867,7 +1905,6 @@ def build_external_products():
             brands[brand.name] = brand
 
             details = [
-                f"Source: {source['source_label']}",
                 f"Category: {item.get('category', {}).get('name') if isinstance(item.get('category'), dict) else item.get('category', '')}",
                 f"Rating: {rating:.1f}",
                 f"Stock: {stock}",
@@ -1889,7 +1926,7 @@ def build_external_products():
                     "discount_price": discount_price,
                     "stock": stock,
                     "rating": rating,
-                    "tag": source["source_label"].replace(" Products", "").replace(" API", ""),
+                    "tag": product_deal_tag(title, category_name, price_npr, discount_price, rating, stock),
                     "is_featured": index < 2 or rating >= 4.6,
                     "store": source["store"],
                     "image_url": image_url,

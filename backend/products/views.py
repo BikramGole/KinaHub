@@ -273,3 +273,87 @@ class SearchSuggestionsView(APIView):
 
         # Return top 8
         return Response({'suggestions': suggestions[:8]})
+
+from django.conf import settings
+from django.core.files.storage import FileSystemStorage
+from django.shortcuts import render, redirect
+from django.views.decorators.csrf import csrf_exempt
+from .models import ImageCurationRating
+
+@csrf_exempt
+def curation_view(request):
+    total = Product.objects.count()
+    count = ImageCurationRating.objects.count()
+
+    if request.method == "POST":
+        action = request.POST.get("action")
+        
+        if action == "undo":
+            last_rating = ImageCurationRating.objects.order_by('-updated_at').first()
+            if last_rating:
+                last_rating.delete()
+            return redirect('curation_view')
+            
+        product_id = request.POST.get("product_id")
+        rating = request.POST.get("rating")
+        new_image = request.FILES.get("new_image")
+        
+        try:
+            product = Product.objects.get(id=product_id)
+            
+            if new_image:
+                import os
+                # Ensure target directory exists in the frontend public folder
+                base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) # backend dir
+                project_root = os.path.dirname(base_dir) # kina_ai dir
+                target_dir = os.path.join(project_root, 'frontend', 'public', 'product-media')
+                os.makedirs(target_dir, exist_ok=True)
+                
+                # Save the new image as [slug].ext
+                ext = new_image.name.split('.')[-1]
+                if not ext: ext = 'jpg'
+                filename = f"{product.slug}.{ext}"
+                filepath = os.path.join(target_dir, filename)
+                
+                # Remove old file if it exists to overwrite
+                if os.path.exists(filepath):
+                    os.remove(filepath)
+                    
+                fs = FileSystemStorage(location=target_dir)
+                fs.save(filename, new_image)
+                
+                # Update the ProductImage in database to use frontend path
+                new_url = f"/product-media/{filename}"
+                product_img = product.images.first()
+                if product_img:
+                    product_img.image_url = new_url
+                    product_img.save()
+                else:
+                    ProductImage.objects.create(product=product, image_url=new_url, is_primary=True)
+                
+                # If they upload an image, automatically count it as 'good'
+                rating = "good"
+                
+            if rating:
+                ImageCurationRating.objects.update_or_create(
+                    product=product,
+                    defaults={'rating': rating}
+                )
+                
+        except Product.DoesNotExist:
+            pass
+            
+        return redirect('curation_view')
+
+    # GET request - find next unrated product
+    unrated_products = Product.objects.filter(curation_rating__isnull=True).order_by('id')
+    product = unrated_products.first()
+    product_image = product.images.first() if product else None
+
+    context = {
+        'product': product,
+        'product_image': product_image,
+        'count': count,
+        'total': total,
+    }
+    return render(request, 'products/curation.html', context)

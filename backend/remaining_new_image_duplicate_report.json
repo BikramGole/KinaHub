@@ -1,0 +1,190 @@
+{
+  "before_duplicate_groups": {
+    "a481309f9241369b789f846b5e3c1755139038ec79273f8410983230af62af59": [
+      "diversified-pro-books-see-prep-guide-137",
+      "see-prep-guide"
+    ],
+    "fa23d952982d6f3ab03d2edf060624236e6364b5826cbeefbf80921c2d8b99f8": [
+      "nepali-grammar-guide-3",
+      "english-grammar-workbook-1",
+      "entrance-exam-mastery"
+    ],
+    "71a436bd708a723716c321811042aa2335a9e83aa73b729f5b84af2dc97a5a10": [
+      "rice-cooker-mini-2",
+      "water-filter-1",
+      "air-fryer",
+      "electric-kettle-2",
+      "curtain-set",
+      "rice-cooker-1"
+    ],
+    "7a3e3851bbacba48ddfb0fb6d880acf81e1d80320440ad33f494187561e43db7": [
+      "earbuds-pro",
+      "wireless-earbuds"
+    ],
+    "f0e40d9cf307904d46140874b5548a04ac5f4f5c6f27c28556c6fe371009985d": [
+      "mechanical-keyboard",
+      "mechanical-keyboard-3"
+    ],
+    "987284d01d30b8eac5b7254dabe827e4453e57cac6d3bb792fd7a55730ed65f6": [
+      "mobile-grip-stand-2",
+      "foldable-phone-case",
+      "usb-c-fast-cable"
+    ],
+    "7a619c41bc216526bee57b0a4f3de8ced405c27b1d34572af892722400cf05d9": [
+      "fresh-apples",
+      "fortune-sunflower-oil"
+    ],
+    "7bb16052e3767f280fda7e9002a335e5bdb106549eef4e270e5a8823102d4686": [
+      "yoga-mat",
+      "basketball-pro-2"
+    ],
+    "3118ac0560b869376c41ea1139b318f9fe8ea794ab8ed1a42ef94d66886ee353": [
+      "rgb-mouse-pad-2",
+      "gaming-chair-pro"
+    ],
+    "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855": [
+      "exam-clipboard-2",
+      "mens-cotton-jacket-2"
+    ],
+    "16f0359e7f810eb821078f819df99be5de9481c9800435c5c2ce667c3b4f4107": [
+      "marker-set",
+      "geometry-box-1"
+    ]
+  },
+  "after_duplicate_groups": {
+    "fa23d952982d6f3ab03d2edf060624236e6364b5826cbeefbf80921c2d8b99f8": [
+      "nepali-grammar-guide-3",
+      "english-grammar-workbook-1"
+    ],
+    "987284d01d30b8eac5b7254dabe827e4453e57cac6d3bb792fd7a55730ed65f6": [
+      "foldable-phone-case",
+      "usb-c-fast-cable"
+    ],
+    "3118ac0560b869376c41ea1139b318f9fe8ea794ab8ed1a42ef94d66886ee353": [
+      "rgb-mouse-pad-2",
+      "gaming-chair-pro"
+    ]
+  },
+  "repaired": [
+    {
+      "slug": "exam-clipboard-2",
+      "old_image": "/product-media/exam-clipboard-2.jpg",
+      "new_image": "/product-media/real-new-catalog/exam-clipboard-2-00647f584e.jpg",
+      "confidence": 48,
+      "source_title": "File:Long Range Reconnaissance Group MOD 45170403.jpg"
+    },
+    {
+      "slug": "diversified-pro-books-see-prep-guide-137",
+      "old_image": "/product-media/real-new-catalog/diversified-pro-books-see-prep-guide-137-4e201db6e6.jpg",
+      "new_image": "/product-media/real-new-catalog/diversified-pro-books-see-prep-guide-137-b853582cb0.jpg",
+      "confidence": 48,
+      "source_title": "5 Ways to Get Your Kids Ready for the Dentist"
+    },
+    {
+      "slug": "entrance-exam-mastery",
+      "old_image": "/product-media/entrance-exam-mastery.jpg",
+      "new_image": "/product-media/real-new-catalog/entrance-exam-mastery-c64abc2814.jpg",
+      "confidence": 48,
+      "source_title": "How to prepare for the integrated essay examination - Yu Hwang Wu"
+    },
+    {
+      "slug": "marker-set",
+      "old_image": "/product-media/marker-set.jpg",
+      "new_image": "/product-media/real-new-catalog/marker-set-c58f85c6ad.jpg",
+      "confidence": 48,
+      "source_title": "<div class='fn'> Bozzetto per Una domanda di matrimonio</div>"
+    },
+    {
+      "slug": "mechanical-keyboard",
+      "old_image": "/product-media/real-new-catalog/mechanical-keyboard-93c1799c5c.jpg",
+      "new_image": "/product-media/real-new-catalog/mechanical-keyboard-3de2e1af40.jpg",
+      "confidence": 48,
+      "source_title": "At IhnatCorp, Our Sole Product Is Innovation"
+    },
+    {
+      "slug": "curtain-set",
+      "old_image": "/product-media/curtain-set.jpg",
+      "new_image": "/product-media/real-new-catalog/curtain-set-200e2f8cee.jpg",
+      "confidence": 48,
+      "source_title": "AKC Meet The Breeds"
+    },
+    {
+      "slug": "electric-kettle-2",
+      "old_image": "/product-media/electric-kettle-2.jpg",
+      "new_image": "/product-media/real-new-catalog/electric-kettle-2-640a5fa859.jpg",
+      "confidence": 62,
+      "source_title": "Kettle"
+    },
+    {
+      "slug": "air-fryer",
+      "old_image": "/product-media/air-fryer.jpg",
+      "new_image": "/product-media/real-new-catalog/air-fryer-408cfebe74.jpg",
+      "confidence": 76,
+      "source_title": "File:Potato slices in toaster oven using air fryer function B.jpg"
+    },
+    {
+      "slug": "water-filter-1",
+      "old_image": "/product-media/water-filter-1.jpg",
+      "new_image": "/product-media/real-new-catalog/water-filter-1-3b8f3dd41f.jpg",
+      "confidence": 48,
+      "source_title": "Golden Gate Sunset"
+    },
+    {
+      "slug": "rice-cooker-mini-2",
+      "old_image": "/product-media/rice-cooker-mini-2.jpg",
+      "new_image": "/product-media/real-new-catalog/rice-cooker-mini-2-8872e2d999.jpg",
+      "confidence": 78,
+      "source_title": "Rice cooker and all other home appliances repairing man! #fixing #service #shop #smallbusiness #oddjob #electric #ricecooker #india #bangalore"
+    },
+    {
+      "slug": "yoga-mat",
+      "old_image": "/product-media/yoga-mat.jpg",
+      "new_image": "/product-media/real-new-catalog/yoga-mat-d1c2b652c7.jpg",
+      "confidence": 76,
+      "source_title": "Rolled teal yoga mat its"
+    },
+    {
+      "slug": "fresh-apples",
+      "old_image": "/product-media/fresh-apples.jpg",
+      "new_image": "/product-media/real-new-catalog/fresh-apples-12801881f1.jpg",
+      "confidence": 62,
+      "source_title": "DSCF0422 apples"
+    },
+    {
+      "slug": "mobile-grip-stand-2",
+      "old_image": "/product-media/mobile-grip-stand-2.jpg",
+      "new_image": "/product-media/real-new-catalog/mobile-grip-stand-2-7a061feed6.jpg",
+      "confidence": 48,
+      "source_title": "You Can See Who Loves Who From Miles Around in This NCDOT Water Tower Town"
+    },
+    {
+      "slug": "earbuds-pro",
+      "old_image": "/product-media/real-new-catalog/earbuds-pro-bb261da32c.jpg",
+      "new_image": "/product-media/real-new-catalog/earbuds-pro-5919464e00.jpg",
+      "confidence": 62,
+      "source_title": "Latitude Wireless Earbuds"
+    }
+  ],
+  "manual": [
+    {
+      "slug": "english-grammar-workbook-1",
+      "query": "english grammar workbook cover",
+      "reason": "no candidates"
+    },
+    {
+      "slug": "nepali-grammar-guide-3",
+      "query": "nepali grammar book cover",
+      "reason": "no candidates"
+    },
+    {
+      "slug": "rgb-mouse-pad-2",
+      "query": "RGB gaming mouse pad product",
+      "reason": "no candidates"
+    },
+    {
+      "slug": "foldable-phone-case",
+      "query": "foldable phone case product",
+      "reason": "no candidates"
+    }
+  ]
+}
