@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Image Curation</title>
+    <style>
+        body { font-family: system-ui, -apple-system, sans-serif; background-color: #f3f4f6; color: #1f2937; margin: 0; padding: 1rem; display: flex; flex-direction: column; align-items: center; }
+        .card { background: white; border-radius: 8px; padding: 1.5rem; box-shadow: 0 2px 4px rgb(0 0 0 / 0.1); max-width: 500px; width: 100%; text-align: center; }
+        .stats { margin-bottom: 1rem; font-size: 1rem; font-weight: 600; color: #4b5563; }
+        .product-name { font-size: 1.25rem; font-weight: bold; margin: 0.5rem 0; }
+        .category { color: #6b7280; font-size: 0.85rem; margin-bottom: 0.5rem; }
+        .image-container { margin: 1rem 0; background: #f9fafb; padding: 0.5rem; border-radius: 6px; border: 1px solid #e5e7eb; display: flex; justify-content: center; align-items: center; min-height: 200px; }
+        .product-image { max-width: 100%; max-height: 250px; object-fit: contain; border-radius: 4px; }
+        .buttons { display: flex; gap: 0.5rem; justify-content: center; margin-top: 1rem; }
+        .btn { padding: 0.5rem 1rem; border: none; border-radius: 4px; font-weight: 600; cursor: pointer; transition: opacity 0.2s; color: white; font-size: 0.9rem; flex: 1; }
+        .btn:hover { opacity: 0.9; }
+        .btn-good { background-color: #10b981; }
+        .btn-better { background-color: #f59e0b; }
+        .btn-wrong { background-color: #ef4444; }
+        .upload-section { margin-top: 1rem; padding-top: 1rem; border-top: 1px solid #e5e7eb; }
+        .upload-section h3 { font-size: 1rem; margin-top: 0; }
+        input[type="file"] { margin-bottom: 0.5rem; font-size: 0.85rem; }
+        .btn-upload { background-color: #3b82f6; width: 100%; margin-top: 0.5rem; }
+        .completed { font-size: 1.5rem; color: #10b981; margin-top: 3rem; text-align: center; }
+        .toast { display: none; background: #10b981; color: white; padding: 0.5rem 1rem; border-radius: 4px; margin-bottom: 1rem; font-weight: bold; }
+    </style>
+</head>
+<body>
+    {% if product %}
+        <div class="stats" style="display: flex; justify-content: space-between; align-items: center; max-width: 500px; width: 100%;">
+            <span>Progress: {{ count }} / {{ total }} curated</span>
+            <form method="post" style="margin: 0;">
+                {% csrf_token %}
+                <button type="submit" name="action" value="undo" class="btn" style="background: #6b7280; padding: 0.25rem 0.75rem; font-size: 0.8rem;">↩ Undo Last</button>
+            </form>
+        </div>
+        <div id="toast" class="toast">Image pasted! Press 'H' to save.</div>
+        <div class="card">
+            <div class="category">{{ product.category.name }}</div>
+            <h1 class="product-name">{{ product.name }}</h1>
+            
+            <div class="image-container">
+                {% if product_image %}
+                    <img id="previewImage" src="{{ product_image.image_url }}" alt="{{ product.name }}" class="product-image" onerror="if(this.src.indexOf('5173') === -1) this.src='http://localhost:5173{{ product_image.image_url }}';">
+                {% else %}
+                    <img id="previewImage" style="display:none;" class="product-image">
+                    <p id="noImageText">No image available</p>
+                {% endif %}
+            </div>
+
+            <form id="curationForm" method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                <input type="hidden" name="product_id" value="{{ product.id }}">
+                
+                <div class="buttons">
+                    <button type="submit" id="btn-good" name="rating" value="good" class="btn btn-good">✅ Good [H]</button>
+                    <button type="submit" id="btn-better" name="rating" value="could_be_better" class="btn btn-better">🤔 Better [B]</button>
+                    <button type="submit" id="btn-wrong" name="rating" value="wrong" class="btn btn-wrong">❌ Wrong [W]</button>
+                </div>
+
+                <div class="upload-section">
+                    <h3>Replace Image (Ctrl+V anywhere)</h3>
+                    <input type="file" id="new_image" name="new_image" accept="image/*" onchange="previewFile()">
+                    <button type="submit" id="btn-upload" name="action" value="upload" class="btn btn-upload">Upload & Mark as Good [H]</button>
+                </div>
+            </form>
+        </div>
+    {% else %}
+        <div class="completed">
+            🎉 All 369 products have been curated! 
+            <p style="font-size: 1.2rem; color: #6b7280; margin-top: 1rem;">Check the media/products/ folder for your clean dataset.</p>
+            <form method="post" style="margin-top: 2rem;">
+                {% csrf_token %}
+                <button type="submit" name="action" value="undo" class="btn" style="background: #6b7280;">↩ Undo Last Action</button>
+            </form>
+        </div>
+    {% endif %}
+    
+    <script>
+        // Keyboard shortcuts
+        document.addEventListener('keydown', function(e) {
+            // Ignore if typing in an input
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+            
+            const form = document.getElementById('curationForm');
+            if (!form) return;
+
+            const key = e.key.toLowerCase();
+            
+            function submitWithRating(ratingValue) {
+                // Remove any existing dynamic rating inputs just in case
+                const existing = document.getElementById('dynamic-rating');
+                if (existing) existing.remove();
+                
+                const hiddenInput = document.createElement('input');
+                hiddenInput.type = 'hidden';
+                hiddenInput.name = 'rating';
+                hiddenInput.value = ratingValue;
+                hiddenInput.id = 'dynamic-rating';
+                form.appendChild(hiddenInput);
+                form.submit();
+            }
+
+            if (key === 'h') {
+                const fileInput = document.getElementById('new_image');
+                if (fileInput && fileInput.files.length > 0) {
+                    // Just submit, the file presence is enough for the backend
+                    form.submit();
+                } else {
+                    submitWithRating('good');
+                }
+            } else if (key === 'b') {
+                submitWithRating('could_be_better');
+            } else if (key === 'w') {
+                submitWithRating('wrong');
+            }
+        });
+
+        // File preview helper
+        function previewFile() {
+            const fileInput = document.getElementById('new_image');
+            const preview = document.getElementById('previewImage');
+            const noImageText = document.getElementById('noImageText');
+            
+            if (fileInput.files && fileInput.files[0]) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                    if (noImageText) noImageText.style.display = 'none';
+                    document.getElementById('toast').style.display = 'block';
+                }
+                reader.readAsDataURL(fileInput.files[0]);
+            }
+        }
+
+        // Paste handler
+        document.addEventListener('paste', function(e) {
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            for (let index in items) {
+                const item = items[index];
+                if (item.kind === 'file') {
+                    const blob = item.getAsFile();
+                    const fileInput = document.getElementById('new_image');
+                    if (fileInput) {
+                        const dataTransfer = new DataTransfer();
+                        const ext = blob.type.split('/')[1] || 'jpg';
+                        const file = new File([blob], "pasted_image." + ext, { type: blob.type });
+                        dataTransfer.items.add(file);
+                        fileInput.files = dataTransfer.files;
+                        
+                        // Show preview instead of auto-submitting
+                        previewFile();
+                        return;
+                    }
+                }
+            }
+        });
+    </script>
+</body>
+</html>

@@ -87,7 +87,7 @@ class Product(models.Model):
 
 class ProductImage(models.Model):
     product = models.ForeignKey(Product, on_delete=models.CASCADE, related_name="images")
-    image_url = models.URLField()
+    image_url = models.URLField(max_length=500)
     alt_text = models.CharField(max_length=200, blank=True)
     is_primary = models.BooleanField(default=False)
     order = models.IntegerField(default=0)
@@ -97,6 +97,14 @@ class ProductImage(models.Model):
 
     def __str__(self):
         return f"{self.product.name} - Image {self.order}"
+
+class ImageCurationRating(models.Model):
+    product = models.OneToOneField(Product, on_delete=models.CASCADE, related_name="curation_rating")
+    rating = models.CharField(max_length=50, choices=[('good', 'Good'), ('could_be_better', 'Could be better'), ('wrong', 'Wrong')])
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.product.name} - {self.rating}"
 
 
 class Review(models.Model):

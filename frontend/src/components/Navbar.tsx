@@ -104,10 +104,10 @@ function SearchBar({ mobile = false, onSearch }: { mobile?: boolean; onSearch?: 
           <button
             type="button"
             onClick={() => setMobileExpanded(true)}
-            className="flex h-10 w-10 items-center justify-center rounded-md border border-border text-secondary hover:text-primary"
+            className="flex h-10 w-10 items-center justify-center rounded-md border border-border text-secondary hover:text-primary btn-press-effect"
             aria-label={t('nav.searchProducts', { defaultValue: 'Search products' })}
           >
-            <Search className="h-5 w-5" />
+            <Search className="h-5 w-5 icon-hover-effect" />
           </button>
         ) : (
           <div className="relative">
@@ -133,10 +133,10 @@ function SearchBar({ mobile = false, onSearch }: { mobile?: boolean; onSearch?: 
                     setIsOpen(false);
                     setMobileExpanded(false);
                   }}
-                  className="flex h-8 w-8 items-center justify-center rounded-md text-secondary hover:text-primary"
+                  className="flex h-8 w-8 items-center justify-center rounded-md text-secondary hover:text-primary btn-press-effect"
                   aria-label={t('nav.closeMenu', { defaultValue: 'Close search' })}
                 >
-                  <X className="h-4 w-4" />
+                  <X className="h-4 w-4 icon-hover-effect" />
                 </button>
               </div>
             </form>
@@ -209,21 +209,21 @@ export default function Navbar() {
             <button onClick={toggleLanguage} className="text-xs font-bold text-secondary hover:text-primary transition-colors">
               {locale === 'en' ? 'EN | NP' : 'NP | EN'}
             </button>
-            <Link to="/ai" className="inline-flex items-center gap-2 text-sm font-semibold text-secondary hover:text-primary">
-              <Sparkles className="h-4 w-4" />
+            <Link to="/ai" className="inline-flex items-center gap-2 text-sm font-semibold text-secondary hover:text-primary group">
+              <Sparkles className="h-4 w-4 icon-hover-effect group-hover:text-accent" />
               {t('nav.ai', { defaultValue: 'AI' })}
             </Link>
             <Link to="/products" className="text-sm font-semibold text-secondary hover:text-primary">
               {t('nav.products', { defaultValue: 'Products' })}
             </Link>
             <ThemeToggle />
-            <Link to={user ? '/dashboard' : '/login'} className="text-secondary hover:text-primary">
-              <User className="h-5 w-5" />
+            <Link to={user ? '/dashboard' : '/login'} className="text-secondary hover:text-primary group">
+              <User className="h-5 w-5 icon-hover-effect" />
             </Link>
-            <Link to="/cart" className="relative text-secondary hover:text-primary">
-              <ShoppingBag className="h-5 w-5" />
+            <Link to="/cart" className="relative text-secondary hover:text-primary group">
+              <ShoppingBag className="h-5 w-5 icon-hover-effect group-hover:text-accent" />
               {totalCount > 0 && (
-                <span className="absolute -right-2 -top-2 rounded-full bg-accent px-1.5 text-[10px] font-bold text-background">
+                <span className="absolute -right-2 -top-2 rounded-full bg-accent px-1.5 text-[10px] font-bold text-background transition-transform duration-200 group-hover:scale-110">
                   {totalCount}
                 </span>
               )}
@@ -235,17 +235,17 @@ export default function Navbar() {
               {locale.toUpperCase()}
             </button>
             <SearchBar mobile />
-            <Link to="/ai" className="flex h-10 w-10 items-center justify-center rounded-md border border-border text-secondary hover:text-primary" aria-label={t('nav.ai', { defaultValue: 'AI' })}>
-              <Sparkles className="h-5 w-5" />
+            <Link to="/ai" className="flex h-10 w-10 items-center justify-center rounded-md border border-border text-secondary hover:text-primary btn-press-effect group" aria-label={t('nav.ai', { defaultValue: 'AI' })}>
+              <Sparkles className="h-5 w-5 icon-hover-effect group-hover:text-accent" />
             </Link>
             <ThemeToggle />
             <button
               type="button"
               onClick={() => setMenuOpen((open) => !open)}
-              className="flex h-10 w-10 items-center justify-center rounded-md border border-border text-secondary hover:text-primary"
+              className="flex h-10 w-10 items-center justify-center rounded-md border border-border text-secondary hover:text-primary btn-press-effect group"
               aria-label={menuOpen ? t('nav.closeMenu', { defaultValue: 'Close menu' }) : t('nav.openMenu', { defaultValue: 'Open menu' })}
             >
-              {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+              {menuOpen ? <X className="h-5 w-5 icon-hover-effect" /> : <Menu className="h-5 w-5 icon-hover-effect" />}
             </button>
           </div>
         </div>

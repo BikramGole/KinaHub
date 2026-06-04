@@ -76,3 +76,33 @@ textarea {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* UI/UX Enhancement Classes (Material/Samsung UI Inspired) */
+.btn-press-effect {
+  transition: transform 0.15s cubic-bezier(0.4, 0, 0.2, 1), background-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-press-effect:active {
+  transform: scale(0.96);
+}
+
+.card-lift-effect {
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.card-lift-effect:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -8px rgba(0, 0, 0, 0.15);
+}
+
+.icon-hover-effect {
+  transition: color 0.2s ease, transform 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.icon-hover-effect:hover {
+  transform: scale(1.1);
+}
+
+.icon-hover-effect:active {
+  transform: scale(0.9);
+}
