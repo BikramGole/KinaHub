@@ -98,4 +98,4 @@ These scripts automatically:
 
 Solo-built project by **Bikram Gole**.  
 Maintained and developed independently.
-```
+
