@@ -94,18 +94,9 @@ export default function Products() {
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0]?.isIntersecting) {
-          if (visibleCount >= products.length) {
-            // Endless Doomscrolling Loop: Append a shuffled version of the products
-            const shuffled = [...products.slice(0, 40)].sort(() => Math.random() - 0.5).map(p => ({
-              ...p,
-              // Variable ratio reward: occasionally inject a secret deal
-              tag: Math.random() > 0.85 ? 'SECRET DEAL 🔥' : (Math.random() > 0.8 ? 'HOT 🚨' : p.tag),
-              // Randomize ID so React doesn't complain about duplicate keys in loop
-              id: p.id + Math.floor(Math.random() * 10000000)
-            }));
-            setProducts(prev => [...prev, ...shuffled]);
+          if (visibleCount < products.length) {
+            setVisibleCount((count) => count + 12);
           }
-          setVisibleCount((count) => count + 12);
         }
       },
       { rootMargin: '600px 0px 800px 0px', threshold: 0.01 }

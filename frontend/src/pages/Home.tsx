@@ -19,6 +19,7 @@ export default function Home() {
   const [products, setProducts] = useState<ProductType[]>([]);
   const [categories, setCategories] = useState<CategoryType[]>([]);
   const [heroReady, setHeroReady] = useState(false);
+  const [heroIndex, setHeroIndex] = useState(0);
 
   const trustBadges = [
     { Icon: Truck, title: t('home.badgeFastDelivery', { defaultValue: 'Fast local delivery' }), copy: t('home.badgeFastCopy', { defaultValue: 'From nearby seller stores' }) },
@@ -46,11 +47,30 @@ export default function Home() {
       .catch(() => {});
   }, []);
 
-  const heroProduct = products[0];
-  const flashDeals = products.slice(1, 5);
-  const dailyPicks = products.slice(5, 13);
-  const trendingProducts = products.slice(13, 21);
-  const recommendedProducts = products.slice(21, 30);
+  // Automatically rotate the hero product every 30 seconds
+  useEffect(() => {
+    if (products.length === 0) return;
+    
+    const interval = setInterval(() => {
+      setHeroReady(false); // fade out
+      setTimeout(() => {
+        setHeroIndex((prev) => (prev + 1) % products.length);
+        setHeroReady(true); // fade in
+      }, 300); // Wait for fade out animation before changing image
+    }, 30000);
+    
+    return () => clearInterval(interval);
+  }, [products.length]);
+
+  const heroProduct = products[heroIndex];
+  
+  // To avoid duplicates, we'll exclude the current hero product from the rest of the layout
+  const otherProducts = products.filter((_, idx) => idx !== heroIndex);
+  
+  const flashDeals = otherProducts.slice(0, 4);
+  const dailyPicks = otherProducts.slice(4, 12);
+  const trendingProducts = otherProducts.slice(12, 20);
+  const recommendedProducts = otherProducts.slice(20, 29);
 
   return (
     <div className="min-h-screen">

@@ -128,23 +128,45 @@ def ensure_seller_store(email, password, business_name, phone, description, logo
         user=user,
         defaults={"business_name": business_name, "phone": phone, "status": "verified"},
     )
+    address_val = {
+        "New Road Tech Suppliers": "New Road, Kathmandu",
+        "Thamel Style House": "Thamel, Kathmandu",
+        "Baneshwor Home Mart": "New Baneshwor, Kathmandu",
+        "Boudha Books & Stationery": "Boudha, Kathmandu",
+        "Kalanki Sports Hub": "Kalanki, Kathmandu",
+        "New Road Console Garage": "New Road, Kathmandu",
+        "Teku Auto & Bike Store": "Teku, Kathmandu",
+        "Patan Eco & Pet Mart": "Patan, Lalitpur",
+        "Bharatpur General Store": "Bharatpur, Chitwan",
+        "Everest Lifestyle Mart": "Gyaneshwor, Kathmandu",
+        "Pokhara Modern Mall": "Lakeside, Pokhara",
+    }.get(business_name, "Kathmandu, Nepal")
+    
+    area_val = {
+        "New Road Tech Suppliers": "New Road",
+        "Thamel Style House": "Thamel",
+        "Baneshwor Home Mart": "New Baneshwor",
+        "Boudha Books & Stationery": "Boudha",
+        "Kalanki Sports Hub": "Kalanki",
+        "New Road Console Garage": "New Road",
+        "Teku Auto & Bike Store": "Teku",
+        "Patan Eco & Pet Mart": "Patan",
+        "Bharatpur General Store": "Bharatpur",
+        "Everest Lifestyle Mart": "Gyaneshwor",
+        "Pokhara Modern Mall": "Lakeside",
+    }.get(business_name, "Kathmandu")
+    
+    map_url_val = "https://www.google.com/maps/search/?api=1&query=" + address_val.replace(" ", "%20").replace(",", "")
+
     store, _ = Store.objects.update_or_create(
         seller=profile,
         defaults={
             "name": business_name,
             "slug": unique_store_slug(business_name, email),
             "description": description,
-            "address": {
-                "New Road Tech Suppliers": "New Road, Kathmandu",
-                "Thamel Style House": "Thamel, Kathmandu",
-                "Baneshwor Home Mart": "New Baneshwor, Kathmandu",
-            }.get(business_name, "Kathmandu, Nepal"),
-            "area": {
-                "New Road Tech Suppliers": "New Road",
-                "Thamel Style House": "Thamel",
-                "Baneshwor Home Mart": "New Baneshwor",
-            }.get(business_name, "Kathmandu"),
-            "map_url": "https://www.google.com/maps/search/?api=1&query=" + business_name.replace(" ", "%20") + "%20Kathmandu",
+            "address": address_val,
+            "area": area_val,
+            "map_url": map_url_val,
             "support_email": email,
             "support_phone": phone,
             "logo_url": logo_url,
@@ -274,17 +296,18 @@ def fetch_json(url):
         return json.loads(response.read().decode())
 
 
-def download_image(source_url, target_filename):
-    os.makedirs(product_media_dir, exist_ok=True)
-    target_path = os.path.join(product_media_dir, target_filename)
+def download_image(source_url, target_filename, store_slug=""):
+    store_dir = os.path.join(product_media_dir, store_slug) if store_slug else product_media_dir
+    os.makedirs(store_dir, exist_ok=True)
+    target_path = os.path.join(store_dir, target_filename)
     if os.path.exists(target_path):
-        return f"/product-media/{target_filename}"
+        return f"/product-media/{store_slug}/{target_filename}" if store_slug else f"/product-media/{target_filename}"
 
     request = urllib.request.Request(source_url, headers={"User-Agent": "Mozilla/5.0"})
     with urllib.request.urlopen(request, timeout=30) as response, open(target_path, "wb") as output:
         output.write(response.read())
 
-    return f"/product-media/{target_filename}"
+    return f"/product-media/{store_slug}/{target_filename}" if store_slug else f"/product-media/{target_filename}"
 
 
 review_people = [
@@ -448,8 +471,8 @@ products_data = [
         "tag": "Hot",
         "is_featured": True,
         "image_url": "https://images.unsplash.com/photo-1695048133142-1a20484d2569?auto=format&fit=crop&w=900&q=80",
-        "description": "A18 Pro, titanium body, 48MP camera system, and excellent battery life.",
-        "specifications": "Storage: 256GB\nDisplay: 6.9 inch Super Retina XDR\nWarranty: 1 year\nDelivery: Kathmandu valley 1-2 days",
+        "description": "Experience the ultimate iPhone with the A18 Pro chip, a stunning titanium design, and an advanced 48MP Pro camera system for unmatched photography and videography.",
+        "specifications": "Storage: 256GB NVMe\nDisplay: 6.9\" Super Retina XDR OLED (120Hz ProMotion)\nProcessor: Apple A18 Pro (3nm)\nCamera: 48MP Main + 48MP Ultrawide + 12MP Telephoto (5x Optical Zoom)\nBattery: 4676 mAh with MagSafe\nOS: iOS 18\nWarranty: 1 Year Official",
     },
     {
         "name": "Samsung Galaxy S25 Ultra",
@@ -461,9 +484,9 @@ products_data = [
         "rating": 4.7,
         "tag": "Deal",
         "is_featured": True,
-        "image_url": "https://images.unsplash.com/photo-1610945265064-0e34e5519bbf?auto=format&fit=crop&w=900&q=80",
-        "description": "Flagship Android phone with bright AMOLED display, S Pen, and pro cameras.",
-        "specifications": "Storage: 256GB\nRAM: 12GB\nCamera: 200MP main\nPayment: Cash on Delivery available",
+        "image_url": "/product-media/samsung_galaxy_s25_ultra.png",
+        "description": "The definitive Android flagship experience featuring the Snapdragon 8 Gen 4, a brilliant Dynamic AMOLED 2X display, the integrated S Pen, and an unparalleled 200MP camera setup.",
+        "specifications": "Storage: 256GB UFS 4.0\nRAM: 12GB LPDDR5X\nProcessor: Snapdragon 8 Gen 4 for Galaxy\nDisplay: 6.8\" Dynamic LTPO AMOLED 2X (120Hz, 2600 nits)\nCamera: 200MP Main + 50MP Periscope (5x) + 10MP Telephoto (3x) + 12MP Ultrawide\nBattery: 5000 mAh (45W Fast Charging)\nFeatures: Built-in S Pen, Galaxy AI\nWarranty: 1 Year Official",
     },
     {
         "name": "MacBook Air M3",
@@ -475,9 +498,9 @@ products_data = [
         "rating": 4.9,
         "tag": "Featured",
         "is_featured": True,
-        "image_url": "https://images.unsplash.com/photo-1517336714731-489689fd1ca8?auto=format&fit=crop&w=900&q=80",
-        "description": "Thin, silent, fast laptop for school, work, and travel.",
-        "specifications": "Processor: Apple M3\nRAM: 16GB\nStorage: 512GB SSD\nBattery: Up to 18 hours",
+        "image_url": "/product-media/macbook_air_m3.png",
+        "description": "The ultimate everyday laptop, supercharged by the Apple M3 chip. Incredibly thin, fanless, and built for seamless productivity, creativity, and entertainment on the go.",
+        "specifications": "Processor: Apple M3 (8-core CPU, 10-core GPU)\nRAM: 16GB Unified Memory\nStorage: 512GB PCIe SSD\nDisplay: 13.6\" Liquid Retina with True Tone (500 nits)\nBattery: Up to 18 hours of video playback\nPorts: 2x Thunderbolt 4 / USB 4, MagSafe 3, 3.5mm headphone jack\nWeight: 1.24 kg\nWarranty: 1 Year Apple Limited Warranty",
     },
     {
         "name": "Dell XPS 15 Creator",
@@ -490,8 +513,8 @@ products_data = [
         "tag": "Creator",
         "is_featured": True,
         "image_url": "https://images.unsplash.com/photo-1496181133206-80ce9b88a853?auto=format&fit=crop&w=900&q=80",
-        "description": "OLED laptop with strong performance for design, editing, and coding.",
-        "specifications": "Processor: Intel Core i7\nRAM: 16GB\nGPU: RTX 4050\nDisplay: 15.6 inch OLED",
+        "description": "A premium powerhouse designed for creators. Features a stunning OLED display and robust RTX graphics, encased in a sleek, precision-machined aluminum body.",
+        "specifications": "Processor: Intel Core i7-13700H (14 cores, up to 5.0 GHz)\nRAM: 16GB DDR5 4800MHz\nStorage: 1TB M.2 PCIe NVMe SSD\nGPU: NVIDIA GeForce RTX 4050 6GB GDDR6\nDisplay: 15.6\" 3.5K (3456x2160) OLED Touchscreen (400 nits, 100% DCI-P3)\nBattery: 86 Wh (Up to 12 hours)\nWeight: 1.92 kg\nOS: Windows 11 Pro",
     },
     {
         "name": "Lenovo IdeaPad Slim 5",
@@ -504,8 +527,8 @@ products_data = [
         "tag": "Student",
         "is_featured": False,
         "image_url": "https://images.unsplash.com/photo-1541807084-5c52b6b3adef?auto=format&fit=crop&w=900&q=80",
-        "description": "Good daily laptop for college, office, browsing, and light creative work.",
-        "specifications": "Processor: Ryzen 7\nRAM: 16GB\nStorage: 512GB SSD\nWeight: 1.46 kg",
+        "description": "A versatile and reliable daily driver laptop perfect for students and professionals. Offers strong performance for multitasking, browsing, and light creative work in a slim, portable chassis.",
+        "specifications": "Processor: AMD Ryzen 7 7730U (8 Cores, 16 Threads)\nRAM: 16GB LPDDR4x\nStorage: 512GB PCIe 4.0 NVMe SSD\nDisplay: 14\" WUXGA (1920x1200) IPS, Anti-glare, 300 nits\nBattery: 56.6Wh with Rapid Charge Boost\nWeight: 1.46 kg\nSecurity: FHD IR Camera with Privacy Shutter\nOS: Windows 11 Home",
     },
     {
         "name": "Nike Court Vision Low",
@@ -644,8 +667,8 @@ products_data = [
         "tag": "Esports",
         "is_featured": True,
         "image_url": "https://images.unsplash.com/photo-1615663245857-ac93bb7c39e7?auto=format&fit=crop&w=900&q=80",
-        "description": "Lightweight gaming mouse with fast optical switches.",
-        "specifications": "Sensor: 30K DPI\nWeight: 63g\nConnection: Wired\nWarranty: 1 year",
+        "description": "An ultra-lightweight, ergonomic esports mouse co-developed with top pros. Features the cutting-edge Focus Pro 30K Optical Sensor and Gen-3 Optical Mouse Switches for zero double-clicking.",
+        "specifications": "Sensor: Razer Focus Pro 30K Optical Sensor\nMax Sensitivity: 30,000 DPI\nMax Speed: 750 IPS\nPolling Rate: 1000 Hz (Upgradable to 8000 Hz with HyperPolling Wireless Dongle)\nSwitches: Razer Optical Gen-3 (90-million click lifecycle)\nForm Factor: Right-handed Ergonomic\nWeight: 63g\nConnectivity: Wired (Speedflex Cable)\nWarranty: 1 Year",
     },
     {
         "name": "Logitech G435 Wireless Headset",
@@ -658,8 +681,8 @@ products_data = [
         "tag": "Audio",
         "is_featured": False,
         "image_url": "https://images.unsplash.com/photo-1599669454699-248893623440?auto=format&fit=crop&w=900&q=80",
-        "description": "Light wireless headset for PC, console, and phone gaming.",
-        "specifications": "Connection: Bluetooth and Lightspeed\nBattery: 18 hours\nWeight: 165g\nMic: Dual beamforming",
+        "description": "Ultra-lightweight wireless gaming headset with LIGHTSPEED and Bluetooth connectivity. Delivers powerful, clean sound and features dual beamforming microphones to reduce background noise.",
+        "specifications": "Connectivity: LIGHTSPEED Wireless (USB) + Bluetooth\nDrivers: 40mm Audio Drivers\nFrequency Response: 20 Hz - 20 kHz\nBattery Life: Up to 18 hours\nWeight: 165g (Ultra-lightweight)\nMicrophone: Built-in dual beamforming (no boom arm needed)\nCompatibility: PC, Mac, PlayStation 4/5, Mobile\nSustainability: Minimum 22% post-consumer recycled plastic",
     },
     {
         "name": "Dell XPS 15",
@@ -672,8 +695,8 @@ products_data = [
         "tag": "Creator",
         "is_featured": True,
         "image_url": "/product-media/dell-xps-15.png",
-        "description": "Stunning InfinityEdge display in a compact design. Perfect for creators and professionals.",
-        "specifications": "Processor: Intel Core i7-13700H\nRAM: 16GB DDR5\nStorage: 512GB NVMe SSD\nDisplay: 15.6 inch OLED 3.5K\nGPU: NVIDIA RTX 4050\nWeight: 1.86 kg",
+        "description": "A stunning InfinityEdge display in a premium, compact design. Engineered for creators and professionals demanding uncompromised performance and exceptional build quality.",
+        "specifications": "Processor: Intel Core i7-13700H (14 cores)\nRAM: 16GB DDR5 4800MHz (Upgradable)\nStorage: 512GB PCIe 4.0 NVMe SSD\nDisplay: 15.6\" 3.5K (3456x2160) OLED Touch, Anti-Reflective, 400 nit\nGPU: NVIDIA GeForce RTX 4050 6GB GDDR6 (40W)\nBattery: 86Whr 6-Cell Battery\nWeight: 1.86 kg\nConnectivity: 2x Thunderbolt 4, 1x USB-C 3.2 Gen 2, Full-size SD Card Reader\nOS: Windows 11 Home",
     },
     {
         "name": "AirPods Pro 3",
@@ -686,8 +709,8 @@ products_data = [
         "tag": "ANC",
         "is_featured": True,
         "image_url": "/product-media/airpods-pro-3.png",
-        "description": "Active Noise Cancellation, Adaptive Transparency, and Personalized Spatial Audio with head tracking.",
-        "specifications": "Driver: Custom high-excursion\nANC: Active Noise Cancellation\nBattery: 6 hours, 30 with case\nConnectivity: Bluetooth 5.3\nWater Resistance: IPX4",
+        "description": "Re-engineered for richer audio, smarter Active Noise Cancellation, and an adaptive transparency mode. Features Personalized Spatial Audio with dynamic head tracking for immersive listening.",
+        "specifications": "Chip: Apple H2 Headphone Chip, U1 in charging case\nAudio: Custom high-excursion Apple driver, Adaptive EQ\nANC: 2x better Active Noise Cancellation, Adaptive Transparency\nSensors: Skin-detect, Motion-detecting accelerometer, Speech-detecting accelerometer, Touch control\nBattery: Up to 6 hours listening time (up to 30 hours with MagSafe Charging Case)\nConnectivity: Bluetooth 5.3\nDurability: IP54 Sweat and Water Resistant (Earbuds & Case)",
     },
     {
         "name": "Sony WH-1000XM6",
@@ -700,8 +723,8 @@ products_data = [
         "tag": "Premium",
         "is_featured": True,
         "image_url": "/product-media/sony-wh-1000xm6.png",
-        "description": "Industry-leading noise cancellation with exceptional sound quality and long battery life.",
-        "specifications": "Driver: 40mm\nANC: Adaptive\nBattery: 40 hours\nCodecs: LDAC, AAC, SBC\nWeight: 252g\nFolding: Yes",
+        "description": "The next generation of industry-leading noise cancellation. Exceptional sound quality meets unparalleled comfort and AI-driven adaptive sound control for a premium audio experience.",
+        "specifications": "Processor: Integrated Processor V2 & HD Noise Cancelling Processor QN2\nDrivers: 40mm precision-engineered drivers\nANC: Auto NC Optimizer for adaptive noise cancellation\nBattery: Up to 40 hours with ANC ON (Fast Charge: 3 min = 3 hours playback)\nCodecs: SBC, AAC, LDAC (Hi-Res Audio Wireless)\nMicrophones: 8 mics with AI noise reduction for crystal-clear calls\nWeight: 252g\nFeatures: Speak-to-Chat, Multipoint connection, DSEE Extreme",
     },
     {
         "name": "Xiaomi Pad 7 Pro",
@@ -714,8 +737,8 @@ products_data = [
         "tag": "Tablet",
         "is_featured": False,
         "image_url": "/product-media/xiaomi-pad-7-pro.jpg",
-        "description": "Premium tablet with a bright 11.2 inch 144Hz display, Snapdragon chip, and massive battery.",
-        "specifications": "Display: 11.2 inch IPS 144Hz\nProcessor: Snapdragon 8s Gen 3\nRAM: 8GB\nStorage: 256GB\nBattery: 10000mAh\nCharging: 67W",
+        "description": "A high-performance premium tablet designed for productivity and entertainment. Features a brilliant 144Hz 3.2K display, the powerful Snapdragon 8s Gen 3, and lightning-fast charging.",
+        "specifications": "Display: 11.2\" 3.2K (3200 x 2136) IPS LCD, 144Hz Refresh Rate, Dolby Vision, HDR10, 900 nits\nProcessor: Qualcomm Snapdragon 8s Gen 3 (4nm)\nRAM: 8GB LPDDR5X\nStorage: 256GB UFS 4.0\nBattery: 10000mAh with 67W Wired Fast Charging (100% in 65 mins)\nCameras: 50MP Main + 2MP Depth Rear, 32MP Front\nAudio: Quad Stereo Speakers, Dolby Atmos, Hi-Res Audio\nOS: HyperOS based on Android 14",
     },
     {
         "name": "Logitech MX Mechanical",
@@ -728,8 +751,8 @@ products_data = [
         "tag": "Keyboard",
         "is_featured": False,
         "image_url": "/product-media/logitech-mx-mechanical.jpg",
-        "description": "Wireless mechanical keyboard with smart backlighting and multi-device connectivity.",
-        "specifications": "Switches: Tactile Quiet\nBacklight: Smart Illumination\nBattery: Up to 15 months\nConnectivity: Bluetooth + USB Receiver\nLayout: Full Size",
+        "description": "A low-profile wireless mechanical keyboard designed for exceptional typing feel and performance. Features smart illumination, quiet tactile switches, and seamless multi-device connectivity for a streamlined workflow.",
+        "specifications": "Switches: Tactile Quiet (Brown) Low-Profile Mechanical\nBacklight: Smart Illumination with auto-adjust and hand proximity sensors\nBattery: Up to 15 days on full charge, or up to 10 months with backlighting off\nConnectivity: Bluetooth Low Energy + Logi Bolt USB Receiver (connect up to 3 devices)\nLayout: Full Size (with Numpad)\nCompatibility: Windows, macOS, Linux, Chrome OS, iPadOS, Android",
     },
     {
         "name": "HP Pavilion Gaming Desktop",
@@ -742,8 +765,8 @@ products_data = [
         "tag": "Desktop",
         "is_featured": True,
         "image_url": "/product-media/hp-pavilion-gaming-desktop.jpg",
-        "description": "Powerful gaming desktop with RTX graphics for modern games and creative workloads.",
-        "specifications": "Processor: AMD Ryzen 7 7700X\nGPU: NVIDIA RTX 4060 8GB\nRAM: 16GB DDR5\nStorage: 1TB NVMe SSD\nPSU: 500W\nOS: Windows 11",
+        "description": "A powerful pre-built gaming desktop engineered for seamless modern gaming and intensive creative workflows. Features optimized cooling and striking customizable RGB aesthetics.",
+        "specifications": "Processor: AMD Ryzen 7 7700X (8 Cores, 16 Threads, up to 5.4 GHz)\nGPU: NVIDIA GeForce RTX 4060 8GB GDDR6\nRAM: 16GB DDR5 5200MHz\nStorage: 1TB PCIe NVMe M.2 SSD\nMotherboard: AMD B650 Chipset\nPower Supply: 500W 80 Plus Gold\nCooling: Advanced Air Cooling with customizable RGB fans\nConnectivity: Wi-Fi 6E, Bluetooth 5.3, Gigabit Ethernet\nOS: Windows 11 Home",
     },
     {
         "name": "Samsung T7 Shield SSD 2TB",
@@ -756,8 +779,8 @@ products_data = [
         "tag": "Storage",
         "is_featured": False,
         "image_url": "/product-media/samsung-t7-shield-ssd-2tb.jpg",
-        "description": "Portable SSD with rugged design and USB 3.2 Gen 2 speeds up to 1,050MB/s.",
-        "specifications": "Capacity: 2TB\nInterface: USB 3.2 Gen 2\nRead Speed: 1050 MB/s\nWrite Speed: 1000 MB/s\nDurability: IP65, 3m drop\nWeight: 98g",
+        "description": "A rugged, high-speed portable SSD built for creators on the move. Delivers blazing-fast performance and superior durability to withstand the elements and demanding environments.",
+        "specifications": "Capacity: 2TB\nInterface: USB 3.2 Gen 2 (10 Gbps)\nRead Speed: Up to 1,050 MB/s\nWrite Speed: Up to 1,000 MB/s\nDurability: IP65 water and dust resistance, 3-meter drop resistant\nMaterial: Rubberized exterior for extra protection\nCompatibility: PC, Mac, Android devices, Gaming Consoles\nWeight: 98g",
     },
     {
         "name": "Xiaomi Smart Band 9",
@@ -770,8 +793,8 @@ products_data = [
         "tag": "Wearable",
         "is_featured": False,
         "image_url": "/product-media/xiaomi-smart-band-9.jpg",
-        "description": "AMOLED fitness band with sport modes, SpO2 monitoring, and long battery life.",
-        "specifications": "Display: 1.62 inch AMOLED\nBattery: 21 days\nWater Resistance: 5ATM\nSensors: Heart Rate, SpO2, Accelerometer\nWeight: 15.8g",
+        "description": "A sleek and comprehensive fitness tracker featuring a vibrant AMOLED display, advanced health monitoring, over 150 sports modes, and an impressive multi-week battery life.",
+        "specifications": "Display: 1.62\" AMOLED (60Hz, 1200 nits peak brightness)\nBattery: 233mAh (Up to 21 days standard use, 9 days with AOD)\nWater Resistance: 5ATM (Up to 50 meters)\nSensors: High-precision Heart Rate, SpO2 (Blood Oxygen), Accelerometer, Gyroscope\nFeatures: Sleep tracking, Stress monitoring, Female health tracking\nConnectivity: Bluetooth 5.4\nWeight: 15.8g (without strap)",
     },
     {
         "name": "Ubiquiti UniFi Dream Machine Pro",
@@ -784,8 +807,8 @@ products_data = [
         "tag": "Network",
         "is_featured": False,
         "image_url": "/product-media/ubiquiti-unifi-dream-machine-pro.jpg",
-        "description": "All-in-one enterprise network console with Dual WAN, 10G SFP+, and advanced firewall tools.",
-        "specifications": "WAN: Dual WAN\nPorts: 10G SFP+\nSecurity: Advanced firewall\nUse: Store, office, and creator studio networks",
+        "description": "An enterprise-grade, all-in-one network appliance. Combines a secure gateway, advanced firewall, managed switch, and UniFi application hosting into a single 1U rack-mountable console.",
+        "specifications": "WAN: 1x 10G SFP+, 1x GbE RJ45 (Dual WAN with failover)\nLAN: 1x 10G SFP+, 8x GbE RJ45\nSecurity: Advanced threat management (IPS/IDS), DPI, VPN\nStorage: 1x 3.5\"/2.5\" HDD bay for UniFi Protect NVR storage\nDisplay: 1.3\" LCM color touchscreen for status\nProcessor: Quad-core ARM Cortex-A57 at 1.7 GHz\nForm Factor: 1U Rackmountable",
     },
     {
         "name": "TP-Link Deco AX3000 WiFi 6 Mesh",
@@ -798,8 +821,8 @@ products_data = [
         "tag": "WiFi 6",
         "is_featured": False,
         "image_url": "/product-media/tp-link-deco-ax3000-wifi-6-mesh.jpg",
-        "description": "WiFi 6 mesh system with seamless roaming, low latency, and wide home coverage.",
-        "specifications": "Speed: AX3000\nWireless: WiFi 6\nCoverage: Mesh roaming\nUse: Home, hostel, and small office",
+        "description": "A high-performance Wi-Fi 6 mesh system delivering gigabit speeds and seamless roaming. Eliminates dead zones and provides robust connectivity for up to 150 devices across your entire home.",
+        "specifications": "Speed: AX3000 (2402 Mbps on 5 GHz, 574 Mbps on 2.4 GHz)\nWireless Standard: Wi-Fi 6 (802.11ax)\nCoverage: Up to 6,500 sq. ft. (with 3-pack)\nCapacity: Connects up to 150 devices simultaneously\nFeatures: AI-Driven Mesh, TP-Link HomeShield (Security), Parental Controls\nPorts: 3x Gigabit Ports per unit\nSetup: Easy setup via TP-Link Deco App",
     },
     {
         "name": "Corsair MM300 PRO Extended Mouse Pad",
@@ -826,8 +849,8 @@ products_data = [
         "tag": "Charger",
         "is_featured": False,
         "image_url": "/product-media/anker-735-charger-ganprime-65w.jpg",
-        "description": "Compact GaNPrime charger that powers three devices at once with fast 65W output.",
-        "specifications": "Output: 65W\nPorts: 2 USB-C + 1 USB-A\nTechnology: GaNPrime\nUse: Phone, tablet, and laptop charging",
+        "description": "A versatile, high-powered GaNPrime charger capable of fast-charging three devices simultaneously. Its compact design makes it the perfect travel companion for your phone, tablet, and laptop.",
+        "specifications": "Max Output: 65W (PowerIQ 4.0)\nPorts: 2x USB-C, 1x USB-A\nTechnology: GaNPrime, ActiveShield 2.0 temperature monitoring\nCompatibility: MacBook Pro/Air, iPad Pro, iPhone 14/15 series, Samsung Galaxy, Pixel\nDimensions: Ultra-compact, foldable plug (region dependent)\nWeight: 132g\nWarranty: 18-month warranty",
     },
     {
         "name": "SanDisk 1TB Dual Drive USB-C",
@@ -854,8 +877,8 @@ products_data = [
         "tag": "Custom",
         "is_featured": False,
         "image_url": "/product-media/keychron-q1-pro-mechanical-keyboard.jpg",
-        "description": "Full-metal QMK/VIA wireless custom mechanical keyboard for heavy typing and coding.",
-        "specifications": "Build: Full metal\nFirmware: QMK/VIA\nConnection: Wireless and wired\nUse: Coding, writing, and desk setups",
+        "description": "A premium, fully customizable 75% mechanical keyboard built with a CNC machined aluminum body. Features QMK/VIA support, a flexible gasket mount design, and wireless connectivity for the ultimate typing experience.",
+        "specifications": "Build: CNC machined full aluminum body, gasket mount design\nFirmware: QMK/VIA supported for advanced key mapping and macros\nConnectivity: Bluetooth 5.1 (up to 3 devices) and Type-C wired\nSwitches: Keychron K Pro Mechanical (Hot-swappable)\nKeycaps: Double-shot PBT KSA profile\nBattery: 4000 mAh (up to 300 hours with backlight off)\nLayout: 75% Mac/Windows compatible",
     },
     {
         "name": "CalDigit TS4 Thunderbolt 4 Dock",
@@ -868,8 +891,8 @@ products_data = [
         "tag": "Dock",
         "is_featured": False,
         "image_url": "/product-media/caldigit-ts4-thunderbolt-4-dock.jpg",
-        "description": "Thunderbolt 4 dock with 18 ports, 98W charging, and 2.5GbE for full workstation setups.",
-        "specifications": "Ports: 18\nCharging: 98W\nNetwork: 2.5GbE\nConnection: Thunderbolt 4",
+        "description": "The ultimate Thunderbolt 4 dock featuring 18 ports of connectivity. Designed for power users, it provides unparalleled expansion, 98W laptop charging, and high-speed networking.",
+        "specifications": "Ports: 18 total (Thunderbolt 4, USB-C, USB-A, DisplayPort 1.4, SD/microSD, Audio)\nCharging: 98W Power Delivery to Host\nNetwork: 2.5 Gigabit Ethernet\nDisplay Support: Up to Single 8K or Dual 6K 60Hz displays\nCompatibility: Thunderbolt 4, Thunderbolt 3, USB4, USB-C\nMaterial: Premium aluminum enclosure",
     },
     {
         "name": "CG 190L Single Door Refrigerator",
@@ -1135,8 +1158,8 @@ extra_products = [
         "is_featured": True,
         "store": "console",
         "image_url": "https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=900&q=80",
-        "description": "Starter kit for coding, IoT projects, and learning electronics.",
-        "specifications": "Board: Raspberry Pi 5\nUse: Maker and learning kit\nIncludes: Board, power, cables",
+        "description": "The ultimate starter kit for the Raspberry Pi 5. Everything you need to start building IoT projects, learning programming, or setting up a high-performance micro-desktop.",
+        "specifications": "Board: Raspberry Pi 5 (8GB RAM)\nProcessor: Broadcom BCM2712 2.4GHz quad-core 64-bit Arm Cortex-A76\nIncludes: Official Case with Active Cooler, 27W USB-C Power Supply, 32GB MicroSD Card with Raspberry Pi OS, Micro HDMI cables\nConnectivity: Dual-band Wi-Fi 802.11ac, Bluetooth 5.0, Gigabit Ethernet\nPorts: 2x USB 3.0, 2x USB 2.0, PCIe 2.0 x1 interface",
     },
     {
         "name": "Arduino Uno Learning Kit",
@@ -1165,8 +1188,8 @@ extra_products = [
         "is_featured": True,
         "store": "console",
         "image_url": "https://images.unsplash.com/photo-1605901309584-818e25960a8f?auto=format&fit=crop&w=900&q=80",
-        "description": "Next-gen console for local game buyers and gift shoppers.",
-        "specifications": "Storage: 825GB\nType: Digital edition\nUse: Gaming",
+        "description": "Experience lightning-fast loading with an ultra-high-speed SSD, deeper immersion with haptic feedback and adaptive triggers, and an all-new generation of incredible PlayStation games.",
+        "specifications": "Storage: 825GB Custom NVMe SSD\nResolution: 4K up to 120Hz, 8K support\nProcessor: Custom AMD Ryzen Zen 2 (8 Cores)\nGPU: Custom AMD Radeon RDNA 2 (10.28 TFLOPs)\nAudio: Tempest 3D AudioTech\nType: Digital Edition (No disc drive)\nIncluded: 1x DualSense Wireless Controller",
     },
     {
         "name": "Xbox Series S",
@@ -1180,8 +1203,8 @@ extra_products = [
         "is_featured": False,
         "store": "console",
         "image_url": "https://images.unsplash.com/photo-1605901309584-818e25960a8f?auto=format&fit=crop&w=900&q=80",
-        "description": "Compact console for 1440p gaming and entertainment.",
-        "specifications": "Storage: 512GB\nType: Digital console\nUse: Gaming and streaming",
+        "description": "Next-gen performance in the smallest Xbox ever. Experience all-digital gaming at 1440p up to 120 FPS with ultra-fast load times and seamless game switching.",
+        "specifications": "Storage: 512GB Custom NVMe SSD\nResolution: 1440p Gaming (up to 120 FPS)\nProcessor: Custom AMD Zen 2 (8 Cores)\nGPU: Custom AMD RDNA 2 (4 TFLOPs)\nType: All-Digital Console\nIncluded: 1x Xbox Wireless Controller\nFeatures: Quick Resume, DirectX Raytracing",
     },
     {
         "name": "Ergonomic Gaming Chair",
@@ -2052,9 +2075,9 @@ for row in products_data:
         defaults=product_defaults,
     )
     for extension in ("jpg", "jpeg", "png", "webp"):
-        slug_image_path = os.path.join(product_media_dir, f"{product.slug}.{extension}")
+        slug_image_path = os.path.join(product_media_dir, store.slug, f"{product.slug}.{extension}")
         if os.path.exists(slug_image_path):
-            image_url = f"/product-media/{product.slug}.{extension}"
+            image_url = f"/product-media/{store.slug}/{product.slug}.{extension}"
             break
     if image_url.startswith("http"):
         parsed = urlparse(image_url)
@@ -2063,7 +2086,7 @@ for row in products_data:
             extension = ".jpg"
         local_filename = f"{product.slug}{extension}"
         try:
-            image_url = download_image(image_url, local_filename)
+            image_url = download_image(image_url, local_filename, store.slug)
         except Exception as exc:
             print(f"Failed to download image for {product.name}: {exc}")
     ProductImage.objects.update_or_create(
