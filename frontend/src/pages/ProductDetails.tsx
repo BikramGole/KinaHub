@@ -42,6 +42,14 @@ export default function ProductDetails() {
   const videoInputRef = useRef<HTMLInputElement>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
+  const [activeImage, setActiveImage] = useState<string | null>(null);
+
+  // Initialize active image when product loads
+  useEffect(() => {
+    if (product) {
+      setActiveImage(productImage(product));
+    }
+  }, [product]);
 
   function handleAddToCart() {
     if (!product) return;
@@ -144,8 +152,8 @@ export default function ProductDetails() {
     );
   }
 
-  const image = productImage(product);
-  const subtotal = price(product) * quantity;
+  const image = activeImage || (product ? productImage(product) : null);
+  const subtotal = product ? price(product) * quantity : 0;
 
   async function submitReview(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -196,7 +204,7 @@ export default function ProductDetails() {
       <Seo
         title={product.name}
         description={product.description}
-        image={image}
+        image={image || undefined}
         type="product"
       />
       <Link to="/products" className="mb-5 inline-flex items-center gap-2 text-sm font-semibold text-secondary hover:text-primary sm:mb-6">
@@ -208,9 +216,22 @@ export default function ProductDetails() {
         <motion.div
           initial={{ opacity: 0, y: 16 }}
           animate={{ opacity: 1, y: 0 }}
-          className="self-start rounded-lg border border-border bg-surface p-4 shadow-sm sm:p-5 lg:p-4"
+          className="self-start rounded-lg border border-border bg-surface p-4 shadow-sm sm:p-5 lg:p-4 flex flex-col md:flex-row gap-4"
         >
-          <div className="aspect-[4/3] overflow-hidden rounded-md bg-muted">
+          {product.images && product.images.length > 1 && (
+            <div className="flex order-2 md:order-1 md:flex-col gap-2 overflow-x-auto md:overflow-y-auto md:max-h-[500px] pb-2 md:pb-0 scrollbar-thin md:w-20 shrink-0">
+              {product.images.map((img) => (
+                <button
+                  key={img.id}
+                  onClick={() => setActiveImage(img.image_url)}
+                  className={`relative aspect-square w-16 md:w-full shrink-0 overflow-hidden rounded-md border-2 transition-all ${activeImage === img.image_url ? 'border-accent' : 'border-transparent hover:border-border'}`}
+                >
+                  <img src={img.image_url} alt={img.alt_text || product.name} className="h-full w-full object-cover object-center" />
+                </button>
+              ))}
+            </div>
+          )}
+          <div className="aspect-[4/3] w-full order-1 md:order-2 overflow-hidden rounded-md bg-muted">
             {image ? (
               <img src={image} alt={product.name} className="h-full w-full object-cover object-center" />
             ) : (

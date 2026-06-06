@@ -10,6 +10,8 @@ import {
   MapPin,
   Search,
   Truck,
+  LocateFixed,
+  Loader2,
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { formatPrice, price, productImage } from '../lib/products';
@@ -58,6 +60,7 @@ export default function Checkout() {
   const [addressDetail, setAddressDetail] = useState('');
   const [customerNote, setCustomerNote] = useState('');
   const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
   const [focusedSuggestionIndex, setFocusedSuggestionIndex] = useState(-1);
   const addressInputRef = useRef<HTMLInputElement>(null);
   const houseDetailRef = useRef<HTMLTextAreaElement>(null);
@@ -250,6 +253,51 @@ export default function Checkout() {
     setPaymentDetails((current) => ({ ...current, [key]: value }));
   }
 
+  async function handleGetCurrentLocation() {
+    if (!('geolocation' in navigator)) {
+      setError(t('checkout.geoNotSupported', { defaultValue: 'Geolocation is not supported by your browser' }));
+      return;
+    }
+    
+    setIsLocating(true);
+    setError('');
+    navigator.geolocation.getCurrentPosition(
+      async (position) => {
+        try {
+          const { latitude, longitude } = position.coords;
+          const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}`);
+          if (res.ok) {
+            const data = await res.json();
+            const address = data.address;
+            const area = address.suburb || address.neighbourhood || address.city_district || address.town || address.city || 'Kathmandu';
+            const detail = [address.road, address.house_number].filter(Boolean).join(', ') || data.display_name;
+            
+            setAddressQuery(area);
+            setAddressDetail(detail);
+            setShowAddressSuggestions(false);
+            houseDetailRef.current?.focus();
+          } else {
+            setError(t('checkout.geoFetchFailed', { defaultValue: 'Could not fetch address for your location' }));
+          }
+        } catch (err) {
+          console.error(err);
+          setError(t('checkout.geoReverseFailed', { defaultValue: 'Failed to reverse geocode location' }));
+        } finally {
+          setIsLocating(false);
+        }
+      },
+      (error) => {
+        setIsLocating(false);
+        if (error.code === error.PERMISSION_DENIED) {
+          setError(t('checkout.geoDenied', { defaultValue: 'Location permission denied. Please enable it in your browser settings.' }));
+        } else {
+          setError(t('checkout.geoError', { defaultValue: 'Unable to retrieve your location' }));
+        }
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  }
+
   function applyPromoCode(code = promoCodeInput) {
     const next = resolvePromoCode(code);
     if (!next.code) {
@@ -406,8 +454,17 @@ export default function Checkout() {
                   }}
                   placeholder={t('checkout.searchHint', { defaultValue: 'Type Gongabu, Thamel, Gyaneshwor...' })}
                   ref={addressInputRef}
-                  className="h-11 w-full rounded-md border border-border bg-background pl-10 pr-3 text-base outline-none transition-colors focus:border-accent"
+                  className="h-11 w-full rounded-md border border-border bg-background pl-10 pr-10 text-base outline-none transition-colors focus:border-accent"
                 />
+                <button
+                  type="button"
+                  onClick={handleGetCurrentLocation}
+                  disabled={isLocating}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-md text-secondary hover:bg-accent/10 hover:text-accent disabled:opacity-50"
+                  title={t('checkout.useCurrentLocation', { defaultValue: 'Use current location' })}
+                >
+                  {isLocating ? <Loader2 className="h-4 w-4 animate-spin" /> : <LocateFixed className="h-4 w-4" />}
+                </button>
               </div>
 
               {showAddressSuggestions && addressSuggestions.length > 0 && (

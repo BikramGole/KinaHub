@@ -6,10 +6,12 @@ import { API as PRODUCTS_API } from '../lib/products';
 import type { ProductType, StoreType } from '../lib/products';
 import { API_BASE } from '../lib/api';
 import { useTranslation } from '../i18n/LocaleContext';
+import { useTheme } from '../context/ThemeContext';
 
 export default function StoreDetails() {
   const { slug } = useParams();
   const { t } = useTranslation();
+  const { theme } = useTheme();
   const [store, setStore] = useState<StoreType | null>(null);
   const [products, setProducts] = useState<ProductType[]>([]);
   const [loading, setLoading] = useState(true);
@@ -166,7 +168,7 @@ export default function StoreDetails() {
             <iframe
               title={`${store.name} map`}
               src={`https://maps.google.com/maps?q=${mapQuery}&output=embed`}
-              className="h-72 w-full border-0"
+              className={`h-72 w-full border-0 transition-all ${theme === 'dark' ? 'invert hue-rotate-180 brightness-75 contrast-125' : ''}`}
               loading="lazy"
             />
           </div>
