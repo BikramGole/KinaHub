@@ -18,5 +18,8 @@
   "moreDeals": "अरू डिल",
   "justForToday": "नजिकका पसलका पिक",
   "randomized": "हरेक visit मा नयाँ पिक",
-  "loadProducts": "उत्पादन लोड हुँदैछ"
+  "loadProducts": "उत्पादन लोड हुँदैछ",
+  "trendingNow": "अहिले ट्रेन्डिङमा",
+  "recommendedForYou": "तपाईंको लागि सिफारिस गरिएको",
+  "exploreMore": "सबै उत्पादनहरू अन्वेषण गर्नुहोस्"
 }

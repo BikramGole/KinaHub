@@ -16,6 +16,9 @@ class User(AbstractUser):
     phone = models.CharField(max_length=20, blank=True, null=True)
     address = models.TextField(blank=True, null=True)
     
+    otp_code = models.CharField(max_length=6, blank=True, null=True)
+    otp_created_at = models.DateTimeField(blank=True, null=True)
+    
     USERNAME_FIELD = 'email'
     REQUIRED_FIELDS = ['username']
 

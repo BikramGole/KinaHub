@@ -15,7 +15,7 @@ interface ChatMessage {
   text: string;
 }
 
-const starterPrompts = ['Summarize my cart', 'Find best deals', 'Explain delivery', 'How sellers work'];
+// Replaced starter prompts array with t() calls inside the component
 
 const MOBILE_DOCK_KEY = 'kinahub-ai-mobile-dock';
 const LAUNCHER_SIZE = 48;
@@ -36,12 +36,14 @@ export function aiChatReply(message: string, items: CartItem[]) {
 
 export default function AiAssistantWidget() {
   const { items } = useCart();
-  const { locale } = useTranslation();
+  const { t, locale } = useTranslation();
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [catalog, setCatalog] = useState<ProductType[]>([]);
   const [isMobile, setIsMobile] = useState(false);
+  const [showBadge, setShowBadge] = useState(false);
+  const prevItemsRef = useRef(items.length);
   const [launcherPosition, setLauncherPosition] = useState({ x: 0, y: 0 });
   const dragState = useRef({
     dragging: false,
@@ -50,14 +52,39 @@ export default function AiAssistantWidget() {
     offsetY: 0,
     moved: false,
   });
-  const [messages, setMessages] = useState<ChatMessage[]>([
-    {
-      role: 'assistant',
-      text: 'Ask me about products, delivery, seller stores, checkout, or your cart.',
-    },
-  ]);
+  const [messages, setMessages] = useState<ChatMessage[]>(() => {
+    const saved = window.localStorage.getItem('kinahub-ai-messages');
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      } catch (e) {
+        // ignore
+      }
+    }
+    return [
+      {
+        role: 'assistant',
+        text: t('ai.widget.greeting', { defaultValue: 'Ask me about products, delivery, seller stores, checkout, or your cart.' }),
+      },
+    ];
+  });
+
+  useEffect(() => {
+    window.localStorage.setItem('kinahub-ai-messages', JSON.stringify(messages));
+  }, [messages]);
 
   const cartHint = useMemo(() => cartAiOverview(items)[0]?.body, [items]);
+
+  useEffect(() => {
+    if (items.length > prevItemsRef.current) {
+      setShowBadge(true);
+      const timer = setTimeout(() => setShowBadge(false), 3000);
+      prevItemsRef.current = items.length;
+      return () => clearTimeout(timer);
+    }
+    prevItemsRef.current = items.length;
+  }, [items]);
 
   useEffect(() => {
     const mobileQuery = window.matchMedia('(max-width: 639px)');
@@ -145,7 +172,7 @@ export default function AiAssistantWidget() {
       console.error("AI Error:", e);
       setMessages(current => [
         ...current,
-        { role: 'assistant', text: "Sorry, something went wrong. Please try again." },
+        { role: 'assistant', text: t('ai.widget.error', { defaultValue: 'Sorry, something went wrong. Please try again.' }) },
       ]);
     } finally {
       setLoading(false);
@@ -161,7 +188,7 @@ export default function AiAssistantWidget() {
     setMessages([
       {
         role: 'assistant',
-        text: 'Ask me about products, delivery, seller stores, checkout, or your cart.',
+        text: t('ai.widget.greeting', { defaultValue: 'Ask me about products, delivery, seller stores, checkout, or your cart.' }),
       },
     ]);
     setMessage('');
@@ -231,6 +258,13 @@ export default function AiAssistantWidget() {
     return map;
   }, [catalog, items]);
 
+  const starterPrompts = [
+    t('ai.widget.promptSummarize', { defaultValue: 'Summarize my cart' }),
+    t('ai.widget.promptDeals', { defaultValue: 'Find best deals' }),
+    t('ai.widget.promptDelivery', { defaultValue: 'Explain delivery' }),
+    t('ai.widget.promptSellers', { defaultValue: 'How sellers work' })
+  ];
+
   const renderMessage = (text: string) => {
     // Basic markdown for **bold** and [PRODUCT:slug]
     const parts = text.split(/(\*\*.*?\*\*|\[PRODUCT:[a-zA-Z0-9_-]+\])/g);
@@ -292,12 +326,30 @@ export default function AiAssistantWidget() {
               }
             : undefined
         }
-        className={`fixed z-[60] flex h-12 w-12 items-center justify-center rounded-full border border-accent/40 bg-accent text-background shadow-lg shadow-black/20 transition-transform active:scale-95 ${
-          isMobile ? 'touch-none' : 'hover:scale-105 bottom-24 right-4 sm:bottom-6 sm:right-6'
+        className={`group fixed z-[60] flex h-14 w-14 items-center justify-center transition-all active:scale-95 ${
+          isMobile ? 'touch-none' : 'hover:scale-110 bottom-24 right-4 sm:bottom-6 sm:right-6'
         }`}
         aria-label="Open AI assistant"
       >
-        <Bot className="h-5 w-5" aria-hidden="true" />
+        <div className="relative z-10 flex h-full w-full items-center justify-center overflow-hidden rounded-full border border-accent/40 bg-accent shadow-lg shadow-black/20">
+          <img 
+            src="/kinu-mascot-transparent.svg" 
+            alt="Kinu AI" 
+            className="h-full w-full object-cover scale-[1.35] translate-y-1 transition-transform duration-500 ease-out group-hover:scale-[1.25] group-hover:translate-y-1.5" 
+          />
+        </div>
+        
+        {/* Discord-style notification/status badge */}
+        <AnimatePresence>
+          {showBadge && (
+            <motion.div 
+              initial={{ scale: 0, opacity: 0 }}
+              animate={{ scale: 1, opacity: 1 }}
+              exit={{ scale: 0, opacity: 0 }}
+              className="absolute -top-0.5 -right-0.5 z-30 h-4 w-4 rounded-full border-2 border-background bg-red-500 shadow-sm" 
+            />
+          )}
+        </AnimatePresence>
       </button>
 
       <AnimatePresence>
@@ -326,14 +378,14 @@ export default function AiAssistantWidget() {
 
               <div className="flex items-start justify-between gap-3 border-b border-border bg-background px-4 py-3 sm:px-4 sm:py-3">
                 <div className="flex min-w-0 items-start gap-3">
-                  <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-accent text-background">
-                    <Sparkles className="h-4 w-4" aria-hidden="true" />
+                  <span className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-accent/10">
+                    <img src="/kinu-mascot-transparent.svg" alt="Kinu AI" className="h-8 w-8 object-contain drop-shadow-sm" />
                   </span>
                   <div className="min-w-0">
-                    <p className="truncate text-sm font-black text-primary">KinaHub AI</p>
-                    <p className="text-xs text-secondary">Local commerce assistant</p>
+                    <p className="truncate text-sm font-black text-primary">{t('ai.widget.title', { defaultValue: 'Kinu AI' })}</p>
+                    <p className="text-xs text-secondary">{t('ai.widget.subtitle', { defaultValue: 'Local commerce assistant' })}</p>
                     <p className="mt-1 inline-flex items-center rounded-full border border-accent/20 bg-accent/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent">
-                      Ready
+                      {t('ai.widget.ready', { defaultValue: 'Ready' })}
                     </p>
                   </div>
                 </div>
@@ -341,9 +393,9 @@ export default function AiAssistantWidget() {
                   <button
                     type="button"
                     onClick={resetConversation}
-                    className="hidden rounded-md px-2 py-1 text-xs font-semibold text-secondary hover:bg-surface hover:text-primary sm:inline-flex"
+                    className="rounded-md px-2 py-1 text-xs font-semibold text-secondary hover:bg-surface hover:text-primary"
                   >
-                    New chat
+                    {t('ai.widget.newChat', { defaultValue: 'New chat' })}
                   </button>
                   <button
                     type="button"
@@ -403,7 +455,7 @@ export default function AiAssistantWidget() {
                     <input
                       value={message}
                       onChange={(event) => setMessage(event.target.value)}
-                      placeholder="Ask KinaHub AI"
+                      placeholder={t('ai.widget.placeholder', { defaultValue: 'Ask KinaHub AI' })}
                       className="h-11 min-w-0 flex-1 rounded-full border border-border bg-background px-4 text-sm text-primary outline-none focus:border-accent"
                     />
                     <button

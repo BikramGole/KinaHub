@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, BadgePercent, Truck, ShieldCheck, RefreshCw, Flame } from 'lucide-react';
+import { ArrowRight, BadgePercent, Truck, ShieldCheck, RefreshCw, Flame, Star, Tag, Sparkles, ChevronLeft, ChevronRight, Store, Clock, TrendingUp, Zap } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import ProductCard from '../components/ProductCard';
 import AiInsightPanel from '../components/AiInsightPanel';
@@ -14,9 +14,132 @@ import Seo from '../components/Seo';
 
 const quickLinks = ['mobiles', 'fashion', 'groceries', 'gaming', 'appliances', 'books'];
 
+// Horizontal scrollable product row
+function ProductRow({ products }: { products: ProductType[] }) {
+  const rowRef = useRef<HTMLDivElement>(null);
+  const scroll = (dir: 'left' | 'right') => {
+    if (rowRef.current) rowRef.current.scrollBy({ left: dir === 'left' ? -360 : 360, behavior: 'smooth' });
+  };
+  return (
+    <div className="relative group">
+      <button
+        onClick={() => scroll('left')}
+        className="absolute -left-4 top-1/2 z-10 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:border-accent"
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </button>
+      <div
+        ref={rowRef}
+        className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide scroll-smooth"
+        style={{ scrollbarWidth: 'none' }}
+      >
+        {products.map((product) => (
+          <div key={product.id} className="shrink-0 w-[220px] sm:w-[240px]">
+            <ProductCard product={product} compact />
+          </div>
+        ))}
+      </div>
+      <button
+        onClick={() => scroll('right')}
+        className="absolute -right-4 top-1/2 z-10 -translate-y-1/2 flex h-9 w-9 items-center justify-center rounded-full border border-border bg-surface shadow-md opacity-0 group-hover:opacity-100 transition-opacity hover:border-accent"
+      >
+        <ChevronRight className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}
+
+// Section header component
+function SectionHeader({
+  icon: Icon,
+  title,
+  subtitle,
+  linkTo,
+  linkLabel,
+  badge,
+}: {
+  icon?: React.ElementType;
+  title: string;
+  subtitle?: string;
+  linkTo?: string;
+  linkLabel?: string;
+  badge?: string;
+}) {
+  return (
+    <div className="mb-5 flex items-center justify-between gap-4">
+      <div className="flex items-center gap-3">
+        {Icon && (
+          <span className="flex h-9 w-9 items-center justify-center rounded-md bg-accent/10 text-accent">
+            <Icon className="h-5 w-5" />
+          </span>
+        )}
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="text-xl font-black tracking-tight sm:text-2xl">{title}</h2>
+            {badge && (
+              <span className="rounded-full bg-accent/10 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-accent">
+                {badge}
+              </span>
+            )}
+          </div>
+          {subtitle && <p className="text-xs text-secondary mt-0.5">{subtitle}</p>}
+        </div>
+      </div>
+      {linkTo && (
+        <Link to={linkTo} className="flex items-center gap-1 text-sm font-semibold text-accent hover:underline shrink-0">
+          {linkLabel || 'View all'} <ArrowRight className="h-3 w-3" />
+        </Link>
+      )}
+    </div>
+  );
+}
+
+// Deal card for discounted products
+function DealCard({ product }: { product: ProductType }) {
+  const original = parseFloat(product.price as unknown as string);
+  const discounted = parseFloat((product.discount_price || product.price) as unknown as string);
+  const pct = original > 0 ? Math.round(((original - discounted) / original) * 100) : 0;
+
+  return (
+    <Link
+      to={`/product/${product.slug}`}
+      className="group flex gap-3 rounded-lg border border-border bg-surface p-3 transition-all hover:border-accent hover:shadow-md"
+    >
+      <div className="h-20 w-20 shrink-0 overflow-hidden rounded-md bg-muted">
+        <img
+          src={productImage(product)}
+          alt={product.name}
+          className="h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
+        />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="line-clamp-2 text-sm font-semibold text-primary leading-snug">{product.name}</p>
+        <div className="mt-1 flex items-center gap-2">
+          <span className="text-base font-black text-accent">{formatPrice(price(product))}</span>
+          {product.discount_price && (
+            <span className="text-xs text-secondary line-through">{formatPrice(original)}</span>
+          )}
+        </div>
+        {pct > 0 && (
+          <span className="mt-1 inline-block rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-bold text-accent">
+            -{pct}% OFF
+          </span>
+        )}
+      </div>
+    </Link>
+  );
+}
+
 export default function Home() {
   const { t } = useTranslation();
   const [products, setProducts] = useState<ProductType[]>([]);
+  const [newestProducts, setNewestProducts] = useState<ProductType[]>([]);
+  const [dealsProducts, setDealsProducts] = useState<ProductType[]>([]);
+  const [featuredProducts, setFeaturedProducts] = useState<ProductType[]>([]);
+  const [techProducts, setTechProducts] = useState<ProductType[]>([]);
+  const [fashionProducts, setFashionProducts] = useState<ProductType[]>([]);
+  const [groceryProducts, setGroceryProducts] = useState<ProductType[]>([]);
+  const [booksProducts, setBooksProducts] = useState<ProductType[]>([]);
   const [categories, setCategories] = useState<CategoryType[]>([]);
   const [heroReady, setHeroReady] = useState(false);
   const [heroIndex, setHeroIndex] = useState(0);
@@ -28,45 +151,79 @@ export default function Home() {
   ];
 
   useEffect(() => {
+    // Random hero/main products
     fetch(`${API}/items/?random=true`)
-      .then((response) => response.json())
+      .then((r) => r.json())
       .then((data: ProductType[]) => {
         setProducts(data.slice(0, 30));
-        // Give the hero image a short preload window without making the page feel blocked.
-        setTimeout(() => {
-          setHeroReady(true);
-        }, 600);
+        setTimeout(() => setHeroReady(true), 600);
       })
-      .catch(() => {
-        setHeroReady(true); // Still show hero even if fetch fails
-      });
+      .catch(() => setHeroReady(true));
 
+    // Newest arrivals
+    fetch(`${API}/items/?sort=newest&limit=16`)
+      .then((r) => r.json())
+      .then((data: ProductType[]) => setNewestProducts(data.slice(0, 16)))
+      .catch(() => {});
+
+    // Deals (price_low approximation via discount filter through random + filter client-side)
+    fetch(`${API}/items/?random=true&limit=40`)
+      .then((r) => r.json())
+      .then((data: ProductType[]) => {
+        const discounted = data.filter((p) => p.discount_price && parseFloat(p.discount_price as unknown as string) < parseFloat(p.price as unknown as string));
+        setDealsProducts(discounted.slice(0, 12));
+      })
+      .catch(() => {});
+
+    // Featured products
+    fetch(`${API}/items/?featured=true&limit=12`)
+      .then((r) => r.json())
+      .then((data: ProductType[]) => setFeaturedProducts(data.slice(0, 12)))
+      .catch(() => {});
+
+    // Category-specific rows
+    fetch(`${API}/items/?category=laptops&limit=10`)
+      .then((r) => r.json())
+      .then((data: ProductType[]) => setTechProducts(data.slice(0, 10)))
+      .catch(() => {});
+
+    fetch(`${API}/items/?category=fashion&limit=10`)
+      .then((r) => r.json())
+      .then((data: ProductType[]) => setFashionProducts(data.slice(0, 10)))
+      .catch(() => {});
+
+    fetch(`${API}/items/?category=groceries&limit=10`)
+      .then((r) => r.json())
+      .then((data: ProductType[]) => setGroceryProducts(data.slice(0, 10)))
+      .catch(() => {});
+
+    fetch(`${API}/items/?category=books&limit=10`)
+      .then((r) => r.json())
+      .then((data: ProductType[]) => setBooksProducts(data.slice(0, 10)))
+      .catch(() => {});
+
+    // Categories
     fetch(`${API}/categories/`)
-      .then((response) => response.json())
-      .then((data: CategoryType[]) => setCategories(data))
+      .then((r) => r.json())
+      .then((data: CategoryType[]) => setCategories([...data].sort((a, b) => a.name.localeCompare(b.name))))
       .catch(() => {});
   }, []);
 
-  // Automatically rotate the hero product every 30 seconds
+  // Rotate hero product
   useEffect(() => {
     if (products.length === 0) return;
-    
     const interval = setInterval(() => {
-      setHeroReady(false); // fade out
+      setHeroReady(false);
       setTimeout(() => {
         setHeroIndex((prev) => (prev + 1) % products.length);
-        setHeroReady(true); // fade in
-      }, 300); // Wait for fade out animation before changing image
+        setHeroReady(true);
+      }, 300);
     }, 30000);
-    
     return () => clearInterval(interval);
   }, [products.length]);
 
   const heroProduct = products[heroIndex];
-  
-  // To avoid duplicates, we'll exclude the current hero product from the rest of the layout
   const otherProducts = products.filter((_, idx) => idx !== heroIndex);
-  
   const flashDeals = otherProducts.slice(0, 4);
   const dailyPicks = otherProducts.slice(4, 12);
   const trendingProducts = otherProducts.slice(12, 20);
@@ -78,6 +235,8 @@ export default function Home() {
         title="KinaHub"
         description="Shop products from local seller stores with marketplace checkout, seller CRM, and delivery support."
       />
+
+      {/* ── Hero ── */}
       <section className="bg-background border-b border-border">
         <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:px-8">
           <motion.div
@@ -96,7 +255,6 @@ export default function Home() {
                 </Link>
               ))}
             </div>
-
             <p className="mb-3 flex items-center gap-2 text-sm font-semibold uppercase tracking-wide text-accent">
               <Flame className="h-4 w-4" />
               {t('home.flashPicks', { defaultValue: 'Flash picks' })}
@@ -134,7 +292,10 @@ export default function Home() {
                       <img
                         src={productImage(heroProduct)}
                         alt={heroProduct.name}
-                        className="h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
+                        fetchPriority="high"
+                        loading="eager"
+                        decoding="sync"
+                        className="h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-105"
                       />
                     </div>
                     <div className="pt-4">
@@ -183,12 +344,14 @@ export default function Home() {
         </div>
       </section>
 
+      {/* ── AI Insight ── */}
       {products.length > 0 && (
         <section className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           <AiInsightPanel title="AI shopping overview" insights={marketAiOverview(products)} />
         </section>
       )}
 
+      {/* ── Trust Badges ── */}
       <section className="border-b border-border bg-muted/40">
         <div className="mx-auto grid max-w-7xl grid-cols-1 divide-y divide-border px-4 sm:px-6 md:grid-cols-3 md:divide-x md:divide-y-0 lg:px-8">
           {trustBadges.map(({ Icon, title, copy }) => (
@@ -205,17 +368,53 @@ export default function Home() {
         </div>
       </section>
 
-      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-        <div className="mb-5 flex items-center justify-between gap-4">
-          <div>
-            <h2 className="text-2xl font-black tracking-tight">{t('home.shopByCategory', { defaultValue: 'Shop by category' })}</h2>
-            <p className="text-sm text-secondary">{t('home.categorySubtitle', { defaultValue: 'All product types in one place.' })}</p>
+      {/* ── Flash Deals (4 cards) ── */}
+      {flashDeals.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+          <SectionHeader
+            icon={Zap}
+            title={t('home.flashDeals', { defaultValue: 'Flash deals' })}
+            subtitle="Limited-time prices from local stores"
+            linkTo="/products"
+            linkLabel="More deals"
+            badge="HOT"
+          />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            {flashDeals.map((product) => (
+              <ProductCard key={product.id} product={product} compact />
+            ))}
           </div>
-          <Link to="/products" className="hidden text-sm font-semibold text-accent hover:underline sm:block">
-            {t('home.viewAll', { defaultValue: 'View all' })}
-          </Link>
-        </div>
+        </section>
+      )}
 
+      {/* ── Deals & Discounts compact list ── */}
+      {dealsProducts.length > 0 && (
+        <section className="border-y border-border bg-muted/30">
+          <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+            <SectionHeader
+              icon={Tag}
+              title="Deals & Discounts"
+              subtitle="Products with the biggest savings right now"
+              linkTo="/products?sort=price_low"
+              linkLabel="All deals"
+            />
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+              {dealsProducts.slice(0, 9).map((product) => (
+                <DealCard key={product.id} product={product} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* ── Shop by Category ── */}
+      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <SectionHeader
+          title={t('home.shopByCategory', { defaultValue: 'Shop by category' })}
+          subtitle={t('home.categorySubtitle', { defaultValue: 'Browse products listed by local stores.' })}
+          linkTo="/products"
+          linkLabel={t('home.viewAll', { defaultValue: 'View all' })}
+        />
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
           {categories.map((category) => (
             <Link
@@ -240,76 +439,175 @@ export default function Home() {
         </div>
       </section>
 
-      {flashDeals.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 pb-10 sm:px-6 lg:px-8">
-          <div className="mb-5 flex items-center justify-between gap-4">
-            <h2 className="text-2xl font-black tracking-tight">{t('home.flashDeals', { defaultValue: 'Flash deals' })}</h2>
-            <Link to="/products" className="text-sm font-semibold text-accent hover:underline">
-              {t('home.moreDeals', { defaultValue: 'More deals' })}
-            </Link>
+      {/* ── New Arrivals (horizontal scroll) ── */}
+      {newestProducts.length > 0 && (
+        <section className="border-t border-border bg-muted/20">
+          <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+            <SectionHeader
+              icon={Clock}
+              title="New Arrivals"
+              subtitle="The latest products added to the marketplace"
+              linkTo="/products?sort=newest"
+              linkLabel="See all new"
+              badge="NEW"
+            />
+            <ProductRow products={newestProducts} />
           </div>
+        </section>
+      )}
+
+      {/* ── Featured Picks ── */}
+      {featuredProducts.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+          <SectionHeader
+            icon={Star}
+            title="Featured Products"
+            subtitle="Handpicked by stores for you"
+            linkTo="/products?featured=true"
+            linkLabel="All featured"
+          />
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            {flashDeals.map((product) => (
-              <ProductCard key={product.id} product={product} compact />
+            {featuredProducts.slice(0, 8).map((product) => (
+              <ProductCard key={product.id} product={product} />
             ))}
           </div>
         </section>
       )}
 
+      {/* ── Daily Picks (random) ── */}
       {dailyPicks.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
-          <div className="mb-5 flex items-center justify-between gap-4">
-            <h2 className="text-2xl font-black tracking-tight">{t('home.justForToday', { defaultValue: 'Just for today' })}</h2>
-            <span className="rounded-full bg-surface px-3 py-1 text-xs font-semibold text-secondary">{t('home.randomized', { defaultValue: 'Randomized from DB' })}</span>
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4">
-            {dailyPicks.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
+        <section className="border-t border-border bg-muted/20">
+          <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+            <SectionHeader
+              icon={Sparkles}
+              title={t('home.justForToday', { defaultValue: 'Just for today' })}
+              subtitle="Freshly randomised for you every visit"
+              badge="DAILY"
+            />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {dailyPicks.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
           </div>
         </section>
       )}
 
+      {/* ── Tech / Laptops Row ── */}
+      {techProducts.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+          <SectionHeader
+            icon={getCategoryIcon('laptops')}
+            title="Tech & Laptops"
+            subtitle="Top computing gear from New Road Tech"
+            linkTo="/products?category=laptops"
+            linkLabel="Shop tech"
+          />
+          <ProductRow products={techProducts} />
+        </section>
+      )}
+
+      {/* ── Trending Now ── */}
       {trendingProducts.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
-          <div className="mb-5 flex items-center justify-between gap-4">
-            <h2 className="text-2xl font-black tracking-tight">{t('home.trendingNow', { defaultValue: 'Trending Now' })}</h2>
-            <Link to="/products?sort=popular" className="text-sm font-semibold text-accent hover:underline">
-              {t('home.viewAll', { defaultValue: 'View all' })}
-            </Link>
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 xl:grid-cols-4">
-            {trendingProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
+        <section className="border-t border-border bg-muted/20">
+          <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+            <SectionHeader
+              icon={TrendingUp}
+              title={t('home.trendingNow', { defaultValue: 'Trending Now' })}
+              subtitle="What everyone is buying this week"
+              linkTo="/products?sort=popular"
+              linkLabel={t('home.viewAll', { defaultValue: 'View all' })}
+            />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+              {trendingProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
           </div>
         </section>
       )}
 
+      {/* ── Fashion Row ── */}
+      {fashionProducts.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+          <SectionHeader
+            icon={getCategoryIcon('fashion')}
+            title="Fashion & Style"
+            subtitle="Clothes, accessories & more from Thamel Style House"
+            linkTo="/products?category=fashion"
+            linkLabel="Shop fashion"
+          />
+          <ProductRow products={fashionProducts} />
+        </section>
+      )}
+
+      {/* ── Grocery Row ── */}
+      {groceryProducts.length > 0 && (
+        <section className="border-t border-border bg-muted/20">
+          <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+            <SectionHeader
+              icon={getCategoryIcon('groceries')}
+              title="Groceries & Fresh Produce"
+              subtitle="Daily essentials from Barat Kirana Pasal"
+              linkTo="/products?category=groceries"
+              linkLabel="Shop groceries"
+            />
+            <ProductRow products={groceryProducts} />
+          </div>
+        </section>
+      )}
+
+      {/* ── Books Row ── */}
+      {booksProducts.length > 0 && (
+        <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+          <SectionHeader
+            icon={getCategoryIcon('books')}
+            title="Books & Stationery"
+            subtitle="Study guides, novels, and school supplies"
+            linkTo="/products?category=books"
+            linkLabel="Browse books"
+          />
+          <ProductRow products={booksProducts} />
+        </section>
+      )}
+
+      {/* ── Recommended for You ── */}
       {recommendedProducts.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 pb-16 sm:px-6 lg:px-8">
-          <div className="mb-5 flex items-center justify-between gap-4">
-            <h2 className="text-2xl font-black tracking-tight">{t('home.recommendedForYou', { defaultValue: 'Recommended for you' })}</h2>
-            <span className="rounded-full bg-surface px-3 py-1 text-xs font-semibold text-secondary">AI Curated</span>
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
-            {recommendedProducts.map((product) => (
-              <ProductCard key={product.id} product={product} />
-            ))}
+        <section className="border-t border-border bg-muted/20">
+          <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+            <SectionHeader
+              icon={Sparkles}
+              title={t('home.recommendedForYou', { defaultValue: 'Recommended for you' })}
+              subtitle="AI-curated picks based on your browsing"
+              badge="AI"
+            />
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
+              {recommendedProducts.map((product) => (
+                <ProductCard key={product.id} product={product} />
+              ))}
+            </div>
           </div>
         </section>
       )}
 
-      {/* Explore More Button Section */}
-      <section className="mx-auto max-w-7xl px-4 pb-20 pt-4 sm:px-6 lg:px-8 flex justify-center">
-        <Link
-          to="/products"
-          className="inline-flex items-center gap-2 rounded-md bg-accent px-8 py-3.5 font-bold text-background transition-colors hover:bg-orange-600"
-        >
-          {t('home.exploreMore', { defaultValue: 'Explore all products' })}
-          <ArrowRight className="h-4 w-4" />
-        </Link>
+      {/* ── Store Directory Banner ── */}
+      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <div className="rounded-xl border border-border bg-gradient-to-br from-accent/10 via-surface to-muted/60 p-8 text-center">
+          <Store className="mx-auto mb-3 h-10 w-10 text-accent" />
+          <h2 className="text-2xl font-black tracking-tight">Browse by Store</h2>
+          <p className="mx-auto mt-2 max-w-sm text-sm text-secondary">
+            Explore dedicated stores — from groceries and tech to fashion and sports gear.
+          </p>
+          <Link
+            to="/products"
+            className="mt-5 inline-flex items-center gap-2 rounded-md bg-accent px-6 py-3 font-bold text-background transition-colors hover:bg-orange-600"
+          >
+            Explore all stores <ArrowRight className="h-4 w-4" />
+          </Link>
+        </div>
       </section>
+
+
     </div>
   );
 }

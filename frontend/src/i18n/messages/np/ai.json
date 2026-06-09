@@ -12,5 +12,18 @@
   "featuredTitle": "Suggested products",
   "featuredCopy": "यी live catalog बाट आएका हुन् र सिधै खोल्न सकिन्छ।",
   "viewCatalog": "Catalog हेर्नुहोस्",
-  "noProducts": "अहिलेसम्म कुनै product लोड भएको छैन।"
+  "noProducts": "अहिलेसम्म कुनै product लोड भएको छैन।",
+  "widget": {
+    "greeting": "मलाई उत्पादनहरू, डेलिभरी, विक्रेता पसलहरू, चेकआउट वा तपाईंको कार्टको बारेमा सोध्नुहोस्।",
+    "promptSummarize": "मेरो कार्ट संक्षेप गर्नुहोस्",
+    "promptDeals": "उत्कृष्ट सम्झौताहरू खोज्नुहोस्",
+    "promptDelivery": "डेलिभरी व्याख्या गर्नुहोस्",
+    "promptSellers": "विक्रेताहरू कसरी काम गर्छन्",
+    "title": "Kinu AI",
+    "subtitle": "स्थानीय वाणिज्य सहायक",
+    "ready": "तयार",
+    "newChat": "नयाँ च्याट",
+    "placeholder": "KinaHub AI लाई सोध्नुहोस्",
+    "error": "माफ गर्नुहोस्, केहि गलत भयो। कृपया फेरि प्रयास गर्नुहोस्।"
+  }
 }

@@ -110,16 +110,16 @@ export default function StoreDetails() {
                 </p>
               )}
               {store.support_phone && (
-                <p className="flex items-center gap-2 text-secondary">
+                <a href={`tel:${store.support_phone}`} className="flex items-center gap-2 text-secondary hover:text-accent transition-colors">
                   <Phone className="h-4 w-4 shrink-0 text-accent" />
                   <span>{store.support_phone}</span>
-                </p>
+                </a>
               )}
               {store.support_email && (
-                <p className="flex items-center gap-2 text-secondary">
+                <a href={`mailto:${store.support_email}`} className="flex items-center gap-2 text-secondary hover:text-accent transition-colors">
                   <Mail className="h-4 w-4 shrink-0 text-accent" />
                   <span>{store.support_email}</span>
-                </p>
+                </a>
               )}
               <p className="flex items-center gap-2 text-secondary">
                 <Package className="h-4 w-4 shrink-0 text-accent" />

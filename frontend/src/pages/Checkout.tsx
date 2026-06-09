@@ -62,6 +62,7 @@ export default function Checkout() {
   const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
   const [isLocating, setIsLocating] = useState(false);
   const [focusedSuggestionIndex, setFocusedSuggestionIndex] = useState(-1);
+  const hasAutoLocated = useRef(false);
   const addressInputRef = useRef<HTMLInputElement>(null);
   const houseDetailRef = useRef<HTMLTextAreaElement>(null);
   const instructionsRef = useRef<HTMLTextAreaElement>(null);
@@ -202,6 +203,14 @@ export default function Checkout() {
       document.getElementById(`suggestion-${focusedSuggestionIndex}`)?.scrollIntoView({ block: 'nearest' });
     }
   }, [focusedSuggestionIndex]);
+
+  useEffect(() => {
+    if (!hasAutoLocated.current && !addressQuery.trim()) {
+      hasAutoLocated.current = true;
+      handleGetCurrentLocation();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (!addressQuery.trim()) {
@@ -448,23 +457,22 @@ export default function Checkout() {
                         houseDetailRef.current?.focus();
                       }
                     } else if (e.key === 'Tab') {
-                      setShowAddressSuggestions(false);
-                      setFocusedSuggestionIndex(-1);
+                      if (showAddressSuggestions && focusedSuggestionIndex >= 0) {
+                        e.preventDefault();
+                        setAddressQuery(addressSuggestions[focusedSuggestionIndex].label);
+                        setShowAddressSuggestions(false);
+                        setFocusedSuggestionIndex(-1);
+                        houseDetailRef.current?.focus();
+                      } else {
+                        setShowAddressSuggestions(false);
+                        setFocusedSuggestionIndex(-1);
+                      }
                     }
                   }}
                   placeholder={t('checkout.searchHint', { defaultValue: 'Type Gongabu, Thamel, Gyaneshwor...' })}
                   ref={addressInputRef}
-                  className="h-11 w-full rounded-md border border-border bg-background pl-10 pr-10 text-base outline-none transition-colors focus:border-accent"
+                  className="h-11 w-full rounded-md border border-border bg-background pl-10 pr-3 text-base outline-none transition-colors focus:border-accent"
                 />
-                <button
-                  type="button"
-                  onClick={handleGetCurrentLocation}
-                  disabled={isLocating}
-                  className="absolute right-2 top-1/2 -translate-y-1/2 flex h-8 w-8 items-center justify-center rounded-md text-secondary hover:bg-accent/10 hover:text-accent disabled:opacity-50"
-                  title={t('checkout.useCurrentLocation', { defaultValue: 'Use current location' })}
-                >
-                  {isLocating ? <Loader2 className="h-4 w-4 animate-spin" /> : <LocateFixed className="h-4 w-4" />}
-                </button>
               </div>
 
               {showAddressSuggestions && addressSuggestions.length > 0 && (
@@ -612,13 +620,15 @@ export default function Checkout() {
                 {items.map(({ product, quantity }) => (
                   <div key={product.id} className="flex flex-col gap-2 rounded-md bg-surface p-2">
                     <div className="flex items-center gap-3">
-                      <div className="h-12 w-12 overflow-hidden rounded-md bg-muted">
+                      <Link to={`/products/${product.slug}`} className="h-12 w-12 shrink-0 overflow-hidden rounded-md bg-muted hover:opacity-80 transition-opacity">
                         {productImage(product) ? (
                           <img src={productImage(product)} alt={product.name} className="h-full w-full object-cover" />
                         ) : null}
-                      </div>
+                      </Link>
                       <div className="min-w-0 flex-1">
-                        <p className="truncate text-sm font-semibold">{product.name}</p>
+                        <Link to={`/products/${product.slug}`} className="truncate text-sm font-semibold hover:text-primary transition-colors block">
+                          {product.name}
+                        </Link>
                         <p className="text-xs text-secondary">{t('cart.qty', { defaultValue: 'Qty' })} {quantity}</p>
                       </div>
                       <p className="shrink-0 text-sm font-semibold">{formatPrice(price(product) * quantity)}</p>

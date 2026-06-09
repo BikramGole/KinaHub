@@ -1,5 +1,6 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { GoogleOAuthProvider } from '@react-oauth/google';
 import RootLayout from './layouts/RootLayout';
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
@@ -7,6 +8,9 @@ import { ThemeProvider } from './context/ThemeContext';
 import { LocaleProvider } from './i18n/LocaleContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import ScrollToTop from './components/ScrollToTop';
+import CookieConsent from './components/CookieConsent';
+
+const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID || '';
 
 const Home = lazy(() => import('./pages/Home'));
 const Login = lazy(() => import('./pages/Login'));
@@ -46,12 +50,14 @@ function RouteFallback() {
 
 function App() {
   return (
+    <GoogleOAuthProvider clientId={GOOGLE_CLIENT_ID}>
     <LocaleProvider>
       <ThemeProvider>
       <AuthProvider>
         <CartProvider>
           <BrowserRouter>
             <ScrollToTop />
+            <CookieConsent />
             <Suspense fallback={<RouteFallback />}>
               <Routes>
                 <Route path="/" element={<RootLayout />}>
@@ -95,6 +101,7 @@ function App() {
       </AuthProvider>
     </ThemeProvider>
     </LocaleProvider>
+    </GoogleOAuthProvider>
   );
 }
 

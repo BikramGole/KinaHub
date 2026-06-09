@@ -19,7 +19,21 @@ export async function apiRequest<T>(path: string, options: ApiOptions = {}): Pro
     let detail = 'Request failed';
     try {
       const data = await response.json();
-      detail = typeof data.detail === 'string' ? data.detail : JSON.stringify(data);
+      if (typeof data.detail === 'string') {
+        detail = data.detail;
+      } else if (typeof data.error === 'string') {
+        detail = data.error;
+      } else {
+        const errors: string[] = [];
+        for (const key in data) {
+          if (Array.isArray(data[key])) {
+            errors.push(data[key][0]);
+          } else if (typeof data[key] === 'string') {
+            errors.push(data[key]);
+          }
+        }
+        detail = errors.length > 0 ? errors.join(' ') : JSON.stringify(data);
+      }
     } catch {
       detail = response.statusText;
     }

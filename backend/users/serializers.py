@@ -3,6 +3,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from crm.models import ActivityLog, CustomerRecord, SellerRecord
 from sellers.models import SellerProfile, Store
 from .models import Address, CustomerProfile, User
+from .email_utils import send_otp_email
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -57,11 +58,20 @@ class RegisterSerializer(serializers.Serializer):
         return user
 
     def to_representation(self, user):
-        refresh = RefreshToken.for_user(user)
+        import random
+        from django.utils import timezone
+
+        otp = f"{random.randint(100000, 999999)}"
+        user.otp_code = otp
+        user.otp_created_at = timezone.now()
+        user.save(update_fields=['otp_code', 'otp_created_at'])
+
+        send_otp_email(user.email, otp, "Your KinaHub Registration Code")
+
         return {
-            "user": UserSerializer(user).data,
-            "access": str(refresh.access_token),
-            "refresh": str(refresh),
+            "require_2fa": True,
+            "user_id": user.id,
+            "message": "A verification code has been sent to your email."
         }
 
 

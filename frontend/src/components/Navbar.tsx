@@ -16,6 +16,7 @@ function SearchBar({ mobile = false, onSearch }: { mobile?: boolean; onSearch?: 
   const [suggestions, setSuggestions] = useState<string[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [mobileExpanded, setMobileExpanded] = useState(false);
+  const [focusedIndex, setFocusedIndex] = useState(-1);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -26,11 +27,13 @@ function SearchBar({ mobile = false, onSearch }: { mobile?: boolean; onSearch?: 
           .then((res) => res.json())
           .then((data: { suggestions: string[] }) => {
             setSuggestions(data.suggestions || []);
+            setFocusedIndex(-1);
             setIsOpen(true);
           })
-          .catch(() => setSuggestions([]));
+          .catch(() => { setSuggestions([]); setFocusedIndex(-1); });
       } else {
         setSuggestions([]);
+        setFocusedIndex(-1);
         setIsOpen(false);
       }
     }, 200);
@@ -41,6 +44,7 @@ function SearchBar({ mobile = false, onSearch }: { mobile?: boolean; onSearch?: 
     function handleClickOutside(event: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
         setIsOpen(false);
+        setFocusedIndex(-1);
         if (mobile) setMobileExpanded(false);
       }
     }
@@ -68,9 +72,28 @@ function SearchBar({ mobile = false, onSearch }: { mobile?: boolean; onSearch?: 
     
     navigate(`/products?q=${encodeURIComponent(query.trim())}`);
     setIsOpen(false);
+    setFocusedIndex(-1);
     if (mobile) setMobileExpanded(false);
     if (onSearch) onSearch();
   }
+
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (!isOpen || suggestions.length === 0) return;
+    if (e.key === 'ArrowDown') {
+      e.preventDefault();
+      setFocusedIndex((prev) => (prev < suggestions.length - 1 ? prev + 1 : prev));
+    } else if (e.key === 'ArrowUp') {
+      e.preventDefault();
+      setFocusedIndex((prev) => (prev > -1 ? prev - 1 : -1));
+    } else if (e.key === 'Enter' && focusedIndex >= 0) {
+      e.preventDefault();
+      setSearch(suggestions[focusedIndex]);
+      submitSearch(suggestions[focusedIndex]);
+    } else if (e.key === 'Escape') {
+      setIsOpen(false);
+      setFocusedIndex(-1);
+    }
+  };
 
   const renderSuggestions = () => {
     if (!isOpen || suggestions.length === 0) return null;
@@ -85,7 +108,9 @@ function SearchBar({ mobile = false, onSearch }: { mobile?: boolean; onSearch?: 
                   setSearch(suggestion);
                   submitSearch(suggestion);
                 }}
-                className="w-full text-left flex items-center gap-3 px-4 py-2.5 hover:bg-accent/5 transition-colors text-sm font-medium text-primary"
+                className={`w-full text-left flex items-center gap-3 px-4 py-2.5 transition-colors text-sm font-medium text-primary ${
+                  index === focusedIndex ? 'bg-accent/10' : 'hover:bg-accent/5'
+                }`}
               >
                 <Search className="h-4 w-4 text-secondary shrink-0" />
                 <span className="truncate capitalize">{suggestion}</span>
@@ -121,6 +146,7 @@ function SearchBar({ mobile = false, onSearch }: { mobile?: boolean; onSearch?: 
                   onFocus={() => {
                     if (suggestions.length > 0) setIsOpen(true);
                   }}
+                  onKeyDown={handleInputKeyDown}
                   className="h-10 min-w-0 flex-1 bg-transparent text-base outline-none"
                   placeholder={t('nav.searchProducts', { defaultValue: 'Search products' })}
                   autoFocus
@@ -131,6 +157,7 @@ function SearchBar({ mobile = false, onSearch }: { mobile?: boolean; onSearch?: 
                     setSearch('');
                     setSuggestions([]);
                     setIsOpen(false);
+                    setFocusedIndex(-1);
                     setMobileExpanded(false);
                   }}
                   className="flex h-8 w-8 items-center justify-center rounded-md text-secondary hover:text-primary btn-press-effect"
@@ -159,6 +186,7 @@ function SearchBar({ mobile = false, onSearch }: { mobile?: boolean; onSearch?: 
             onFocus={() => {
               if (suggestions.length > 0) setIsOpen(true);
             }}
+            onKeyDown={handleInputKeyDown}
             className="h-11 w-full rounded-md border border-border bg-background pl-10 pr-12 text-base outline-none transition-colors focus:border-accent"
             placeholder={t('nav.searchProducts', { defaultValue: 'Search products' })}
           />
@@ -193,14 +221,21 @@ export default function Navbar() {
     <nav className="sticky top-0 z-50 border-b border-border bg-surface/95 backdrop-blur">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-14 items-center gap-3 md:h-16 md:gap-4">
-          <Link to="/" className="flex shrink-0 items-center gap-2">
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full border border-border bg-background shadow-sm">
-              <img
-                src={theme === 'dark' ? '/logo-dark.png' : '/logo-light.png'}
-                alt="KinaHub Logo"
-                className="h-[132%] w-[132%] object-cover object-center"
-              />
-            </span>
+          <Link 
+            to="/" 
+            className="flex shrink-0 items-center h-full py-2"
+            onClick={(e) => {
+              if (location.pathname === '/') {
+                e.preventDefault();
+                window.location.reload();
+              }
+            }}
+          >
+            <img
+              src={theme === 'dark' ? '/logo_navbar-dark.png' : '/logo_navbar-light.png'}
+              alt="KinaHub Logo"
+              className="h-full w-auto object-contain"
+            />
           </Link>
 
           <SearchBar />
@@ -217,7 +252,7 @@ export default function Navbar() {
               {t('nav.products', { defaultValue: 'Products' })}
             </Link>
             <ThemeToggle />
-            <Link to={user ? '/dashboard' : '/login'} className="text-secondary hover:text-primary group">
+            <Link to={user ? '/dashboard' : '/register'} className="text-secondary hover:text-primary group">
               <User className="h-5 w-5 icon-hover-effect" />
             </Link>
             <Link to="/cart" className="relative text-secondary hover:text-primary group">
@@ -265,7 +300,7 @@ export default function Navbar() {
               <Link onClick={closeMenu} to="/cart" className="rounded-md bg-background px-3 py-3 text-secondary hover:text-primary">
                 {t('nav.cart', { defaultValue: 'Cart' })} {totalCount > 0 ? `(${totalCount})` : ''}
               </Link>
-              <Link onClick={closeMenu} to={user ? '/dashboard' : '/login'} className="rounded-md bg-background px-3 py-3 text-secondary hover:text-primary">
+              <Link onClick={closeMenu} to={user ? '/dashboard' : '/register'} className="rounded-md bg-background px-3 py-3 text-secondary hover:text-primary">
                 {user ? t('nav.dashboard', { defaultValue: 'Dashboard' }) : t('nav.login', { defaultValue: 'Login' })}
               </Link>
               <Link onClick={closeMenu} to="/register" className="rounded-md bg-background px-3 py-3 text-secondary hover:text-primary">

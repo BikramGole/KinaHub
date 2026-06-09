@@ -12,7 +12,7 @@ export default function DashboardHome() {
 }
 
 function CustomerDashboard() {
-  const { user } = useAuth();
+  const { user, deleteAccount } = useAuth();
   const { t } = useTranslation();
   const roleKey = ((user?.effective_role || 'customer').charAt(0).toUpperCase() + (user?.effective_role || 'customer').slice(1)) as Capitalize<Role>;
 
@@ -36,6 +36,21 @@ function CustomerDashboard() {
           <p className="text-sm text-secondary">{t('dashboard.orders', { defaultValue: 'Orders' })}</p>
           <p className="mt-2 font-bold">{t('dashboard.ordersConnected', { defaultValue: 'Orders sync automatically.' })}</p>
         </div>
+      </div>
+
+      <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-4 sm:p-6 mt-8">
+        <h2 className="text-lg font-bold text-red-600 mb-2">Danger Zone</h2>
+        <p className="text-sm text-secondary mb-4">Once you delete your account, there is no going back. Please be certain.</p>
+        <button
+          onClick={() => {
+            if (window.confirm("Are you sure you want to permanently delete your account? This action cannot be undone.")) {
+              deleteAccount().catch((err: any) => alert("Failed to delete account: " + err.message));
+            }
+          }}
+          className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-sm"
+        >
+          Delete Account
+        </button>
       </div>
     </div>
   );

@@ -8,7 +8,7 @@ export default function MobileBottomNav() {
   const { t } = useTranslation();
   const { user } = useAuth();
   const { totalCount } = useCart();
-  const accountPath = user ? '/dashboard' : '/login';
+  const accountPath = user ? '/dashboard' : '/register';
 
   const itemClass = ({ isActive }: { isActive: boolean }) =>
     `flex flex-col items-center justify-center gap-1 text-[11px] font-semibold transition-colors btn-press-effect group ${
