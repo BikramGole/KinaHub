@@ -170,10 +170,12 @@ AUTH_USER_MODEL = 'users.User'
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
 CORS_ALLOWED_ORIGINS = [
     FRONTEND_URL,
+    'https://kinahub.vercel.app',
     'http://localhost:5173',
     'http://localhost:3000',
 ]
 CORS_ALLOW_ALL_ORIGINS = DEBUG  # Only allow all in dev
+CORS_ALLOW_CREDENTIALS = True
 
 # DRF Config
 REST_FRAMEWORK = {
