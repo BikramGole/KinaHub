@@ -35,6 +35,7 @@ export default function SellerProducts() {
   const [categories, setCategories] = useState<CategoryType[]>([]);
   const [form, setForm] = useState<ProductFormState>(initialForm);
   const [error, setError] = useState('');
+  const [isDragging, setIsDragging] = useState(false);
 
   function loadProducts() {
     apiRequest<ProductType[]>('/products/items/?mine=true', { token })
@@ -101,7 +102,21 @@ export default function SellerProducts() {
           <input className="rounded-md border border-border bg-background px-3 py-3 text-base outline-none focus:border-accent" placeholder={t('seller.price', { defaultValue: 'Price' })} type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} required />
           <input className="rounded-md border border-border bg-background px-3 py-3 text-base outline-none focus:border-accent" placeholder={t('seller.discountPrice', { defaultValue: 'Discount price' })} type="number" value={form.discount_price} onChange={(e) => setForm({ ...form, discount_price: e.target.value })} />
           <input className="rounded-md border border-border bg-background px-3 py-3 text-base outline-none focus:border-accent" placeholder={t('seller.stock', { defaultValue: 'Stock' })} type="number" min="0" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} required />
-          <div className="relative flex items-center justify-center rounded-md border-2 border-dashed border-border bg-background px-3 py-4 hover:border-accent hover:bg-accent/5 transition-colors cursor-pointer" onClick={() => document.getElementById('image-upload')?.click()}>
+          <div
+            className={`relative flex items-center justify-center rounded-md border-2 border-dashed bg-background px-3 py-4 transition-colors cursor-pointer ${
+              isDragging ? 'border-accent bg-accent/5' : 'border-border hover:border-accent hover:bg-accent/5'
+            }`}
+            onClick={() => document.getElementById('image-upload')?.click()}
+            onDragOver={(e) => { e.preventDefault(); setIsDragging(true); }}
+            onDragLeave={(e) => { e.preventDefault(); setIsDragging(false); }}
+            onDrop={(e) => {
+              e.preventDefault();
+              setIsDragging(false);
+              if (e.dataTransfer.files?.[0]) {
+                setForm({ ...form, imageFile: e.dataTransfer.files[0] });
+              }
+            }}
+          >
             <input id="image-upload" type="file" accept="image/*" className="hidden" onChange={(e) => setForm({ ...form, imageFile: e.target.files?.[0] || null })} />
             <div className="flex flex-col items-center gap-2 text-secondary">
               {form.imageFile ? (
