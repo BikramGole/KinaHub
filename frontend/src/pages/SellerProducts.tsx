@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Plus, Save } from 'lucide-react';
+import { Plus, Save, Upload, Image as ImageIcon } from 'lucide-react';
 import { apiRequest } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { API, formatPrice } from '../lib/products';
@@ -15,7 +15,7 @@ interface ProductFormState {
   price: string;
   discount_price: string;
   stock: string;
-  primary_image_url: string;
+  imageFile: File | null;
 }
 
 const initialForm: ProductFormState = {
@@ -25,7 +25,7 @@ const initialForm: ProductFormState = {
   price: '',
   discount_price: '',
   stock: '1',
-  primary_image_url: '',
+  imageFile: null,
 };
 
 export default function SellerProducts() {
@@ -54,19 +54,23 @@ export default function SellerProducts() {
     event.preventDefault();
     setError('');
     try {
+      const formData = new FormData();
+      formData.append('name', form.name);
+      formData.append('category_id', form.category_id);
+      formData.append('description', form.description);
+      formData.append('price', form.price);
+      if (form.discount_price) formData.append('discount_price', form.discount_price);
+      formData.append('stock', form.stock);
+      formData.append('is_active', 'true');
+      formData.append('is_featured', 'false');
+      if (form.imageFile) {
+        formData.append('image', form.imageFile);
+      }
+
       await apiRequest<ProductType>('/products/items/', {
         token,
         method: 'POST',
-        body: JSON.stringify({
-          ...form,
-          category_id: Number(form.category_id),
-          price: Number(form.price),
-          discount_price: form.discount_price ? Number(form.discount_price) : null,
-          stock: Number(form.stock),
-          is_active: true,
-          is_featured: false,
-          rating: 0,
-        }),
+        body: formData,
       });
       setForm(initialForm);
       loadProducts();
@@ -97,7 +101,22 @@ export default function SellerProducts() {
           <input className="rounded-md border border-border bg-background px-3 py-3 text-base outline-none focus:border-accent" placeholder={t('seller.price', { defaultValue: 'Price' })} type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} required />
           <input className="rounded-md border border-border bg-background px-3 py-3 text-base outline-none focus:border-accent" placeholder={t('seller.discountPrice', { defaultValue: 'Discount price' })} type="number" value={form.discount_price} onChange={(e) => setForm({ ...form, discount_price: e.target.value })} />
           <input className="rounded-md border border-border bg-background px-3 py-3 text-base outline-none focus:border-accent" placeholder={t('seller.stock', { defaultValue: 'Stock' })} type="number" min="0" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} required />
-          <input className="rounded-md border border-border bg-background px-3 py-3 text-base outline-none focus:border-accent" placeholder={t('seller.imageUrl', { defaultValue: 'Image URL' })} value={form.primary_image_url} onChange={(e) => setForm({ ...form, primary_image_url: e.target.value })} />
+          <div className="relative flex items-center justify-center rounded-md border-2 border-dashed border-border bg-background px-3 py-4 hover:border-accent hover:bg-accent/5 transition-colors cursor-pointer" onClick={() => document.getElementById('image-upload')?.click()}>
+            <input id="image-upload" type="file" accept="image/*" className="hidden" onChange={(e) => setForm({ ...form, imageFile: e.target.files?.[0] || null })} />
+            <div className="flex flex-col items-center gap-2 text-secondary">
+              {form.imageFile ? (
+                <>
+                  <ImageIcon className="h-6 w-6 text-accent" />
+                  <span className="text-sm font-medium text-primary">{form.imageFile.name}</span>
+                </>
+              ) : (
+                <>
+                  <Upload className="h-6 w-6" />
+                  <span className="text-sm font-medium">{t('seller.uploadImage', { defaultValue: 'Upload image' })}</span>
+                </>
+              )}
+            </div>
+          </div>
           <textarea className="md:col-span-2 rounded-md border border-border bg-background px-3 py-3 text-base outline-none focus:border-accent" placeholder={t('seller.description', { defaultValue: 'Description' })} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} required />
           <button className="inline-flex items-center justify-center gap-2 rounded-md bg-accent px-5 py-3 font-bold text-background md:w-fit">
             <Save className="h-4 w-4" />

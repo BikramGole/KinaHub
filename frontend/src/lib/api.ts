@@ -1,4 +1,4 @@
-export const API_BASE = '/api';
+export const API_BASE = import.meta.env.VITE_API_URL || '/api';
 
 export interface ApiOptions extends RequestInit {
   token?: string | null;
@@ -9,7 +9,7 @@ export async function apiRequest<T>(path: string, options: ApiOptions = {}): Pro
   const response = await fetch(`${API_BASE}${path}`, {
     ...requestOptions,
     headers: {
-      'Content-Type': 'application/json',
+      ...(requestOptions.body instanceof FormData ? {} : { 'Content-Type': 'application/json' }),
       ...(token ? { Authorization: `Bearer ${token}` } : {}),
       ...headers,
     },

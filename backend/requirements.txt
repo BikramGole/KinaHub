@@ -72,7 +72,6 @@ python-multipart==0.0.21
 pytz==2026.2
 PyYAML==6.0.3
 referencing==0.37.0
-rembg==2.0.76
 requests==2.34.2
 rich==15.0.0
 rpds-py==2026.5.1
@@ -94,5 +93,12 @@ typing_extensions==4.15.0
 urllib3==2.7.0
 uvicorn==0.40.0
 vtracer==0.6.15
-watchdog==6.0.0
 yarl==1.24.2
+
+# Deployment
+gunicorn==23.0.0
+psycopg[binary]==3.3.4
+whitenoise==6.9.0
+dj-database-url==2.3.0
+django-cloudinary-storage==0.3.0
+cloudinary==1.41.0

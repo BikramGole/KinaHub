@@ -125,7 +125,7 @@ export default function Login() {
           ) : (
             <div className="space-y-1">
               <label className="text-xs font-semibold text-secondary uppercase tracking-wider pl-1">{t('auth.verificationCode', { defaultValue: 'Verification Code' })}</label>
-              <p className="text-xs text-secondary mb-3 pl-1">A 6-digit code has been sent to your email.</p>
+              <p className="text-xs text-secondary mb-3 pl-1">A 6-digit code has been sent to {email}.</p>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <Lock className="h-5 w-5 text-secondary" />
@@ -133,7 +133,7 @@ export default function Login() {
                 <input 
                   type="text" 
                   value={otpCode}
-                  onChange={(e) => setOtpCode(e.target.value)}
+                  onChange={(e) => setOtpCode(e.target.value.replace(/\s+/g, ''))}
                   className="w-full bg-background border border-border rounded-xl pl-11 pr-4 py-3.5 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-300 text-base tracking-[0.5em] font-mono"
                   placeholder="••••••"
                   maxLength={6}

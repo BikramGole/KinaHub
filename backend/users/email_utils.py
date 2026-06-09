@@ -23,7 +23,6 @@ def send_otp_email(to_email: str, otp: str, subject: str):
         settings.DEFAULT_FROM_EMAIL,
         [to_email],
     )
-    msg.mixed_subtype = 'related'
     msg.attach_alternative(html_content, "text/html")
 
     # Attach logo as inline image
