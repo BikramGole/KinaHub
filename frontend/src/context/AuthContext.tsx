@@ -25,7 +25,8 @@ interface AuthContextType {
   verifyOTP: (userId: number, otpCode: string) => Promise<User>;
   loginWithGoogle: (idToken: string, role?: 'customer' | 'seller', businessName?: string) => Promise<User>;
   register: (payload: RegisterPayload) => Promise<User | { require_2fa: true; user_id: number }>;
-  deleteAccount: () => Promise<void>;
+  requestDeleteAccount: () => Promise<void>;
+  confirmDeleteAccount: (otpCode: string) => Promise<void>;
   logout: () => void;
   refreshMe: () => Promise<void>;
 }
@@ -132,8 +133,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return data.user;
   }
 
-  async function deleteAccount() {
-    await apiRequest('/auth/me/', { method: 'DELETE', token });
+  async function requestDeleteAccount() {
+    await apiRequest('/auth/delete-account/request/', { method: 'POST', token });
+  }
+
+  async function confirmDeleteAccount(otpCode: string) {
+    await apiRequest('/auth/delete-account/confirm/', {
+      method: 'POST',
+      token,
+      body: JSON.stringify({ otp_code: otpCode }),
+    });
     logout();
   }
 
@@ -146,7 +155,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, loginWithGoogle, verifyOTP, register, deleteAccount, logout, refreshMe }}>
+    <AuthContext.Provider value={{ user, token, loading, login, loginWithGoogle, verifyOTP, register, requestDeleteAccount, confirmDeleteAccount, logout, refreshMe }}>
       {children}
     </AuthContext.Provider>
   );
@@ -157,3 +166,4 @@ export function useAuth() {
   if (!context) throw new Error('useAuth must be used inside AuthProvider');
   return context;
 }
+

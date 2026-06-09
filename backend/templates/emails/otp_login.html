@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KinaHub — Login Verification</title>
+</head>
+<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;">
+  <table role="presentation" width="100%" cellpadding="0" cellspacing="0" style="background-color:#f4f4f5;padding:32px 16px;">
+    <tr>
+      <td align="center">
+        <table role="presentation" width="480" cellpadding="0" cellspacing="0" style="background-color:#ffffff;border-radius:12px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,0.08);">
+          <!-- Header -->
+          <tr>
+            <td style="background:linear-gradient(135deg,#f97316,#ea580c);padding:28px 32px;text-align:center;">
+              <h1 style="margin:0;font-size:24px;font-weight:800;color:#ffffff;letter-spacing:-0.5px;">KinaHub</h1>
+              <p style="margin:6px 0 0;font-size:13px;color:rgba(255,255,255,0.85);font-weight:500;">Your local commerce marketplace</p>
+            </td>
+          </tr>
+          <!-- Body -->
+          <tr>
+            <td style="padding:32px;">
+              <h2 style="margin:0 0 8px;font-size:20px;font-weight:700;color:#18181b;">Login Verification</h2>
+              <p style="margin:0 0 24px;font-size:14px;color:#71717a;line-height:1.6;">
+                We received a sign-in request for your KinaHub account. Use the code below to complete your login. This code expires in <strong style="color:#18181b;">5 minutes</strong>.
+              </p>
+              <!-- OTP Code -->
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0">
+                <tr>
+                  <td align="center" style="padding:20px 0;">
+                    <div style="display:inline-block;background-color:#fff7ed;border:2px solid #fed7aa;border-radius:10px;padding:16px 40px;">
+                      <span style="font-size:36px;font-weight:800;letter-spacing:8px;color:#ea580c;font-family:'Courier New',monospace;">{{ otp }}</span>
+                    </div>
+                  </td>
+                </tr>
+              </table>
+              <p style="margin:20px 0 0;font-size:13px;color:#a1a1aa;line-height:1.6;">
+                If you didn't request this code, you can safely ignore this email. Someone may have typed your email address by mistake.
+              </p>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="padding:20px 32px;background-color:#fafafa;border-top:1px solid #f0f0f0;">
+              <p style="margin:0;font-size:11px;color:#a1a1aa;text-align:center;line-height:1.5;">
+                &copy; {{ year|default:"2026" }} KinaHub &middot; Nepal's local commerce platform<br>
+                This is an automated message. Please do not reply.
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>

@@ -191,3 +191,57 @@ class VerifyOTPView(APIView):
             "refresh": str(refresh),
             "user": UserSerializer(user).data
         })
+
+
+class RequestDeleteAccountView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        user = request.user
+        otp = f"{random.randint(100000, 999999)}"
+        user.otp_code = otp
+        user.otp_created_at = timezone.now()
+        user.save(update_fields=['otp_code', 'otp_created_at'])
+
+        subject = "KinaHub — Account Deletion Verification"
+        from_email = settings.DEFAULT_FROM_EMAIL
+        to_email = user.email
+
+        html_content = render_to_string("emails/otp_delete_account.html", {
+            "otp": otp,
+            "email": user.email,
+        })
+        text_content = (
+            f"You requested to delete your KinaHub account ({user.email}).\n"
+            f"Your verification code is: {otp}\n"
+            f"This code expires in 5 minutes.\n\n"
+            f"If you did not request this, please change your password immediately."
+        )
+
+        msg = EmailMultiAlternatives(subject, text_content, from_email, [to_email])
+        msg.attach_alternative(html_content, "text/html")
+        msg.send(fail_silently=False)
+
+        return Response({"message": "A verification code has been sent to your email."})
+
+
+class ConfirmDeleteAccountView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def post(self, request):
+        otp_code = request.data.get("otp_code")
+        if not otp_code:
+            return Response({"error": "Verification code is required."}, status=400)
+
+        user = request.user
+
+        if user.otp_code != str(otp_code):
+            return Response({"error": "Invalid verification code."}, status=400)
+
+        if not user.otp_created_at or (timezone.now() - user.otp_created_at).total_seconds() > 300:
+            return Response({"error": "Verification code has expired."}, status=400)
+
+        # Permanently delete
+        user.delete()
+        return Response({"message": "Your account has been permanently deleted."})
+
