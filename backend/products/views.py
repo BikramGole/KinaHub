@@ -402,3 +402,43 @@ def curation_view(request):
         'total': total,
     }
     return render(request, 'products/curation.html', context)
+
+
+import os
+import requests
+
+class AiChatView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        messages = request.data.get("messages", [])
+        if not messages:
+            return Response({"error": "No messages provided"}, status=400)
+            
+        api_key = os.environ.get("OPENROUTER_API_KEY")
+        if not api_key:
+            return Response({"error": "OPENROUTER_API_KEY not configured on server"}, status=501)
+
+        model = request.data.get("model", "google/gemma-2-9b-it:free")
+        
+        try:
+            response = requests.post(
+                "https://openrouter.ai/api/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                    "HTTP-Referer": "https://kinahub.vercel.app",
+                    "X-Title": "KinaHub",
+                },
+                json={
+                    "model": model,
+                    "messages": messages,
+                    "temperature": 0.7,
+                },
+                timeout=15
+            )
+            response.raise_for_status()
+            data = response.json()
+            return Response(data)
+        except Exception as e:
+            return Response({"error": str(e)}, status=500)

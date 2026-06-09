@@ -1,6 +1,6 @@
 import type { CartItem } from '../context/CartContext';
 import type { ProductType } from './products';
-import { formatPrice, price } from './products';
+import { formatPrice, price, API } from './products';
 
 export interface AiInsight {
   title: string;
@@ -251,14 +251,8 @@ export async function askOpenRouter(
   locale: string = 'en',
   catalog: Partial<ProductType>[] = []
 ): Promise<string> {
-  const apiKey = import.meta.env.VITE_OPENROUTER_API_KEY;
   const lastMessage = chatHistory[chatHistory.length - 1]?.text || '';
   
-  if (!apiKey || typeof apiKey !== 'string' || apiKey.trim() === '') {
-    // Fallback to basic offline AI
-    return aiChatReply(lastMessage, items) || 'I can help compare products, explain your cart, suggest seller grouping, and guide checkout. Ask about deals, delivery, sellers, or payment.';
-  }
-
   const cartContext = items.length === 0
     ? "The user's cart is currently empty."
     : `The user currently has the following items in their cart:\n${items.map(i => `- ${i.quantity}x ${i.product.name} (${formatPrice(price(i.product))} each) (Slug: ${i.product.slug})`).join('\n')}\n\nIMPORTANT: When summarizing or talking about items in the cart, you MUST include the exact tag [PRODUCT:slug] for each item so the UI can render a clickable product card with its photo.`;
@@ -286,14 +280,18 @@ export async function askOpenRouter(
 
   for (const model of FREE_MODELS) {
     try {
-      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+      const response = await fetch(`${API}/ai/chat/`, {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${apiKey}`,
           "Content-Type": "application/json"
         },
         body: JSON.stringify({ model, messages })
       });
+
+      if (response.status === 501) {
+         // Server doesn't have API key configured, fallback to basic offline AI
+         return aiChatReply(lastMessage, items) || 'I can help compare products, explain your cart, suggest seller grouping, and guide checkout. Ask about deals, delivery, sellers, or payment.';
+      }
 
       if (response.status === 429 || response.status === 404) {
         console.warn(`Model ${model} unavailable (${response.status}), trying next...`);
@@ -301,7 +299,7 @@ export async function askOpenRouter(
       }
 
       if (!response.ok) {
-        console.error(`OpenRouter error for ${model}:`, await response.text());
+        console.error(`Backend AI error for ${model}:`, await response.text());
         continue;
       }
 
@@ -314,5 +312,5 @@ export async function askOpenRouter(
     }
   }
 
-  return "Sorry, all AI models are temporarily busy. Please try again in a moment!";
+  return aiChatReply(lastMessage, items) || "Sorry, all AI models are temporarily busy. Please try again in a moment!";
 }
