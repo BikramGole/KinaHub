@@ -13,11 +13,13 @@ import { productAiSummary } from '../lib/ai';
 import Seo from '../components/Seo';
 import ProductCard from '../components/ProductCard';
 import { addRecentlyViewedProduct, getRecentlyViewedProducts } from '../lib/recentlyViewed';
+import { useAuth } from '../context/AuthContext';
 
 export default function ProductDetails() {
   const { slug } = useParams();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { user } = useAuth();
   const { addToCart } = useCart();
   const [product, setProduct] = useState<ProductType | null>(null);
   const [loading, setLoading] = useState(true);
@@ -436,8 +438,9 @@ export default function ProductDetails() {
         </div>
 
         <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[360px_1fr]">
-          <form onSubmit={submitReview} className="rounded-lg border border-border bg-background p-4">
-            <h3 className="text-base font-bold">{t('products.writeReview', { defaultValue: 'Write a review' })}</h3>
+          {user ? (
+            <form onSubmit={submitReview} className="rounded-lg border border-border bg-background p-4">
+              <h3 className="text-base font-bold">{t('products.writeReview', { defaultValue: 'Write a review' })}</h3>
             <div className="mt-4 grid gap-3">
               <label className="block">
                 <span className="mb-2 block text-sm font-semibold">{t('products.yourName', { defaultValue: 'Your name' })}</span>
@@ -569,6 +572,18 @@ export default function ProductDetails() {
               {reviewError && <p className="text-sm text-red-500">{reviewError}</p>}
             </div>
           </form>
+          ) : (
+            <div className="flex flex-col items-center justify-center rounded-lg border border-border bg-background p-8 text-center">
+              <MessageCircle className="mb-3 h-8 w-8 text-secondary" />
+              <h3 className="text-base font-bold">{t('products.writeReview', { defaultValue: 'Write a review' })}</h3>
+              <p className="mt-2 text-sm text-secondary">
+                {t('products.loginToReview', { defaultValue: 'You must be logged in to leave a review.' })}
+              </p>
+              <Link to="/login" className="mt-4 rounded-md bg-accent px-4 py-2 text-sm font-semibold text-background transition-colors hover:bg-orange-600">
+                {t('auth.switchToLogin', { defaultValue: 'Login' })}
+              </Link>
+            </div>
+          )}
 
           <div className="space-y-3">
             {reviewLoading ? (

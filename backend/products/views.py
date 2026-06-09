@@ -111,25 +111,67 @@ class ProductViewSet(viewsets.ModelViewSet):
 
         return queryset
 
+    def _save_uploaded_images(self, product, files):
+        """Upload image files and create ProductImage records."""
+        import os
+        from django.conf import settings as django_settings
+        from django.core.files.storage import FileSystemStorage
+
+        for idx, img_file in enumerate(files):
+            is_primary = idx == 0 and not product.images.exists()
+            cloud_name = getattr(django_settings, 'CLOUDINARY_CLOUD_NAME', '')
+            if cloud_name:
+                try:
+                    import cloudinary.uploader
+                    result = cloudinary.uploader.upload(
+                        img_file,
+                        folder='kinahub/products',
+                        public_id=f"{product.slug}-{idx}",
+                        overwrite=True,
+                    )
+                    url = result.get('secure_url', '')
+                except Exception:
+                    url = ''
+            else:
+                upload_dir = os.path.join(django_settings.MEDIA_ROOT, 'products')
+                os.makedirs(upload_dir, exist_ok=True)
+                fs = FileSystemStorage(location=upload_dir)
+                filename = fs.save(img_file.name, img_file)
+                url = f"/media/products/{filename}"
+            if url:
+                ProductImage.objects.create(
+                    product=product,
+                    image_url=url,
+                    alt_text=product.name,
+                    is_primary=is_primary,
+                    order=product.images.count(),
+                )
+
     def perform_create(self, serializer):
         if self.request.user.effective_role == "admin":
-            serializer.save()
-            return
-        seller_profile = getattr(self.request.user, "seller_profile", None)
-        store = getattr(seller_profile, "store", None)
-        if not store:
-            raise ValidationError({"store": "Complete seller onboarding before adding products."})
-        serializer.save(store=store)
+            product = serializer.save()
+        else:
+            seller_profile = getattr(self.request.user, "seller_profile", None)
+            store = getattr(seller_profile, "store", None)
+            if not store:
+                raise ValidationError({"store": "Complete seller onboarding before adding products."})
+            product = serializer.save(store=store)
+        files = self.request.FILES.getlist('images')
+        if files:
+            self._save_uploaded_images(product, files)
 
     def perform_update(self, serializer):
         product = self.get_object()
         if self.request.user.effective_role == "admin":
-            serializer.save()
-            return
-        store = getattr(getattr(self.request.user, "seller_profile", None), "store", None)
-        if product.store_id != getattr(store, "id", None):
-            raise PermissionDenied("You can only manage your own store products.")
-        serializer.save(store=store)
+            updated = serializer.save()
+        else:
+            store = getattr(getattr(self.request.user, "seller_profile", None), "store", None)
+            if product.store_id != getattr(store, "id", None):
+                raise PermissionDenied("You can only manage your own store products.")
+            updated = serializer.save(store=store)
+        files = self.request.FILES.getlist('images')
+        if files:
+            self._save_uploaded_images(updated, files)
 
     @action(detail=True, methods=["get"], url_path="similar")
     def similar_products(self, request, slug=None):
