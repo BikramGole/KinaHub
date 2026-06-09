@@ -38,6 +38,8 @@ export interface ProductType {
     id: number;
     name: string;
     slug: string;
+    support_email?: string;
+    support_phone?: string;
   } | null;
   category: CategoryType;
   brand: BrandType | null;

@@ -21,6 +21,18 @@ class ProductViewSet(viewsets.ModelViewSet):
     permission_classes = [ProductAccessPermission]
     lookup_field = 'slug'
 
+    def list(self, request, *args, **kwargs):
+        response = super().list(request, *args, **kwargs)
+        if not getattr(request.user, 'is_authenticated', False) and not request.query_params.get('mine'):
+            response['Cache-Control'] = 'public, max-age=300, stale-while-revalidate=600'
+        return response
+
+    def retrieve(self, request, *args, **kwargs):
+        response = super().retrieve(request, *args, **kwargs)
+        if not getattr(request.user, 'is_authenticated', False):
+            response['Cache-Control'] = 'public, max-age=300, stale-while-revalidate=600'
+        return response
+
     def get_queryset(self):
         queryset = super().get_queryset()
 
@@ -174,15 +186,26 @@ class ProductViewSet(viewsets.ModelViewSet):
         serializer = self.get_serializer(ranked[:12], many=True)
         return Response(serializer.data)
 
+from django.utils.decorators import method_decorator
+from django.views.decorators.cache import cache_page
+
 class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = [permissions.AllowAny]
 
+    @method_decorator(cache_page(60 * 60))
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
+
 class BrandViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Brand.objects.all()
     serializer_class = BrandSerializer
     permission_classes = [permissions.AllowAny]
+
+    @method_decorator(cache_page(60 * 60))
+    def dispatch(self, *args, **kwargs):
+        return super().dispatch(*args, **kwargs)
 
 
 class ReviewViewSet(viewsets.ModelViewSet):
@@ -209,12 +232,34 @@ class ReviewViewSet(viewsets.ModelViewSet):
             name = 'Guest'
         rating = int(self.request.data.get('rating') or 5)
         rating = max(1, min(rating, 5))
+        from django.core.files.storage import FileSystemStorage
+        import os
+        from django.conf import settings
+
+        # Handle files
+        image_url = ''
+        video_url = ''
+        
+        image_file = self.request.FILES.get('image')
+        if image_file:
+            fs = FileSystemStorage(location=os.path.join(settings.MEDIA_ROOT, 'reviews'))
+            filename = fs.save(image_file.name, image_file)
+            image_url = f"/media/reviews/{filename}"
+            
+        video_file = self.request.FILES.get('video')
+        if video_file:
+            fs = FileSystemStorage(location=os.path.join(settings.MEDIA_ROOT, 'reviews'))
+            filename = fs.save(video_file.name, video_file)
+            video_url = f"/media/reviews/{filename}"
+
         serializer.save(
             product=product,
             user=self.request.user if self.request.user.is_authenticated else None,
             name=name,
             rating=rating,
             is_verified_purchase=False,
+            image_url=image_url,
+            video_url=video_url
         )
 
 

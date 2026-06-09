@@ -26,7 +26,7 @@ export default function ProductCard({ product, compact = false }: ProductCardPro
             <img
               src={image}
               alt={product.name}
-              className="h-full w-full object-cover object-center transition-transform duration-700 ease-out group-hover:scale-110"
+              className="h-full w-full object-cover object-center transition-transform duration-300 ease-out group-hover:scale-110"
               loading="lazy"
             />
           ) : (

@@ -12,5 +12,18 @@
   "featuredTitle": "Suggested products",
   "featuredCopy": "These are pulled from the live catalog and can be opened directly.",
   "viewCatalog": "View catalog",
-  "noProducts": "No products loaded yet."
+  "noProducts": "No products loaded yet.",
+  "widget": {
+    "greeting": "Ask me about products, delivery, seller stores, checkout, or your cart.",
+    "promptSummarize": "Summarize my cart",
+    "promptDeals": "Find best deals",
+    "promptDelivery": "Explain delivery",
+    "promptSellers": "How sellers work",
+    "title": "Kinu AI",
+    "subtitle": "Local commerce assistant",
+    "ready": "Ready",
+    "newChat": "New chat",
+    "placeholder": "Ask KinaHub AI",
+    "error": "Sorry, something went wrong. Please try again."
+  }
 }

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Camera, Check, Film, Minus, Plus, ShieldCheck, ShoppingBag, Star, Store, Truck, X } from 'lucide-react';
+import { ArrowLeft, Camera, Check, Film, Mail, MessageCircle, Minus, Plus, ShieldCheck, ShoppingBag, Star, Store, Truck, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API, formatDate, formatPrice, price, productImage } from '../lib/products';
 import type { ProductType, ReviewType } from '../lib/products';
@@ -169,18 +169,22 @@ export default function ProductDetails() {
     setReviewError('');
     setReviewSubmitting(true);
     try {
+      const formData = new FormData();
+      formData.append('product', product.slug);
+      formData.append('name', name);
+      formData.append('rating', reviewForm.rating.toString());
+      formData.append('title', reviewForm.title.trim());
+      formData.append('comment', comment);
+
+      const imgFile = imageInputRef.current?.files?.[0];
+      if (imgFile) formData.append('image', imgFile);
+
+      const vidFile = videoInputRef.current?.files?.[0];
+      if (vidFile) formData.append('video', vidFile);
+
       const response = await fetch(`${API}/reviews/`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          product: product.slug,
-          name,
-          rating: reviewForm.rating,
-          title: reviewForm.title.trim(),
-          comment,
-          image_url: reviewForm.image_url.trim() || undefined,
-          video_url: reviewForm.video_url.trim() || undefined,
-        }),
+        body: formData,
       });
 
       if (!response.ok) {
@@ -258,16 +262,33 @@ export default function ProductDetails() {
             <p className="mb-2 text-sm text-secondary">{product.brand?.name || t('products.localShopProduct', { defaultValue: 'Local shop product' })}</p>
             <h1 className="text-xl font-black tracking-tight sm:text-3xl">{product.name}</h1>
             {product.store?.name && (
-              <Link to={`/store/${product.store.slug}`} className="mt-4 flex items-start gap-3 rounded-md border border-border bg-background p-3 transition-colors hover:border-accent hover:bg-accent/5 cursor-pointer">
-                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-accent/10 text-accent">
-                  <Store className="h-4 w-4" aria-hidden="true" />
-                </span>
-                <div className="min-w-0">
-                  <p className="text-xs font-semibold uppercase tracking-wide text-secondary">{t('products.sellerStore', { defaultValue: 'Seller store' })}</p>
-                  <p className="truncate font-bold text-primary">{product.store.name}</p>
-                  <p className="text-xs text-secondary">{t('products.platformDelivery', { defaultValue: 'Ordered through KinaHub, fulfilled by this local shop.' })}</p>
-                </div>
-              </Link>
+              <div className="mt-4 rounded-md border border-border bg-background p-3">
+                <Link to={`/store/${product.store.slug}`} className="flex items-start gap-3 transition-colors hover:bg-accent/5 cursor-pointer -mx-3 -mt-3 p-3 rounded-t-md">
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-accent/10 text-accent">
+                    <Store className="h-4 w-4" aria-hidden="true" />
+                  </span>
+                  <div className="min-w-0">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-secondary">{t('products.sellerStore', { defaultValue: 'Seller store' })}</p>
+                    <p className="truncate font-bold text-primary">{product.store.name}</p>
+                    <p className="text-xs text-secondary">{t('products.platformDelivery', { defaultValue: 'Ordered through KinaHub, fulfilled by this local shop.' })}</p>
+                  </div>
+                </Link>
+                {(product.store.support_email || product.store.support_phone) && (
+                  <div className="mt-2 flex flex-wrap gap-2 border-t border-border pt-3">
+                    <span className="text-xs font-semibold text-secondary w-full">Contact Seller:</span>
+                    {product.store.support_phone && (
+                      <a href={`tel:${product.store.support_phone}`} className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:border-accent hover:text-accent">
+                        <MessageCircle className="h-3 w-3" /> Call
+                      </a>
+                    )}
+                    {product.store.support_email && (
+                      <a href={`mailto:${product.store.support_email}`} className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:border-accent hover:text-accent">
+                        <Mail className="h-3 w-3" /> Email
+                      </a>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
             <p className="mt-4 leading-7 text-secondary">{product.description}</p>
 

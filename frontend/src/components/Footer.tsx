@@ -82,8 +82,9 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 border-t border-border pt-6 text-sm text-secondary">
-          &copy; {new Date().getFullYear()} KinaHub.
+        <div className="mt-10 flex flex-col sm:flex-row justify-between border-t border-border pt-6 text-sm text-secondary">
+          <span>&copy; {new Date().getFullYear()} KinaHub.</span>
+          <Link to="/privacy" className="mt-2 sm:mt-0 hover:text-primary">{t('footer.privacyPolicy', { defaultValue: 'Privacy Policy' })}</Link>
         </div>
       </div>
     </footer>
