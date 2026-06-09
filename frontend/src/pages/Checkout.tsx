@@ -10,8 +10,6 @@ import {
   MapPin,
   Search,
   Truck,
-  LocateFixed,
-  Loader2,
 } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import { formatPrice, price, productImage } from '../lib/products';
@@ -60,7 +58,7 @@ export default function Checkout() {
   const [addressDetail, setAddressDetail] = useState('');
   const [customerNote, setCustomerNote] = useState('');
   const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
-  const [isLocating, setIsLocating] = useState(false);
+  const [_isLocating, setIsLocating] = useState(false);
   const [focusedSuggestionIndex, setFocusedSuggestionIndex] = useState(-1);
   const hasAutoLocated = useRef(false);
   const addressInputRef = useRef<HTMLInputElement>(null);

@@ -22,13 +22,13 @@ export default function Register() {
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const googleLogin = useGoogleLogin({
+  const googleLoginTrigger = useGoogleLogin({
     flow: 'implicit',
     onSuccess: async (tokenResponse) => {
       setIsSubmitting(true);
       setError('');
       try {
-        const user = await loginWithGoogle(tokenResponse.access_token);
+        const user = await loginWithGoogle(tokenResponse.access_token, role, role === 'seller' ? businessName : undefined);
         navigate(user.effective_role === 'seller' ? '/seller' : '/dashboard');
       } catch (err: any) {
         setError(err.message || 'Google sign-up failed');
@@ -38,6 +38,15 @@ export default function Register() {
     },
     onError: () => setError('Google sign-up was cancelled'),
   });
+
+  function handleGoogleClick() {
+    if (role === 'seller' && !businessName.trim()) {
+      setError('Please enter your business name before continuing with Google.');
+      return;
+    }
+    setError('');
+    googleLoginTrigger();
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -175,7 +184,7 @@ export default function Register() {
           ) : (
             <div className="space-y-1">
               <label className="text-xs font-semibold text-secondary uppercase tracking-wider pl-1">{t('auth.verificationCode', { defaultValue: 'Verification Code' })}</label>
-              <p className="text-xs text-secondary mb-3 pl-1">A 6-digit code has been sent to your email.</p>
+              <p className="text-xs text-secondary mb-3 pl-1">A 6-digit code has been sent to {email}.</p>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                   <Lock className="h-5 w-5 text-secondary" />
@@ -183,7 +192,7 @@ export default function Register() {
                 <input 
                   type="text" 
                   value={otpCode}
-                  onChange={(e) => setOtpCode(e.target.value)}
+                  onChange={(e) => setOtpCode(e.target.value.replace(/\s+/g, ''))}
                   className="w-full bg-background border border-border rounded-xl pl-11 pr-4 py-3.5 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-300 text-base tracking-[0.5em] font-mono"
                   placeholder="••••••"
                   maxLength={6}
@@ -216,7 +225,7 @@ export default function Register() {
 
             <button
               type="button"
-              onClick={() => googleLogin()}
+              onClick={handleGoogleClick}
               disabled={isSubmitting}
               className="w-full mt-4 flex items-center justify-center gap-3 bg-background border border-border rounded-xl py-3.5 hover:bg-card transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
             >

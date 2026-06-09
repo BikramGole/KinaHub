@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { Check, RotateCcw, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { ProductType } from '../lib/products';
-import { price, productImage } from '../lib/products';
+import { price } from '../lib/products';
 
 export interface CartItem {
   product: ProductType;
@@ -47,7 +47,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
   );
 
   const [toast, setToast] = useState<{ id: number; product: ProductType } | null>(null);
-  const toastTimerRef = useRef<NodeJS.Timeout>();
+  const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const addToCart = useCallback((product: ProductType, quantity = 1) => {
     import('../lib/audio').then(m => m.playAddToCartSound());

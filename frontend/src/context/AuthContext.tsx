@@ -23,7 +23,7 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<User | { require_2fa: true; user_id: number }>;
   verifyOTP: (userId: number, otpCode: string) => Promise<User>;
-  loginWithGoogle: (idToken: string) => Promise<User>;
+  loginWithGoogle: (idToken: string, role?: 'customer' | 'seller', businessName?: string) => Promise<User>;
   register: (payload: RegisterPayload) => Promise<User | { require_2fa: true; user_id: number }>;
   deleteAccount: () => Promise<void>;
   logout: () => void;
@@ -118,10 +118,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return data.user;
   }
 
-  async function loginWithGoogle(accessToken: string) {
+  async function loginWithGoogle(accessToken: string, role: 'customer' | 'seller' = 'customer', businessName?: string) {
     const data = await apiRequest<{ access: string; refresh: string; user: User }>('/auth/google/', {
       method: 'POST',
-      body: JSON.stringify({ access_token: accessToken }),
+      body: JSON.stringify({ access_token: accessToken, role, business_name: businessName }),
     });
     
     setToken(data.access);
