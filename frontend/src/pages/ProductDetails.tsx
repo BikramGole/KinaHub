@@ -63,7 +63,9 @@ export default function ProductDetails() {
   useEffect(() => {
     if (!slug) return;
 
+    setLoading(true);
     setReviewLoading(true);
+    setSimilarLoading(true);
     fetch(`${API}/items/${slug}/`)
       .then((response) => {
         if (!response.ok) throw new Error('Product not found');
@@ -82,25 +84,24 @@ export default function ProductDetails() {
   }, [product]);
 
   useEffect(() => {
-    if (!slug) return;
+    if (!slug || !product) return;
 
-    fetch(`${API}/reviews/?product=${encodeURIComponent(slug)}`)
-      .then((response) => response.json())
-      .then((data: ReviewType[]) => setReviews(Array.isArray(data) ? data : []))
-      .catch(() => setReviews([]))
-      .finally(() => setReviewLoading(false));
-  }, [slug]);
+    const loadRelated = window.setTimeout(() => {
+      fetch(`${API}/reviews/?product=${encodeURIComponent(slug)}`)
+        .then((response) => response.json())
+        .then((data: ReviewType[]) => setReviews(Array.isArray(data) ? data : []))
+        .catch(() => setReviews([]))
+        .finally(() => setReviewLoading(false));
 
-  useEffect(() => {
-    if (!slug) return;
+      fetch(`${API}/items/${slug}/similar/`)
+        .then((response) => response.json())
+        .then((data: ProductType[]) => setSimilarProducts(Array.isArray(data) ? data : []))
+        .catch(() => setSimilarProducts([]))
+        .finally(() => setSimilarLoading(false));
+    }, 120);
 
-    setSimilarLoading(true);
-    fetch(`${API}/items/${slug}/similar/`)
-      .then((response) => response.json())
-      .then((data: ProductType[]) => setSimilarProducts(Array.isArray(data) ? data : []))
-      .catch(() => setSimilarProducts([]))
-      .finally(() => setSimilarLoading(false));
-  }, [slug]);
+    return () => window.clearTimeout(loadRelated);
+  }, [slug, product]);
 
   const reviewStats = useMemo(() => {
     if (!reviews.length) {
@@ -232,14 +233,14 @@ export default function ProductDetails() {
                   onClick={() => setActiveImage(img.image_url)}
                   className={`relative aspect-square w-16 md:w-full shrink-0 overflow-hidden rounded-md border-2 transition-all ${activeImage === img.image_url ? 'border-accent' : 'border-transparent hover:border-border'}`}
                 >
-                  <img src={img.image_url} alt={img.alt_text || product.name} className="h-full w-full object-cover object-center" />
+                  <img src={img.image_url} alt={img.alt_text || product.name} className="h-full w-full object-cover object-center" loading="lazy" decoding="async" />
                 </button>
               ))}
             </div>
           )}
           <div className="aspect-[4/3] w-full order-1 md:order-2 overflow-hidden rounded-md bg-muted">
             {image ? (
-              <img src={image} alt={product.name} className="h-full w-full object-cover object-center" />
+              <img src={image} alt={product.name} className="h-full w-full object-cover object-center" loading="eager" fetchPriority="high" decoding="async" />
             ) : (
               <div className="flex h-full items-center justify-center text-secondary">{t('products.noImage', { defaultValue: 'No image' })}</div>
             )}
@@ -614,7 +615,7 @@ export default function ProductDetails() {
                       )}
                       {review.image_url && (
                         <div className="relative h-48 w-32 shrink-0 snap-center overflow-hidden rounded-md bg-muted">
-                          <img src={review.image_url} alt="Review attachment" className="h-full w-full object-cover" loading="lazy" />
+                  <img src={review.image_url} alt="Review attachment" className="h-full w-full object-cover" loading="lazy" decoding="async" />
                         </div>
                       )}
                     </div>
@@ -654,7 +655,7 @@ export default function ProductDetails() {
             {similarProducts.map((item) => (
               <Link key={item.id} to={`/product/${item.slug}`} className="group overflow-hidden rounded-lg border border-border bg-background transition-colors hover:border-accent hover:bg-accent/5">
                 <div className="aspect-[4/3] overflow-hidden bg-muted">
-                  <img src={productImage(item)} alt={item.name} className="h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-105" loading="lazy" />
+                  <img src={productImage(item)} alt={item.name} className="h-full w-full object-cover object-center transition-transform duration-300 group-hover:scale-105" loading="lazy" decoding="async" />
                 </div>
                 <div className="p-4">
                   <p className="text-[11px] font-semibold uppercase tracking-wide text-secondary">

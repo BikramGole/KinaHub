@@ -88,6 +88,11 @@ else
     fi
 fi
 
+# --- Local OAuth Fallbacks ---
+export VITE_GOOGLE_CLIENT_ID="${VITE_GOOGLE_CLIENT_ID:-dummy-client-id}"
+export GOOGLE_OAUTH2_CLIENT_ID="${GOOGLE_OAUTH2_CLIENT_ID:-dummy-client-id}"
+echo -e "Google OAuth: ${DIM}Local demo fallback enabled${NC}\n"
+
 # --- Start Services ---
 echo -e "🚀 ${BOLD}Starting Services${NC}"
 echo -e "${DIM}─────────────────────────────────────────────${NC}\n"

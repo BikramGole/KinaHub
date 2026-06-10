@@ -1,4 +1,4 @@
-from django.db.models import Q, DecimalField
+from django.db.models import Avg, Count, DecimalField, Q
 from django.db.models.functions import Coalesce
 from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
@@ -15,8 +15,20 @@ class ProductAccessPermission(permissions.BasePermission):
             return True
         return bool(request.user and request.user.is_authenticated and request.user.effective_role in ["seller", "admin"])
 
+def product_queryset(include_inactive: bool = False):
+    queryset = Product.objects.all() if include_inactive else Product.objects.filter(is_active=True)
+    return (
+        queryset
+        .select_related('store', 'category', 'brand')
+        .prefetch_related('images')
+        .annotate(
+            review_count=Count('reviews', distinct=True),
+            average_rating=Coalesce(Avg('reviews__rating'), 'rating', output_field=DecimalField(max_digits=3, decimal_places=2)),
+        )
+    )
+
 class ProductViewSet(viewsets.ModelViewSet):
-    queryset = Product.objects.filter(is_active=True).select_related('store', 'category', 'brand').prefetch_related('images')
+    queryset = product_queryset()
     serializer_class = ProductSerializer
     permission_classes = [ProductAccessPermission]
     lookup_field = 'slug'
@@ -51,9 +63,9 @@ class ProductViewSet(viewsets.ModelViewSet):
                 return queryset.none()
             if self.request.user.effective_role == "seller":
                 store = getattr(getattr(self.request.user, "seller_profile", None), "store", None)
-                return Product.objects.filter(store=store).select_related('store', 'category', 'brand').prefetch_related('images')
+                return product_queryset().filter(store=store)
             if self.request.user.effective_role == "admin":
-                return Product.objects.all().select_related('store', 'category', 'brand').prefetch_related('images')
+                return product_queryset(include_inactive=True)
 
         if category:
             queryset = queryset.filter(category__slug=category)

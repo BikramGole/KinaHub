@@ -23,6 +23,8 @@ interface AuthContextType {
   loading: boolean;
   login: (email: string, password: string) => Promise<User | { require_2fa: true; user_id: number }>;
   verifyOTP: (userId: number, otpCode: string) => Promise<User>;
+  requestPasswordReset: (email: string) => Promise<void>;
+  confirmPasswordReset: (email: string, otpCode: string, newPassword: string) => Promise<void>;
   loginWithGoogle: (idToken: string, role?: 'customer' | 'seller', businessName?: string) => Promise<User>;
   register: (payload: RegisterPayload) => Promise<User | { require_2fa: true; user_id: number }>;
   requestDeleteAccount: () => Promise<void>;
@@ -102,6 +104,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return currentUser;
   }
 
+  async function requestPasswordReset(email: string) {
+    await apiRequest('/auth/password-reset/request/', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    });
+  }
+
+  async function confirmPasswordReset(email: string, otpCode: string, newPassword: string) {
+    await apiRequest('/auth/password-reset/confirm/', {
+      method: 'POST',
+      body: JSON.stringify({ email, otp_code: otpCode, new_password: newPassword }),
+    });
+  }
+
   async function register(payload: RegisterPayload) {
     const data = await apiRequest<any>('/auth/register/', {
       method: 'POST',
@@ -155,7 +171,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, loginWithGoogle, verifyOTP, register, requestDeleteAccount, confirmDeleteAccount, logout, refreshMe }}>
+    <AuthContext.Provider value={{ user, token, loading, login, loginWithGoogle, verifyOTP, requestPasswordReset, confirmPasswordReset, register, requestDeleteAccount, confirmDeleteAccount, logout, refreshMe }}>
       {children}
     </AuthContext.Provider>
   );
@@ -166,4 +182,3 @@ export function useAuth() {
   if (!context) throw new Error('useAuth must be used inside AuthProvider');
   return context;
 }
-
