@@ -6,7 +6,7 @@ KinaHub is a modern, local-first e-commerce and CRM platform designed to bridge 
 
 ## 📽️ Project Video Demo
 
-https://github.com/user-attachments/assets/0bb98a50-65c5-4ca0-93e1-32908014a7f4
+https://github.com/user-attachments/assets/62b99d24-49f6-4ba0-b37c-7c71a6225ee7
 
 ---
 
