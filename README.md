@@ -1,10 +1,23 @@
 # 🛍️ KinaHub
 
-KinaHub is a modern, local-first e-commerce and CRM platform designed to bridge the gap between local seller stores and customers. Built as an On-the-Job Training (OJT) project, it supports multi-seller storefronts, localized delivery estimations, full customer relationship dashboards, and client-side AI integration to assist shopping decisions.
+**KinaHub** is a modern, scalable e-commerce and CRM platform designed to connect local sellers with customers through intelligent, location-aware shopping experiences. Originally developed as an On-the-Job Training (OJT) project, it has evolved into a fully deployed full-stack application with cloud-native infrastructure.
 
 ---
 
-## 📽️ Project Video Demo
+## 🌐 Live Architecture
+
+KinaHub is now fully deployed using a modern distributed stack:
+
+* Frontend hosted on [Vercel](https://vercel.com?utm_source=chatgpt.com)
+* Backend API hosted on [Render](https://render.com?utm_source=chatgpt.com)
+* PostgreSQL database powered by [Neon](https://neon.tech?utm_source=chatgpt.com)
+* Media storage handled by [Cloudinary](https://cloudinary.com?utm_source=chatgpt.com)
+
+This setup ensures scalability, performance, and reliability while remaining cost-efficient using free-tier services.
+
+---
+
+## 📽️ Project Demo
 
 https://github.com/user-attachments/assets/410296e2-23d3-401f-85bc-2aef7b2b1a85
 
@@ -12,64 +25,97 @@ https://github.com/user-attachments/assets/410296e2-23d3-401f-85bc-2aef7b2b1a85
 
 ## 👤 Creator
 
-**Bikram Gole** (Project Developer & Maintainer)
+**Bikram Gole**
+Project Developer & Maintainer
 
-- GitHub: [@DevXtechnic](https://github.com/DevXtechnic)
+* GitHub: https://github.com/DevXtechnic
 
 ---
 
-## 🚀 Key Features
+## 🚀 Core Features
 
-### 🛒 Customer Storefront & Navigation
+### 🛒 Customer Experience
 
-- **Localized Product Feeds:** Shop products based on local areas and nearby stores.
-- **Advanced Filtering:** Filter and sort by category, price, and ratings.
-- **Dynamic Cart & Checkout:** Multi-item cart with automated delivery fee calculations.
+* **Location-Based Shopping:** Discover products from nearby sellers for faster delivery.
+* **Advanced Filtering System:** Sort by category, price, and product ratings.
+* **Smart Cart System:** Automatic delivery fee calculation and multi-item checkout.
 
-### 🤖 Kina AI Shopping Assistant
+---
 
-- **OpenRouter Integration:** Chat assistant powered by free state-of-the-art models (Gemma, Nemotron, etc.).
-- **AI Insight Panels:** Rule-based product summaries, buy signals, and cart optimization tips (e.g., suggesting bundling items from the same store to reduce delivery splits).
-- **Confidence Ranking:** Highlights best-value and high-confidence product picks.
+### 🤖 Kina AI Assistant
+
+* **LLM-Powered Chat Assistant:** Integrated via OpenRouter for intelligent shopping help.
+* **AI Insight Panels:** Product summaries, recommendations, and buying signals.
+* **Cart Optimization:** Suggests bundling items from the same store to minimize delivery costs.
+* **Confidence Ranking:** Highlights high-value and reliable product choices.
+
+---
 
 ### 💼 Seller & CRM Dashboard
 
-- **Store Customization:** Sellers manage store details, banners, logos, and delivery rules.
-- **Product & Stock Management:** Full CRUD system for product listings.
-- **AI CRM Briefings:** Stock alerts for high-performing items running low.
-- **Performance Tracking:** Revenue, sales, and order analytics dashboard.
+* **Store Management:** Customize store branding, delivery zones, and rules.
+* **Inventory Control:** Full CRUD functionality for product listings.
+* **AI CRM Insights:** Alerts for trending products and low stock levels.
+* **Analytics Dashboard:** Track revenue, sales performance, and order metrics.
 
 ---
 
-## 🛠️ Technology Stack
+## 🧱 Tech Stack
 
-- **Backend:** Django (Python), Django REST Framework  
-- **Frontend:** React, TypeScript, Vite, Tailwind CSS, Framer Motion  
-- **Database:** SQLite3  
-- **AI Engine:** OpenRouter API (client-side LLM integration)
+### Frontend
+
+* React
+* TypeScript
+* Vite
+* Tailwind CSS
+* Framer Motion
+
+### Backend
+
+* Django
+* Django REST Framework
+
+### Database
+
+* PostgreSQL (Neon Cloud)
+
+### AI Integration
+
+* OpenRouter API (client-side LLM orchestration)
+
+### Cloud & Infrastructure
+
+* Vercel (Frontend Hosting)
+* Render (Backend Hosting)
+* Neon (Database)
+* Cloudinary (Media Storage)
 
 ---
 
-## ⚙️ How It Works
+## ⚙️ System Architecture
 
-KinaHub runs on a decoupled client-server architecture:
+KinaHub follows a **decoupled client-server architecture**:
 
-1. **Django Backend API**
-	- Handles authentication (JWT-based)
-	- Manages products, stores, orders, and cart logic
-	- Provides seeding utilities
+### 1. Backend (Django API)
 
-2. **React Frontend**
-	- SPA built with Vite
-	- Communicates with backend via Axios/fetch
+* JWT-based authentication system
+* Handles products, stores, orders, and cart logic
+* RESTful API endpoints
 
-3. **AI Orchestration**
-	- Rule-based local insights (cart optimization, seller grouping)
-	- Optional conversational AI using OpenRouter model routing
+### 2. Frontend (React SPA)
+
+* Built with Vite for fast performance
+* Communicates with backend via Axios / Fetch
+* Fully responsive UI with smooth animations
+
+### 3. AI Layer
+
+* Rule-based optimization engine (cart + seller grouping)
+* Optional conversational AI via OpenRouter
 
 ---
 
-## 🏃 Getting Started
+## 🏃 Local Development Setup
 
 ### Linux / macOS
 
@@ -84,17 +130,25 @@ chmod +x start.sh
 start.bat
 ```
 
-These scripts automatically:
+### What the scripts do:
 
-- Start Django API server  
-- Install npm dependencies  
-- Launch Vite dev server  
-- Open `http://localhost:5173`
+* Start Django backend server
+* Install frontend dependencies
+* Launch Vite development server
+* Open http://localhost:5173
 
 ---
 
 ## 🧠 Project Status
 
-Solo-built project by **Bikram Gole**.  
-Maintained and developed independently.
+* Fully functional and deployed
+* Independently built and maintained by a solo developer
+* Actively evolving with new AI and scalability features
 
+---
+
+## 📌 Vision
+
+KinaHub aims to become a **localized commerce ecosystem**, empowering small businesses with tools typically available only to large-scale platforms—enhanced by AI-driven decision support.
+
+---
