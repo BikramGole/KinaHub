@@ -67,7 +67,7 @@ export default function Cart() {
                   className="group relative flex flex-col gap-4 overflow-hidden rounded-2xl border border-border bg-surface p-4 sm:p-5 md:flex-row md:gap-6 lg:p-6"
                 >
                   {/* Product Image */}
-                  <Link to={`/products/${product.slug}`} className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-background sm:h-24 sm:w-24 md:h-32 md:w-32 hover:opacity-80 transition-opacity">
+                  <Link to={`/product/${product.slug}`} className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-border bg-background sm:h-24 sm:w-24 md:h-32 md:w-32 hover:opacity-80 transition-opacity">
                     {image ? (
                       <img src={image} alt={product.name} className="h-full w-full object-cover" />
                     ) : (
@@ -78,7 +78,7 @@ export default function Cart() {
                   {/* Product Info */}
                   <div className="flex-1 flex flex-col">
                     <div className="mb-2 flex items-start justify-between gap-3">
-                      <Link to={`/products/${product.slug}`} className="block hover:opacity-80 transition-opacity">
+                      <Link to={`/product/${product.slug}`} className="block hover:opacity-80 transition-opacity">
                         <p className="mb-1 text-xs font-bold uppercase tracking-wider text-accent">
                           {product.brand?.name || 'KinaHub'}
                         </p>

@@ -54,10 +54,17 @@ export default function ProductDetails() {
   }, [product]);
 
   function handleAddToCart() {
-    if (!product) return;
-    addToCart(product, quantity);
-    setAdded(true);
-    setTimeout(() => setAdded(false), 2000);
+    try {
+      if (!product || typeof product.id !== 'number' || !product.slug) {
+        console.warn('[ProductDetails] Invalid product for addToCart:', product);
+        return;
+      }
+      addToCart(product, quantity);
+      setAdded(true);
+      setTimeout(() => setAdded(false), 2000);
+    } catch (e) {
+      console.error('[ProductDetails] Error in handleAddToCart:', e);
+    }
   }
 
   useEffect(() => {
@@ -71,8 +78,19 @@ export default function ProductDetails() {
         if (!response.ok) throw new Error('Product not found');
         return response.json();
       })
-      .then((data: ProductType) => setProduct(data))
-      .catch(() => setProduct(null))
+      .then((data: ProductType) => {
+        // Validate required fields before setting product
+        if (data && typeof data.id === 'number' && data.slug && data.name) {
+          setProduct(data);
+        } else {
+          console.error('[ProductDetails] Invalid product data received:', data);
+          setProduct(null);
+        }
+      })
+      .catch((err) => {
+        console.error('[ProductDetails] Fetch error:', err);
+        setProduct(null);
+      })
       .finally(() => setLoading(false));
   }, [slug]);
 
@@ -98,7 +116,7 @@ export default function ProductDetails() {
         .then((data: ProductType[]) => setSimilarProducts(Array.isArray(data) ? data : []))
         .catch(() => setSimilarProducts([]))
         .finally(() => setSimilarLoading(false));
-    }, 120);
+    }, 600);
 
     return () => window.clearTimeout(loadRelated);
   }, [slug, product]);

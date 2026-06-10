@@ -235,9 +235,12 @@ class LoginWithOTPView(TokenObtainPairView):
         html_content = render_to_string("emails/otp_login.html", {"otp": otp})
         text_content = f"Your login verification code is: {otp}. It expires in 5 minutes."
         
-        msg = EmailMultiAlternatives(subject, text_content, from_email, [to_email])
-        msg.attach_alternative(html_content, "text/html")
-        msg.send(fail_silently=False)
+        try:
+            msg = EmailMultiAlternatives(subject, text_content, from_email, [to_email])
+            msg.attach_alternative(html_content, "text/html")
+            msg.send(fail_silently=False)
+        except Exception:
+            pass
         
         return Response({
             "require_2fa": True,
@@ -302,9 +305,12 @@ class RequestDeleteAccountView(APIView):
             f"If you did not request this, please change your password immediately."
         )
 
-        msg = EmailMultiAlternatives(subject, text_content, from_email, [to_email])
-        msg.attach_alternative(html_content, "text/html")
-        msg.send(fail_silently=False)
+        try:
+            msg = EmailMultiAlternatives(subject, text_content, from_email, [to_email])
+            msg.attach_alternative(html_content, "text/html")
+            msg.send(fail_silently=False)
+        except Exception:
+            pass
 
         return Response({"message": "A verification code has been sent to your email."})
 
@@ -346,7 +352,10 @@ class RequestPasswordResetView(APIView):
         user.otp_code = otp
         user.otp_created_at = timezone.now()
         user.save(update_fields=['otp_code', 'otp_created_at'])
-        send_password_reset_email(user.email, otp)
+        try:
+            send_password_reset_email(user.email, otp)
+        except Exception:
+            pass
 
         return Response({"message": "If the email exists, a reset code has been sent."})
 
@@ -400,7 +409,10 @@ class SendPromoEmailView(APIView):
 
         sent = 0
         for email in recipients:
-            send_promo_email(email, subject, headline, body, cta_text=cta_text, cta_url=cta_url)
-            sent += 1
+            try:
+                send_promo_email(email, subject, headline, body, cta_text=cta_text, cta_url=cta_url)
+                sent += 1
+            except Exception:
+                continue
 
         return Response({"message": f"Promo emails sent to {sent} users."})

@@ -91,6 +91,7 @@ export interface StoreType {
 }
 
 export function productImage(product: ProductType) {
+  if (!product || !Array.isArray(product.images) || product.images.length === 0) return '';
   return product.images.find((image) => image.is_primary)?.image_url || product.images[0]?.image_url || '';
 }
 

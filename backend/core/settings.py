@@ -223,6 +223,8 @@ else:
     EMAIL_USE_TLS = True
     DEFAULT_FROM_EMAIL = f"KinaHub <{EMAIL_HOST_USER}>"
 
+EMAIL_TIMEOUT = int(os.environ.get('EMAIL_TIMEOUT', '5' if DEBUG else '10'))
+
 # Google OAuth2 Client ID
 GOOGLE_OAUTH2_CLIENT_ID = os.environ.get('GOOGLE_OAUTH2_CLIENT_ID', 'dummy-client-id' if DEBUG else '')
 
