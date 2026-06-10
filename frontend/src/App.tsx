@@ -9,6 +9,7 @@ import { LocaleProvider } from './i18n/LocaleContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import ScrollToTop from './components/ScrollToTop';
 import CookieConsent from './components/CookieConsent';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { GOOGLE_OAUTH_CLIENT_ID, HAS_GOOGLE_OAUTH } from './lib/googleAuth';
 
 const Home = lazy(() => import('./pages/Home'));
@@ -57,42 +58,44 @@ function App() {
               <ScrollToTop />
               <CookieConsent />
               <Suspense fallback={<RouteFallback />}>
-                <Routes>
-                  <Route path="/" element={<RootLayout />}>
-                    <Route index element={<Home />} />
-                    <Route path="login" element={<Login />} />
-                    <Route path="register" element={<Register />} />
-                    <Route path="products" element={<Products />} />
-                    <Route path="product/:slug" element={<ProductDetails />} />
-                    <Route path="store/:slug" element={<StoreDetails />} />
-                    <Route path="ai" element={<AiShopping />} />
-                    <Route path="cart" element={<Cart />} />
-                    <Route path="checkout" element={<Checkout />} />
-                    <Route path="privacy" element={<PrivacyPolicy />} />
-                    <Route path="terms" element={<TermsOfService />} />
-                  </Route>
+                <ErrorBoundary>
+                  <Routes>
+                    <Route path="/" element={<RootLayout />}>
+                      <Route index element={<Home />} />
+                      <Route path="login" element={<Login />} />
+                      <Route path="register" element={<Register />} />
+                      <Route path="products" element={<Products />} />
+                      <Route path="product/:slug" element={<ProductDetails />} />
+                      <Route path="store/:slug" element={<StoreDetails />} />
+                      <Route path="ai" element={<AiShopping />} />
+                      <Route path="cart" element={<Cart />} />
+                      <Route path="checkout" element={<Checkout />} />
+                      <Route path="privacy" element={<PrivacyPolicy />} />
+                      <Route path="terms" element={<TermsOfService />} />
+                    </Route>
 
-                  <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
-                    <Route path="/dashboard" element={<DashboardHome />} />
-                    <Route path="/dashboard/orders" element={<OrdersPage mode="customer" />} />
-                    <Route path="/dashboard/tickets" element={<CRMPage />} />
-                  </Route>
+                    <Route element={<ProtectedRoute><DashboardLayout /></ProtectedRoute>}>
+                      <Route path="/dashboard" element={<DashboardHome />} />
+                      <Route path="/dashboard/orders" element={<OrdersPage mode="customer" />} />
+                      <Route path="/dashboard/tickets" element={<CRMPage />} />
+                    </Route>
 
-                  <Route element={<ProtectedRoute roles={['seller', 'admin']}><DashboardLayout /></ProtectedRoute>}>
-                    <Route path="/seller" element={<SellerDashboard />} />
-                    <Route path="/seller/products" element={<SellerProducts />} />
-                    <Route path="/seller/orders" element={<OrdersPage mode="seller" />} />
-                    <Route path="/seller/customers" element={<CRMPage />} />
-                  </Route>
+                    <Route element={<ProtectedRoute roles={['seller', 'admin']}><DashboardLayout /></ProtectedRoute>}>
+                      <Route path="/seller" element={<SellerDashboard />} />
+                      <Route path="/seller/products" element={<SellerProducts />} />
+                      <Route path="/seller/orders" element={<OrdersPage mode="seller" />} />
+                      <Route path="/seller/customers" element={<CRMPage />} />
+                    </Route>
 
-                  <Route element={<ProtectedRoute roles={['admin']}><DashboardLayout /></ProtectedRoute>}>
-                    <Route path="/admin" element={<AdminDashboard />} />
-                    <Route path="/admin/users" element={<AdminUsersPage />} />
-                    <Route path="/admin/orders" element={<OrdersPage mode="admin" />} />
-                    <Route path="/admin/crm" element={<CRMPage />} />
-                    <Route path="/admin/settings" element={<AdminDashboard />} />
-                  </Route>
-                </Routes>
+                    <Route element={<ProtectedRoute roles={['admin']}><DashboardLayout /></ProtectedRoute>}>
+                      <Route path="/admin" element={<AdminDashboard />} />
+                      <Route path="/admin/users" element={<AdminUsersPage />} />
+                      <Route path="/admin/orders" element={<OrdersPage mode="admin" />} />
+                      <Route path="/admin/crm" element={<CRMPage />} />
+                      <Route path="/admin/settings" element={<AdminDashboard />} />
+                    </Route>
+                  </Routes>
+                </ErrorBoundary>
               </Suspense>
             </BrowserRouter>
           </CartProvider>

@@ -55,7 +55,10 @@ class RegisterSerializer(serializers.Serializer):
             SellerRecord.objects.create(seller=seller)
 
         ActivityLog.objects.create(actor=user, verb="registered", target_type="user", target_id=str(user.id), metadata={"role": user.role})
-        send_welcome_email(user.email, name)
+        try:
+            send_welcome_email(user.email, name)
+        except Exception:
+            pass
         return user
 
     def to_representation(self, user):

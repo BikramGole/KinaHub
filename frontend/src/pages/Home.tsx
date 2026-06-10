@@ -175,12 +175,6 @@ export default function Home() {
       })
       .catch(() => {});
 
-    // Featured products
-    fetch(`${API}/items/?featured=true&limit=12`)
-      .then((r) => r.json())
-      .then((data: ProductType[]) => setFeaturedProducts(data.slice(0, 12)))
-      .catch(() => {});
-
     // Category-specific rows
     fetch(`${API}/items/?category=laptops&limit=10`)
       .then((r) => r.json())
@@ -208,6 +202,29 @@ export default function Home() {
       .then((data: CategoryType[]) => setCategories([...data].sort((a, b) => a.name.localeCompare(b.name))))
       .catch(() => {});
   }, []);
+
+  useEffect(() => {
+    if (products.length === 0) return;
+
+    const immediateFeatured = products.filter((product) => product.is_featured).slice(0, 8);
+    if (immediateFeatured.length > 0) {
+      setFeaturedProducts(immediateFeatured);
+    }
+
+    const timer = window.setTimeout(() => {
+      fetch(`${API}/items/?featured=true&limit=12`)
+        .then((r) => r.json())
+        .then((data: ProductType[]) => {
+          const next = Array.isArray(data) ? data.slice(0, 12) : [];
+          setFeaturedProducts(next.length > 0 ? next : immediateFeatured);
+        })
+        .catch(() => {
+          if (immediateFeatured.length > 0) setFeaturedProducts(immediateFeatured);
+        });
+    }, 900);
+
+    return () => window.clearTimeout(timer);
+  }, [products]);
 
   // Rotate hero product
   useEffect(() => {

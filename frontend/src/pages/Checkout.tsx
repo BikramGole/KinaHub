@@ -618,13 +618,13 @@ export default function Checkout() {
                 {items.map(({ product, quantity }) => (
                   <div key={product.id} className="flex flex-col gap-2 rounded-md bg-surface p-2">
                     <div className="flex items-center gap-3">
-                      <Link to={`/products/${product.slug}`} className="h-12 w-12 shrink-0 overflow-hidden rounded-md bg-muted hover:opacity-80 transition-opacity">
+                      <Link to={`/product/${product.slug}`} className="h-12 w-12 shrink-0 overflow-hidden rounded-md bg-muted hover:opacity-80 transition-opacity">
                         {productImage(product) ? (
                           <img src={productImage(product)} alt={product.name} className="h-full w-full object-cover" />
                         ) : null}
                       </Link>
                       <div className="min-w-0 flex-1">
-                        <Link to={`/products/${product.slug}`} className="truncate text-sm font-semibold hover:text-primary transition-colors block">
+                        <Link to={`/product/${product.slug}`} className="truncate text-sm font-semibold hover:text-primary transition-colors block">
                           {product.name}
                         </Link>
                         <p className="text-xs text-secondary">{t('cart.qty', { defaultValue: 'Qty' })} {quantity}</p>
