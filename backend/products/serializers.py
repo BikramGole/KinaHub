@@ -79,7 +79,6 @@ class ProductSerializer(serializers.ModelSerializer):
     images = ProductImageSerializer(many=True, read_only=True)
     primary_image_url = serializers.URLField(write_only=True, required=False, allow_blank=True)
     inventory = InventorySerializer(read_only=True)
-    reviews = ReviewSerializer(many=True, read_only=True)
     specs = serializers.SerializerMethodField()
     review_count = serializers.SerializerMethodField()
     average_rating = serializers.SerializerMethodField()
@@ -90,7 +89,7 @@ class ProductSerializer(serializers.ModelSerializer):
             'id', 'name', 'slug', 'store', 'category', 'category_id', 'brand', 'brand_id',
             'description', 'specifications', 'specs',
             'price', 'discount_price', 'stock', 'rating', 
-            'tag', 'images', 'primary_image_url', 'inventory', 'reviews', 'review_count', 'average_rating', 'is_featured', 'is_active',
+            'tag', 'images', 'primary_image_url', 'inventory', 'review_count', 'average_rating', 'is_featured', 'is_active',
             'created_at', 'updated_at'
         ]
         read_only_fields = ["id", "slug", "store", "images", "inventory", "created_at", "updated_at"]
@@ -119,9 +118,15 @@ class ProductSerializer(serializers.ModelSerializer):
         return obj.get_specs_list()
 
     def get_review_count(self, obj):
+        cached = getattr(obj, 'review_count', None)
+        if cached is not None:
+            return int(cached)
         return obj.reviews.count()
 
     def get_average_rating(self, obj):
+        cached = getattr(obj, 'average_rating', None)
+        if cached is not None:
+            return round(float(cached), 2)
         reviews = obj.reviews.all()
         if not reviews.exists():
             return float(obj.rating)

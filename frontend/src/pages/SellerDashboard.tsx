@@ -18,7 +18,7 @@ interface SellerSummary {
 }
 
 export default function SellerDashboard() {
-  const { token, deleteAccount } = useAuth();
+  const { token, requestDeleteAccount } = useAuth();
   const { t } = useTranslation();
   const [summary, setSummary] = useState<SellerSummary | null>(null);
 
@@ -88,7 +88,7 @@ export default function SellerDashboard() {
         <button
           onClick={() => {
             if (window.confirm("Are you sure you want to permanently delete your account? This action cannot be undone.")) {
-              deleteAccount().catch((err: any) => alert("Failed to delete account: " + err.message));
+              requestDeleteAccount().catch((err: any) => alert("Failed to request account deletion: " + err.message));
             }
           }}
           className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-sm"

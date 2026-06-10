@@ -3,8 +3,8 @@ import type { FormEvent } from 'react';
 import { motion } from 'framer-motion';
 import { Store, Mail, Lock, ArrowRight, Loader2 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { useGoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
+import GoogleAuthButton from '../components/GoogleAuthButton';
 import { useTranslation } from '../i18n/LocaleContext';
 
 export default function Login() {
@@ -17,26 +17,90 @@ export default function Login() {
   const [otpCode, setOtpCode] = useState('');
   const [userId, setUserId] = useState<number | null>(null);
   const [requires2FA, setRequires2FA] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
+  const [forgotStep, setForgotStep] = useState<'request' | 'verify'>('request');
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetOtp, setResetOtp] = useState('');
+  const [resetPassword, setResetPassword] = useState('');
+  const [forgotMessage, setForgotMessage] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const googleLogin = useGoogleLogin({
-    flow: 'implicit',
-    onSuccess: async (tokenResponse) => {
-      setIsSubmitting(true);
-      setError('');
-      try {
-        const user = await loginWithGoogle(tokenResponse.access_token);
-        const from = (location.state as { from?: string } | null)?.from;
-        navigate(from || (user.effective_role === 'seller' ? '/seller' : user.effective_role === 'admin' ? '/admin' : '/dashboard'));
-      } catch (err: any) {
-        setError(err.message || 'Google login failed');
-      } finally {
-        setIsSubmitting(false);
+  async function handleGoogleSuccess(accessToken: string) {
+    setIsSubmitting(true);
+    setError('');
+    try {
+      const user = await loginWithGoogle(accessToken);
+      const from = (location.state as { from?: string } | null)?.from;
+      navigate(from || (user.effective_role === 'seller' ? '/seller' : user.effective_role === 'admin' ? '/admin' : '/dashboard'));
+    } catch (err: any) {
+      setError(err.message || 'Google login failed');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function handleDemoGoogleLogin() {
+    await handleGoogleSuccess('__local_demo__');
+  }
+
+  async function requestReset() {
+    setIsSubmitting(true);
+    setError('');
+    setForgotMessage('');
+    try {
+      await fetchResetEmail(resetEmail.trim());
+      setForgotStep('verify');
+      setForgotMessage('Reset code sent. Check your email.');
+    } catch (err: any) {
+      setError(err.message || 'Password reset request failed');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function confirmReset() {
+    setIsSubmitting(true);
+    setError('');
+    try {
+      await confirmResetPassword(resetEmail.trim(), resetOtp.trim(), resetPassword);
+      setForgotMessage('Password changed. You can log in now.');
+      setForgotOpen(false);
+      setForgotStep('request');
+      setResetOtp('');
+      setResetPassword('');
+    } catch (err: any) {
+      setError(err.message || 'Password reset failed');
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function fetchResetEmail(email: string) {
+    await fetch('/api/auth/password-reset/request/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email }),
+    }).then(async (response) => {
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Password reset request failed');
       }
-    },
-    onError: () => setError('Google login was cancelled'),
-  });
+    });
+  }
+
+  async function confirmResetPassword(email: string, otp_code: string, new_password: string) {
+    await fetch('/api/auth/password-reset/confirm/', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, otp_code, new_password }),
+    }).then(async (response) => {
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data.error || 'Password reset failed');
+      }
+    });
+  }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -105,7 +169,7 @@ export default function Login() {
               <div className="space-y-1">
                 <div className="flex justify-between items-center pl-1 pr-1">
                   <label className="text-xs font-semibold text-secondary uppercase tracking-wider">{t('auth.password', { defaultValue: 'Password' })}</label>
-                  <a href="#" className="text-xs text-accent hover:underline">{t('auth.resetPassword', { defaultValue: 'Reset password' })}</a>
+                  <button type="button" onClick={() => setForgotOpen(true)} className="text-xs text-accent hover:underline">{t('auth.resetPassword', { defaultValue: 'Forgot password?' })}</button>
                 </div>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
@@ -171,20 +235,14 @@ export default function Login() {
               <div className="flex-1 h-px bg-border"></div>
             </div>
 
-            <button
-              type="button"
-              onClick={() => googleLogin()}
+            <GoogleAuthButton
+              label="Continue with Google"
+              demoLabel="Continue with demo account"
               disabled={isSubmitting}
+              onGoogleToken={handleGoogleSuccess}
+              onDemoClick={handleDemoGoogleLogin}
               className="w-full mt-4 flex items-center justify-center gap-3 bg-background border border-border rounded-xl py-3.5 hover:bg-card transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
-            >
-              <svg width="20" height="20" viewBox="0 0 48 48">
-                <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/>
-                <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/>
-                <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/>
-                <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/>
-              </svg>
-              <span className="font-medium text-secondary">Continue with Google</span>
-            </button>
+            />
           </>
         )}
 
@@ -193,6 +251,71 @@ export default function Login() {
             {t('auth.noAccount', { defaultValue: 'New here?' })} <Link to="/register" className="text-accent hover:underline ml-1">{t('auth.switchToRegister', { defaultValue: 'Create account' })}</Link>
           </p>
         </div>
+
+        {forgotOpen && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6 backdrop-blur-sm">
+            <motion.div initial={{ opacity: 0, scale: 0.96, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} className="w-full max-w-md rounded-lg border border-border bg-surface p-5 shadow-2xl">
+              <div className="flex items-start justify-between gap-4">
+                <div>
+                  <h2 className="text-lg font-bold">Reset password</h2>
+                  <p className="mt-1 text-sm text-secondary">We’ll email a reset code to your account.</p>
+                </div>
+                <button type="button" onClick={() => setForgotOpen(false)} className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border text-secondary hover:text-primary" aria-label="Close">×</button>
+              </div>
+
+              <div className="mt-5 space-y-4">
+                <label className="block">
+                  <span className="mb-2 block text-sm font-semibold">Email</span>
+                  <input
+                    type="email"
+                    value={resetEmail}
+                    onChange={(e) => setResetEmail(e.target.value)}
+                    className="w-full rounded-xl border border-border bg-background px-4 py-3 outline-none focus:border-accent"
+                    placeholder="you@example.com"
+                  />
+                </label>
+
+                {forgotStep === 'verify' && (
+                  <>
+                    <label className="block">
+                      <span className="mb-2 block text-sm font-semibold">Reset OTP</span>
+                      <input
+                        type="text"
+                        value={resetOtp}
+                        onChange={(e) => setResetOtp(e.target.value.replace(/\s+/g, ''))}
+                        className="w-full rounded-xl border border-border bg-background px-4 py-3 outline-none focus:border-accent"
+                        placeholder="123456"
+                        maxLength={6}
+                      />
+                    </label>
+                    <label className="block">
+                      <span className="mb-2 block text-sm font-semibold">New password</span>
+                      <input
+                        type="password"
+                        value={resetPassword}
+                        onChange={(e) => setResetPassword(e.target.value)}
+                        className="w-full rounded-xl border border-border bg-background px-4 py-3 outline-none focus:border-accent"
+                        placeholder="••••••••"
+                      />
+                    </label>
+                  </>
+                )}
+
+                {forgotMessage && <p className="text-sm text-secondary">{forgotMessage}</p>}
+                {error && <p className="text-sm text-red-600">{error}</p>}
+              </div>
+
+              <div className="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <button type="button" onClick={() => setForgotOpen(false)} className="rounded-xl border border-border px-4 py-3 text-sm font-semibold text-secondary hover:text-primary">Cancel</button>
+                {forgotStep === 'request' ? (
+                  <button type="button" onClick={() => void requestReset()} className="rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-background hover:bg-orange-600" disabled={isSubmitting}>Send code</button>
+                ) : (
+                  <button type="button" onClick={() => void confirmReset()} className="rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-background hover:bg-orange-600" disabled={isSubmitting}>Reset password</button>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
       </motion.div>
     </div>
   );

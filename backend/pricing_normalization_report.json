@@ -1,0 +1,271 @@
+{
+  "updated": 24,
+  "manual": 0,
+  "updated_items": [
+    {
+      "id": 15,
+      "slug": "nike-court-vision-low",
+      "name": "Nike Court Vision Low",
+      "category": "Fashion",
+      "old_price": "8500.00",
+      "new_price": "8000",
+      "old_discount": "7286.00",
+      "new_discount": "7286",
+      "cap": "8000"
+    },
+    {
+      "id": 26,
+      "slug": "xiaomi-smart-air-purifier-4",
+      "name": "Xiaomi Smart Air Purifier 4",
+      "category": "Appliances",
+      "old_price": "23999.00",
+      "new_price": "15000",
+      "old_discount": "20999.00",
+      "new_discount": "",
+      "cap": "15000"
+    },
+    {
+      "id": 34,
+      "slug": "ubiquiti-unifi-dream-machine-pro",
+      "name": "Ubiquiti UniFi Dream Machine Pro",
+      "category": "Networking",
+      "old_price": "55000.00",
+      "new_price": "50000",
+      "old_discount": "",
+      "new_discount": "",
+      "cap": "50000"
+    },
+    {
+      "id": 38,
+      "slug": "sandisk-1tb-dual-drive-usb-c",
+      "name": "SanDisk 1TB Dual Drive USB-C",
+      "category": "Accessories",
+      "old_price": "9500.00",
+      "new_price": "6000",
+      "old_discount": "",
+      "new_discount": "",
+      "cap": "6000"
+    },
+    {
+      "id": 40,
+      "slug": "caldigit-ts4-thunderbolt-4-dock",
+      "name": "CalDigit TS4 Thunderbolt 4 Dock",
+      "category": "Accessories",
+      "old_price": "62000.00",
+      "new_price": "35000",
+      "old_discount": "",
+      "new_discount": "",
+      "cap": "35000"
+    },
+    {
+      "id": 83,
+      "slug": "raspberry-pi-5-starter-kit",
+      "name": "Raspberry Pi 5 Starter Kit",
+      "category": "Accessories",
+      "old_price": "12999.00",
+      "new_price": "6000",
+      "old_discount": "11999.00",
+      "new_discount": "",
+      "cap": "6000"
+    },
+    {
+      "id": 84,
+      "slug": "arduino-uno-learning-kit",
+      "name": "Arduino Uno Learning Kit",
+      "category": "Accessories",
+      "old_price": "8999.00",
+      "new_price": "6000",
+      "old_discount": "7999.00",
+      "new_discount": "",
+      "cap": "6000"
+    },
+    {
+      "id": 100,
+      "slug": "raspberry-pi-5-starter-kit-2",
+      "name": "Raspberry Pi 5 Starter Kit - New Road Tech Suppliers",
+      "category": "Accessories",
+      "old_price": "12999.00",
+      "new_price": "6000",
+      "old_discount": "11999.00",
+      "new_discount": "",
+      "cap": "6000"
+    },
+    {
+      "id": 101,
+      "slug": "fjallraven-foldsack-no-1-backpack-fits-15-laptops",
+      "name": "Fjallraven - Foldsack No. 1 Backpack, Fits 15 Laptops - Bharatpur General Store",
+      "category": "School",
+      "old_price": "5500.00",
+      "new_price": "3000",
+      "old_discount": "4950.00",
+      "new_discount": "",
+      "cap": "3000"
+    },
+    {
+      "id": 113,
+      "slug": "acer-sb220q-bi-215-inches-full-hd-1920-x-1080-ips-ultra-thin",
+      "name": "Acer SB220Q bi 21.5 inches Full HD (1920 x 1080) IPS Ultra-Thin",
+      "category": "Accessories",
+      "old_price": "77870.00",
+      "new_price": "6000",
+      "old_discount": "70083.00",
+      "new_discount": "",
+      "cap": "6000"
+    },
+    {
+      "id": 131,
+      "slug": "annibale-colombo-bed",
+      "name": "Annibale Colombo Bed",
+      "category": "Home",
+      "old_price": "246999.00",
+      "new_price": "150000",
+      "old_discount": "225831.00",
+      "new_discount": "",
+      "cap": "150000"
+    },
+    {
+      "id": 132,
+      "slug": "annibale-colombo-sofa",
+      "name": "Annibale Colombo Sofa",
+      "category": "Home",
+      "old_price": "324999.00",
+      "new_price": "150000",
+      "old_discount": "278199.00",
+      "new_discount": "",
+      "cap": "150000"
+    },
+    {
+      "id": 141,
+      "slug": "cucumber",
+      "name": "Cucumber",
+      "category": "Groceries",
+      "old_price": "194.00",
+      "new_price": "194.00",
+      "old_discount": "194.00",
+      "new_discount": "",
+      "cap": "2500"
+    },
+    {
+      "id": 169,
+      "slug": "fjallraven-foldsack-no-1-backpack-fits-15-laptops-2",
+      "name": "Fjallraven - Foldsack No. 1 Backpack, Fits 15 Laptops - Bharatpur General Store Variant 3",
+      "category": "School",
+      "old_price": "5500.00",
+      "new_price": "3000",
+      "old_discount": "4950.00",
+      "new_discount": "",
+      "cap": "3000"
+    },
+    {
+      "id": 181,
+      "slug": "acer-sb220q-bi-215-inches-full-hd-1920-x-1080-ips-ultra-thin-2",
+      "name": "Acer SB220Q bi 21.5 inches Full HD (1920 x 1080) IPS Ultra-Thin - Bharatpur General Store",
+      "category": "Accessories",
+      "old_price": "77870.00",
+      "new_price": "6000",
+      "old_discount": "70083.00",
+      "new_discount": "",
+      "cap": "6000"
+    },
+    {
+      "id": 199,
+      "slug": "annibale-colombo-bed-2",
+      "name": "Annibale Colombo Bed - Everest Lifestyle Mart",
+      "category": "Home",
+      "old_price": "246999.00",
+      "new_price": "150000",
+      "old_discount": "225831.00",
+      "new_discount": "",
+      "cap": "150000"
+    },
+    {
+      "id": 200,
+      "slug": "annibale-colombo-sofa-2",
+      "name": "Annibale Colombo Sofa - Everest Lifestyle Mart",
+      "category": "Home",
+      "old_price": "324999.00",
+      "new_price": "150000",
+      "old_discount": "278199.00",
+      "new_discount": "",
+      "cap": "150000"
+    },
+    {
+      "id": 209,
+      "slug": "cucumber-2",
+      "name": "Cucumber - Everest Lifestyle Mart",
+      "category": "Groceries",
+      "old_price": "194.00",
+      "new_price": "194.00",
+      "old_discount": "194.00",
+      "new_discount": "",
+      "cap": "2500"
+    },
+    {
+      "id": 487,
+      "slug": "raspberry-pi-5-starter-kit-3",
+      "name": "Raspberry Pi 5 Starter Kit",
+      "category": "Accessories",
+      "old_price": "12999.00",
+      "new_price": "6000",
+      "old_discount": "11999.00",
+      "new_discount": "",
+      "cap": "6000"
+    },
+    {
+      "id": 488,
+      "slug": "fjallraven-foldsack-no-1-backpack-fits-15-laptops-3",
+      "name": "Fjallraven - Foldsack No. 1 Backpack, Fits 15 Laptops",
+      "category": "School",
+      "old_price": "5500.00",
+      "new_price": "3000",
+      "old_discount": "4950.00",
+      "new_discount": "",
+      "cap": "3000"
+    },
+    {
+      "id": 500,
+      "slug": "acer-sb220q-bi-215-inches-full-hd-1920-x-1080-ips-ultra-thin-3",
+      "name": "Acer SB220Q bi 21.5 inches Full HD (1920 x 1080) IPS Ultra-Thin",
+      "category": "Accessories",
+      "old_price": "77870.00",
+      "new_price": "6000",
+      "old_discount": "70083.00",
+      "new_discount": "",
+      "cap": "6000"
+    },
+    {
+      "id": 518,
+      "slug": "annibale-colombo-bed-3",
+      "name": "Annibale Colombo Bed",
+      "category": "Home",
+      "old_price": "246999.00",
+      "new_price": "150000",
+      "old_discount": "225831.00",
+      "new_discount": "",
+      "cap": "150000"
+    },
+    {
+      "id": 519,
+      "slug": "annibale-colombo-sofa-3",
+      "name": "Annibale Colombo Sofa",
+      "category": "Home",
+      "old_price": "324999.00",
+      "new_price": "150000",
+      "old_discount": "278199.00",
+      "new_discount": "",
+      "cap": "150000"
+    },
+    {
+      "id": 528,
+      "slug": "cucumber-3",
+      "name": "Cucumber",
+      "category": "Groceries",
+      "old_price": "194.00",
+      "new_price": "194.00",
+      "old_discount": "194.00",
+      "new_discount": "",
+      "cap": "2500"
+    }
+  ],
+  "manual_items": []
+}

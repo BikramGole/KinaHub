@@ -3,7 +3,7 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from crm.models import ActivityLog, CustomerRecord, SellerRecord
 from sellers.models import SellerProfile, Store
 from .models import Address, CustomerProfile, User
-from .email_utils import send_otp_email
+from .email_utils import send_otp_email, send_welcome_email
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -55,6 +55,7 @@ class RegisterSerializer(serializers.Serializer):
             SellerRecord.objects.create(seller=seller)
 
         ActivityLog.objects.create(actor=user, verb="registered", target_type="user", target_id=str(user.id), metadata={"role": user.role})
+        send_welcome_email(user.email, name)
         return user
 
     def to_representation(self, user):
