@@ -88,10 +88,19 @@ else
     fi
 fi
 
-# --- Local OAuth Fallbacks ---
-export VITE_GOOGLE_CLIENT_ID="${VITE_GOOGLE_CLIENT_ID:-dummy-client-id}"
-export GOOGLE_OAUTH2_CLIENT_ID="${GOOGLE_OAUTH2_CLIENT_ID:-dummy-client-id}"
-echo -e "Google OAuth: ${DIM}Local demo fallback enabled${NC}\n"
+# --- Load OAuth Config from .env.local ---
+if [ -f "frontend/.env.local" ]; then
+    export VITE_GOOGLE_CLIENT_ID=$(grep VITE_GOOGLE_CLIENT_ID "frontend/.env.local" | cut -d '=' -f2)
+    export GOOGLE_OAUTH2_CLIENT_ID=$(grep GOOGLE_OAUTH2_CLIENT_ID "backend/.env" 2>/dev/null | cut -d '=' -f2)
+fi
+
+if [ -n "$VITE_GOOGLE_CLIENT_ID" ] && [ "$VITE_GOOGLE_CLIENT_ID" != "dummy-client-id" ]; then
+    echo -e "Google OAuth: ${GREEN}Real credentials loaded${NC}\n"
+else
+    export VITE_GOOGLE_CLIENT_ID="${VITE_GOOGLE_CLIENT_ID:-dummy-client-id}"
+    export GOOGLE_OAUTH2_CLIENT_ID="${GOOGLE_OAUTH2_CLIENT_ID:-dummy-client-id}"
+    echo -e "Google OAuth: ${DIM}Local demo fallback enabled${NC}\n"
+fi
 
 # --- Start Services ---
 echo -e "🚀 ${BOLD}Starting Services${NC}"
