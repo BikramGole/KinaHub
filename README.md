@@ -4,19 +4,6 @@
 
 ---
 
-## 🌐 Live Architecture
-
-KinaHub is now fully deployed using a modern distributed stack:
-
-* Frontend hosted on [Vercel](https://vercel.com?utm_source=chatgpt.com)
-* Backend API hosted on [Render](https://render.com?utm_source=chatgpt.com)
-* PostgreSQL database powered by [Neon](https://neon.tech?utm_source=chatgpt.com)
-* Media storage handled by [Cloudinary](https://cloudinary.com?utm_source=chatgpt.com)
-
-This setup ensures scalability, performance, and reliability while remaining cost-efficient using free-tier services.
-
----
-
 ## 📽️ Project Demo
 
 https://github.com/user-attachments/assets/410296e2-23d3-401f-85bc-2aef7b2b1a85
