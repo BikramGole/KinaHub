@@ -74,8 +74,14 @@ export default function Footer() {
               </li>
               <li className="flex items-center gap-2">
                 <Mail className="h-4 w-4 text-accent" />
+                <a href="mailto:bikramgole.genius@gmail.com" className="hover:text-primary">
+                  bikramgole.genius@gmail.com
+                </a>
+              </li>
+              <li className="flex items-center gap-2">
+                <Mail className="h-4 w-4 text-accent" />
                 <a href="mailto:kinahubofficial@gmail.com" className="hover:text-primary">
-                  {t('footer.email', { defaultValue: 'kinahubofficial@gmail.com' })}
+                  kinahubofficial@gmail.com
                 </a>
               </li>
             </ul>
