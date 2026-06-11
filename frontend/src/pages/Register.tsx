@@ -15,26 +15,25 @@ export default function Register() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<'customer' | 'seller'>('customer');
-  const [businessName, setBusinessName] = useState('');
-  const [sellerCode, setSellerCode] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [userId, setUserId] = useState<number | null>(null);
   const [requires2FA, setRequires2FA] = useState(false);
   const [googleSellerModalOpen, setGoogleSellerModalOpen] = useState(false);
+  const [googleSellerIsDemo, setGoogleSellerIsDemo] = useState(false);
   const [googleSellerBusinessName, setGoogleSellerBusinessName] = useState('');
   const [googleSellerCode, setGoogleSellerCode] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  async function handleGoogleSuccess(accessToken: string) {
+  async function handleGoogleSuccess(accessToken: string, businessName?: string, sellerCode?: string) {
     setIsSubmitting(true);
     setError('');
     try {
       const user = await loginWithGoogle(
         accessToken, 
         role, 
-        role === 'seller' ? businessName : undefined,
-        role === 'seller' ? sellerCode : undefined
+        businessName,
+        sellerCode
       );
       navigate(user.effective_role === 'seller' ? '/seller' : '/dashboard');
     } catch (err: any) {
@@ -46,12 +45,28 @@ export default function Register() {
 
   async function handleDemoGoogleClick() {
     if (role === 'seller') {
-      setGoogleSellerBusinessName(businessName.trim());
-      setGoogleSellerCode(sellerCode.trim());
       setGoogleSellerModalOpen(true);
       return;
     }
     await handleGoogleSuccess('__local_demo__');
+  }
+
+  function handleGoogleClick() {
+    if (role === 'seller') {
+      setGoogleSellerIsDemo(false);
+      setGoogleSellerModalOpen(true);
+      return;
+    }
+    handleGoogleSuccess('');
+  }
+
+  function handleDemoClick() {
+    if (role === 'seller') {
+      setGoogleSellerIsDemo(true);
+      setGoogleSellerModalOpen(true);
+      return;
+    }
+    handleDemoGoogleClick();
   }
 
   async function confirmGoogleSellerBusiness() {
@@ -67,15 +82,13 @@ export default function Register() {
     }
 
     setGoogleSellerModalOpen(false);
-    setBusinessName(nextBusinessName);
-    setSellerCode(nextSellerCode);
     
-    // We need to pass the values directly because state updates are async
     setIsSubmitting(true);
     setError('');
     try {
+      const accessToken = googleSellerIsDemo ? '__local_demo__' : '';
       const user = await loginWithGoogle(
-        '__local_demo__', 
+        accessToken, 
         'seller', 
         nextBusinessName,
         nextSellerCode
@@ -102,8 +115,6 @@ export default function Register() {
           email,
           password,
           role,
-          business_name: role === 'seller' ? businessName : undefined,
-          seller_code: role === 'seller' ? sellerCode : undefined,
         });
         if ('require_2fa' in result && result.require_2fa) {
           setRequires2FA(true);
@@ -203,42 +214,7 @@ export default function Register() {
                 </div>
               </div>
 
-              {role === 'seller' && (
-                <>
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-secondary uppercase tracking-wider pl-1">{t('auth.businessName', { defaultValue: 'Business name' })}</label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <Store className="h-5 w-5 text-secondary" />
-                      </div>
-                      <input
-                        type="text"
-                        value={businessName}
-                        onChange={(e) => setBusinessName(e.target.value)}
-                        className="w-full bg-background border border-border rounded-xl pl-11 pr-4 py-3.5 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-300 text-base"
-                        placeholder={t('auth.businessNamePlaceholder', { defaultValue: 'Your Store Pvt. Ltd.' })}
-                        required
-                      />
-                    </div>
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-secondary uppercase tracking-wider pl-1">{t('auth.sellerCode', { defaultValue: 'Seller code' })}</label>
-                    <div className="relative">
-                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                        <Lock className="h-5 w-5 text-secondary" />
-                      </div>
-                      <input
-                        type="password"
-                        value={sellerCode}
-                        onChange={(e) => setSellerCode(e.target.value)}
-                        className="w-full bg-background border border-border rounded-xl pl-11 pr-4 py-3.5 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-300 text-base"
-                        placeholder={t('auth.sellerCodePlaceholder', { defaultValue: 'Enter invitation code' })}
-                        required
-                      />
-                    </div>
-                  </div>
-                </>
-              )}
+
             </>
           ) : (
             <div className="space-y-1">
@@ -286,8 +262,8 @@ export default function Register() {
               label="Continue with Google"
               demoLabel="Continue with demo account"
               disabled={isSubmitting}
-              onGoogleToken={handleGoogleSuccess}
-              onDemoClick={handleDemoGoogleClick}
+              onGoogleToken={handleGoogleClick}
+              onDemoClick={handleDemoClick}
               className="w-full mt-4 flex items-center justify-center gap-3 bg-background border border-border rounded-xl py-3.5 hover:bg-card transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
             />
           </>
