@@ -228,5 +228,15 @@ EMAIL_TIMEOUT = int(os.environ.get('EMAIL_TIMEOUT', '5' if DEBUG else '10'))
 # Google OAuth2 Client ID
 GOOGLE_OAUTH2_CLIENT_ID = os.environ.get('GOOGLE_OAUTH2_CLIENT_ID', 'dummy-client-id' if DEBUG else '')
 
+# Seller Code for registration/login
+# In DEBUG mode, fallback to 'demo' if not set (for local development)
+# In production, SELLER_REGISTRATION_CODE MUST be set in environment
+if DEBUG:
+    SELLER_REGISTRATION_CODE = os.environ.get('SELLER_REGISTRATION_CODE', 'demo')
+else:
+    SELLER_REGISTRATION_CODE = os.environ.get('SELLER_REGISTRATION_CODE', '')
+    if not SELLER_REGISTRATION_CODE:
+        raise ValueError("SELLER_REGISTRATION_CODE must be set in production environment")
+
 # Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

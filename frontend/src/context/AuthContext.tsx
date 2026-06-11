@@ -21,11 +21,11 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
-  login: (email: string, password: string) => Promise<User | { require_2fa: true; user_id: number }>;
+  login: (email: string, password: string, sellerCode?: string) => Promise<User | { require_2fa: true; user_id: number }>;
   verifyOTP: (userId: number, otpCode: string) => Promise<User>;
   requestPasswordReset: (email: string) => Promise<void>;
   confirmPasswordReset: (email: string, otpCode: string, newPassword: string) => Promise<void>;
-  loginWithGoogle: (idToken: string, role?: 'customer' | 'seller', businessName?: string) => Promise<User>;
+  loginWithGoogle: (idToken: string, role?: 'customer' | 'seller', businessName?: string, sellerCode?: string) => Promise<User>;
   register: (payload: RegisterPayload) => Promise<User | { require_2fa: true; user_id: number }>;
   requestDeleteAccount: () => Promise<void>;
   confirmDeleteAccount: (otpCode: string) => Promise<void>;
@@ -39,6 +39,7 @@ interface RegisterPayload {
   password: string;
   role: 'customer' | 'seller';
   business_name?: string;
+  seller_code?: string;
 }
 
 const ACCESS_KEY = 'kinahub_access_token';
@@ -72,10 +73,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     void refreshMe();
   }, [token]);
 
-  async function login(email: string, password: string) {
+  async function login(email: string, password: string, sellerCode?: string) {
     const data = await apiRequest<any>('/token/', {
       method: 'POST',
-      body: JSON.stringify({ email, password }),
+      body: JSON.stringify({ email, password, seller_code: sellerCode }),
     });
 
     if (data.require_2fa) {
@@ -135,10 +136,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return data.user;
   }
 
-  async function loginWithGoogle(accessToken: string, role: 'customer' | 'seller' = 'customer', businessName?: string) {
+  async function loginWithGoogle(accessToken: string, role: 'customer' | 'seller' = 'customer', businessName?: string, sellerCode?: string) {
     const data = await apiRequest<{ access: string; refresh: string; user: User }>('/auth/google/', {
       method: 'POST',
-      body: JSON.stringify({ access_token: accessToken, role, business_name: businessName }),
+      body: JSON.stringify({ access_token: accessToken, role, business_name: businessName, seller_code: sellerCode }),
     });
     
     setToken(data.access);

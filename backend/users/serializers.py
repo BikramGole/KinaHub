@@ -4,6 +4,7 @@ from crm.models import ActivityLog, CustomerRecord, SellerRecord
 from sellers.models import SellerProfile, Store
 from .models import Address, CustomerProfile, User
 from .email_utils import send_otp_email, send_welcome_email
+from django.conf import settings
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -23,6 +24,7 @@ class RegisterSerializer(serializers.Serializer):
     password = serializers.CharField(write_only=True, min_length=8)
     role = serializers.ChoiceField(choices=ROLE_CHOICES)
     business_name = serializers.CharField(max_length=220, required=False, allow_blank=True)
+    seller_code = serializers.CharField(max_length=50, required=False, allow_blank=True, write_only=True)
 
     def validate_email(self, value):
         if User.objects.filter(email=value).exists():
@@ -30,8 +32,11 @@ class RegisterSerializer(serializers.Serializer):
         return value
 
     def validate(self, attrs):
-        if attrs["role"] == "seller" and not attrs.get("business_name"):
-            raise serializers.ValidationError({"business_name": "Business name is required for seller accounts."})
+        if attrs["role"] == "seller":
+            if not attrs.get("business_name"):
+                raise serializers.ValidationError({"business_name": "Business name is required for seller accounts."})
+            if attrs.get("seller_code") != getattr(settings, 'SELLER_REGISTRATION_CODE', 'mafia'):
+                raise serializers.ValidationError({"seller_code": "Invalid seller code. Unauthorized access prevented."})
         return attrs
 
     def create(self, validated_data):

@@ -53,6 +53,13 @@ export default function ProductDetails() {
     }
   }, [product]);
 
+  useEffect(() => {
+    if (user) {
+      const fullName = `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || user.email;
+      setReviewForm((current) => ({ ...current, name: fullName }));
+    }
+  }, [user]);
+
   function handleAddToCart() {
     try {
       if (!product || typeof product.id !== 'number' || !product.slug) {
@@ -214,7 +221,14 @@ export default function ProductDetails() {
 
       const created = (await response.json()) as ReviewType;
       setReviews((current) => [created, ...current]);
-      setReviewForm({ name: '', rating: 5, title: '', comment: '', image_url: '', video_url: '' });
+      setReviewForm({ 
+        name: user ? `${user.first_name || ''} ${user.last_name || ''}`.trim() || user.username || user.email : '', 
+        rating: 5, 
+        title: '', 
+        comment: '', 
+        image_url: '', 
+        video_url: '' 
+      });
       setImagePreview(null);
       setVideoPreview(null);
     } catch {
@@ -466,8 +480,9 @@ export default function ProductDetails() {
                 <input
                   value={reviewForm.name}
                   onChange={(event) => setReviewForm((current) => ({ ...current, name: event.target.value }))}
-                  className="h-11 w-full rounded-md border border-border bg-surface px-3 text-base outline-none focus:border-accent"
+                  className={`h-11 w-full rounded-md border border-border bg-surface px-3 text-base outline-none focus:border-accent ${user ? 'opacity-70 cursor-not-allowed' : ''}`}
                   placeholder={t('auth.namePlaceholder', { defaultValue: 'Ram Shah' })}
+                  readOnly={!!user}
                 />
               </label>
               <label className="block">
