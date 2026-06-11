@@ -281,7 +281,8 @@ class ReviewViewSet(viewsets.ModelViewSet):
         product = get_object_or_404(Product, slug=product_ref)
         name = (self.request.data.get('name') or '').strip()
         if not name and self.request.user.is_authenticated:
-            name = self.request.user.get_full_name().strip() or self.request.user.email
+            full_name = f"{self.request.user.first_name} {self.request.user.last_name}".strip()
+            name = full_name or self.request.user.email or self.request.user.username
         if not name:
             name = 'Guest'
         rating = int(self.request.data.get('rating') or 5)

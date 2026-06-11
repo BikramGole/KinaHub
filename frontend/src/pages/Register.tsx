@@ -16,11 +16,13 @@ export default function Register() {
   const [password, setPassword] = useState('');
   const [role, setRole] = useState<'customer' | 'seller'>('customer');
   const [businessName, setBusinessName] = useState('');
+  const [sellerCode, setSellerCode] = useState('');
   const [otpCode, setOtpCode] = useState('');
   const [userId, setUserId] = useState<number | null>(null);
   const [requires2FA, setRequires2FA] = useState(false);
   const [googleSellerModalOpen, setGoogleSellerModalOpen] = useState(false);
   const [googleSellerBusinessName, setGoogleSellerBusinessName] = useState('');
+  const [googleSellerCode, setGoogleSellerCode] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -28,7 +30,12 @@ export default function Register() {
     setIsSubmitting(true);
     setError('');
     try {
-      const user = await loginWithGoogle(accessToken, role, role === 'seller' ? businessName : undefined);
+      const user = await loginWithGoogle(
+        accessToken, 
+        role, 
+        role === 'seller' ? businessName : undefined,
+        role === 'seller' ? sellerCode : undefined
+      );
       navigate(user.effective_role === 'seller' ? '/seller' : '/dashboard');
     } catch (err: any) {
       setError(err.message || 'Google sign-up failed');
@@ -40,6 +47,7 @@ export default function Register() {
   async function handleDemoGoogleClick() {
     if (role === 'seller') {
       setGoogleSellerBusinessName(businessName.trim());
+      setGoogleSellerCode(sellerCode.trim());
       setGoogleSellerModalOpen(true);
       return;
     }
@@ -48,14 +56,36 @@ export default function Register() {
 
   async function confirmGoogleSellerBusiness() {
     const nextBusinessName = googleSellerBusinessName.trim();
+    const nextSellerCode = googleSellerCode.trim();
     if (!nextBusinessName) {
       setError('Please enter your business name before continuing with Google.');
+      return;
+    }
+    if (!nextSellerCode) {
+      setError('Please enter your seller code before continuing with Google.');
       return;
     }
 
     setGoogleSellerModalOpen(false);
     setBusinessName(nextBusinessName);
-    await handleGoogleSuccess('__local_demo__');
+    setSellerCode(nextSellerCode);
+    
+    // We need to pass the values directly because state updates are async
+    setIsSubmitting(true);
+    setError('');
+    try {
+      const user = await loginWithGoogle(
+        '__local_demo__', 
+        'seller', 
+        nextBusinessName,
+        nextSellerCode
+      );
+      navigate(user.effective_role === 'seller' ? '/seller' : '/dashboard');
+    } catch (err: any) {
+      setError(err.message || 'Google sign-up failed');
+    } finally {
+      setIsSubmitting(false);
+    }
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -73,6 +103,7 @@ export default function Register() {
           password,
           role,
           business_name: role === 'seller' ? businessName : undefined,
+          seller_code: role === 'seller' ? sellerCode : undefined,
         });
         if ('require_2fa' in result && result.require_2fa) {
           setRequires2FA(true);
@@ -173,22 +204,40 @@ export default function Register() {
               </div>
 
               {role === 'seller' && (
-                <div className="space-y-1">
-                  <label className="text-xs font-semibold text-secondary uppercase tracking-wider pl-1">{t('auth.businessName', { defaultValue: 'Business name' })}</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                      <Store className="h-5 w-5 text-secondary" />
+                <>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-secondary uppercase tracking-wider pl-1">{t('auth.businessName', { defaultValue: 'Business name' })}</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <Store className="h-5 w-5 text-secondary" />
+                      </div>
+                      <input
+                        type="text"
+                        value={businessName}
+                        onChange={(e) => setBusinessName(e.target.value)}
+                        className="w-full bg-background border border-border rounded-xl pl-11 pr-4 py-3.5 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-300 text-base"
+                        placeholder={t('auth.businessNamePlaceholder', { defaultValue: 'Your Store Pvt. Ltd.' })}
+                        required
+                      />
                     </div>
-                    <input
-                      type="text"
-                      value={businessName}
-                      onChange={(e) => setBusinessName(e.target.value)}
-                      className="w-full bg-background border border-border rounded-xl pl-11 pr-4 py-3.5 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-300 text-base"
-                      placeholder={t('auth.businessNamePlaceholder', { defaultValue: 'Your Store Pvt. Ltd.' })}
-                      required
-                    />
                   </div>
-                </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-secondary uppercase tracking-wider pl-1">{t('auth.sellerCode', { defaultValue: 'Seller code' })}</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <Lock className="h-5 w-5 text-secondary" />
+                      </div>
+                      <input
+                        type="password"
+                        value={sellerCode}
+                        onChange={(e) => setSellerCode(e.target.value)}
+                        className="w-full bg-background border border-border rounded-xl pl-11 pr-4 py-3.5 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-300 text-base"
+                        placeholder={t('auth.sellerCodePlaceholder', { defaultValue: 'Enter invitation code' })}
+                        required
+                      />
+                    </div>
+                  </div>
+                </>
               )}
             </>
           ) : (
@@ -282,22 +331,41 @@ export default function Register() {
               </button>
             </div>
 
-            <div className="mt-5 space-y-2">
-              <label className="text-xs font-semibold uppercase tracking-wider text-secondary pl-1">
-                {t('auth.businessName', { defaultValue: 'Business name' })}
-              </label>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Store className="h-5 w-5 text-secondary" />
+            <div className="mt-5 space-y-4">
+              <div className="space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-wider text-secondary pl-1">
+                  {t('auth.businessName', { defaultValue: 'Business name' })}
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Store className="h-5 w-5 text-secondary" />
+                  </div>
+                  <input
+                    type="text"
+                    value={googleSellerBusinessName}
+                    onChange={(e) => setGoogleSellerBusinessName(e.target.value)}
+                    placeholder={t('auth.businessNamePlaceholder', { defaultValue: 'Your Store Pvt. Ltd.' })}
+                    className="w-full rounded-xl border border-border bg-background py-3.5 pl-11 pr-4 text-base focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                    autoFocus
+                  />
                 </div>
-                <input
-                  type="text"
-                  value={googleSellerBusinessName}
-                  onChange={(e) => setGoogleSellerBusinessName(e.target.value)}
-                  placeholder={t('auth.businessNamePlaceholder', { defaultValue: 'Your Store Pvt. Ltd.' })}
-                  className="w-full rounded-xl border border-border bg-background py-3.5 pl-11 pr-4 text-base focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
-                  autoFocus
-                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-xs font-semibold uppercase tracking-wider text-secondary pl-1">
+                  {t('auth.sellerCode', { defaultValue: 'Seller code' })}
+                </label>
+                <div className="relative">
+                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                    <Lock className="h-5 w-5 text-secondary" />
+                  </div>
+                  <input
+                    type="password"
+                    value={googleSellerCode}
+                    onChange={(e) => setGoogleSellerCode(e.target.value)}
+                    placeholder={t('auth.sellerCodePlaceholder', { defaultValue: 'Enter invitation code' })}
+                    className="w-full rounded-xl border border-border bg-background py-3.5 pl-11 pr-4 text-base focus:border-accent focus:outline-none focus:ring-1 focus:ring-accent"
+                  />
+                </div>
               </div>
             </div>
 

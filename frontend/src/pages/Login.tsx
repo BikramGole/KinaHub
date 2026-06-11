@@ -14,6 +14,8 @@ export default function Login() {
   const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [sellerCode, setSellerCode] = useState('');
+  const [isSellerLogin, setIsSellerLogin] = useState(false);
   const [otpCode, setOtpCode] = useState('');
   const [userId, setUserId] = useState<number | null>(null);
   const [requires2FA, setRequires2FA] = useState(false);
@@ -30,7 +32,7 @@ export default function Login() {
     setIsSubmitting(true);
     setError('');
     try {
-      const user = await loginWithGoogle(accessToken);
+      const user = await loginWithGoogle(accessToken, undefined, undefined, isSellerLogin ? sellerCode : undefined);
       const from = (location.state as { from?: string } | null)?.from;
       navigate(from || (user.effective_role === 'seller' ? '/seller' : user.effective_role === 'admin' ? '/admin' : '/dashboard'));
     } catch (err: any) {
@@ -112,7 +114,7 @@ export default function Login() {
         const from = (location.state as { from?: string } | null)?.from;
         navigate(from || (user.effective_role === 'seller' ? '/seller' : user.effective_role === 'admin' ? '/admin' : '/dashboard'));
       } else {
-        const result = await login(email, password);
+        const result = await login(email, password, isSellerLogin ? sellerCode : undefined);
         if ('require_2fa' in result && result.require_2fa) {
           setRequires2FA(true);
           setUserId(result.user_id);
@@ -184,6 +186,36 @@ export default function Login() {
                     required
                   />
                 </div>
+              </div>
+
+              <div className="space-y-1">
+                <div className="flex items-center gap-2 pl-1 mb-2">
+                  <input
+                    type="checkbox"
+                    id="isSellerLogin"
+                    checked={isSellerLogin}
+                    onChange={(e) => setIsSellerLogin(e.target.checked)}
+                    className="w-4 h-4 rounded border-border text-accent focus:ring-accent"
+                  />
+                  <label htmlFor="isSellerLogin" className="text-xs font-semibold text-secondary uppercase tracking-wider cursor-pointer">
+                    {t('auth.loggingInAsSeller', { defaultValue: 'Login as seller?' })}
+                  </label>
+                </div>
+                {isSellerLogin && (
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <Lock className="h-5 w-5 text-secondary" />
+                    </div>
+                    <input 
+                      type="password" 
+                      value={sellerCode}
+                      onChange={(e) => setSellerCode(e.target.value)}
+                      className="w-full bg-background border border-border rounded-xl pl-11 pr-4 py-3.5 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-300 text-base"
+                      placeholder={t('auth.sellerCodePlaceholder', { defaultValue: 'Enter invitation code' })}
+                      required
+                    />
+                  </div>
+                )}
               </div>
             </>
           ) : (

@@ -94,6 +94,11 @@ if [ -f "frontend/.env.local" ]; then
     export GOOGLE_OAUTH2_CLIENT_ID=$(grep GOOGLE_OAUTH2_CLIENT_ID "backend/.env" 2>/dev/null | cut -d '=' -f2)
 fi
 
+# --- Load Seller Registration Code from backend/.env ---
+if [ -f "backend/.env" ]; then
+    export SELLER_REGISTRATION_CODE=$(grep SELLER_REGISTRATION_CODE "backend/.env" 2>/dev/null | cut -d '=' -f2)
+fi
+
 if [ -n "$VITE_GOOGLE_CLIENT_ID" ] && [ "$VITE_GOOGLE_CLIENT_ID" != "dummy-client-id" ]; then
     echo -e "Google OAuth: ${GREEN}Real credentials loaded${NC}\n"
 else

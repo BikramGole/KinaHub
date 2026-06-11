@@ -131,14 +131,18 @@ class GoogleLoginView(APIView):
         access_token = request.data.get("access_token")
         role = request.data.get("role", "customer")
         business_name = request.data.get("business_name", "")
+        seller_code = request.data.get("seller_code", "")
         local_email = request.data.get("email") or ""
         local_name = request.data.get("name") or ""
 
         if not access_token:
             return Response({"error": "No access token provided"}, status=400)
 
-        if role == "seller" and not business_name:
-            return Response({"error": "Business name is required for seller accounts."}, status=400)
+        if role == "seller":
+            if not business_name:
+                return Response({"error": "Business name is required for seller accounts."}, status=400)
+            if seller_code != getattr(settings, 'SELLER_REGISTRATION_CODE', 'mafia'):
+                return Response({"error": "Invalid seller code. Unauthorized access prevented."}, status=400)
 
         if settings.DEBUG and (not settings.GOOGLE_OAUTH2_CLIENT_ID or access_token.startswith("__local_demo__")):
             email = local_email or f"{role}.demo@kinahub.local"
@@ -223,6 +227,11 @@ class LoginWithOTPView(TokenObtainPairView):
         serializer.is_valid(raise_exception=True)
         
         user = serializer.user
+        if user.effective_role == "seller":
+            seller_code = request.data.get("seller_code")
+            if seller_code != getattr(settings, 'SELLER_REGISTRATION_CODE', 'mafia'):
+                return Response({"error": "Invalid seller code for seller account."}, status=400)
+
         otp = f"{random.randint(100000, 999999)}"
         user.otp_code = otp
         user.otp_created_at = timezone.now()
