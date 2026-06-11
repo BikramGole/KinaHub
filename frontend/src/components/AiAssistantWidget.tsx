@@ -52,6 +52,7 @@ export default function AiAssistantWidget() {
     offsetY: 0,
     moved: false,
   });
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const [messages, setMessages] = useState<ChatMessage[]>(() => {
     const saved = window.localStorage.getItem('kinahub-ai-messages');
     if (saved) {
@@ -73,6 +74,18 @@ export default function AiAssistantWidget() {
   useEffect(() => {
     window.localStorage.setItem('kinahub-ai-messages', JSON.stringify(messages));
   }, [messages]);
+
+  // Auto-scroll to bottom when new messages arrive
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  // Auto-scroll when loading state changes (for typing indicator)
+  useEffect(() => {
+    if (loading) {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [loading]);
 
   const cartHint = useMemo(() => cartAiOverview(items)[0]?.body, [items]);
 
@@ -409,7 +422,7 @@ export default function AiAssistantWidget() {
               </div>
 
               <div className="flex min-h-0 flex-1 flex-col sm:h-[560px] sm:min-h-0 sm:max-h-[min(72vh,44rem)]">
-                <div className="flex-1 space-y-3 overflow-y-auto px-4 py-3">
+                <div className="flex-1 space-y-3 overflow-y-auto px-4 py-3" ref={messagesEndRef}>
                   {cartHint && (
                     <div className="rounded-md border border-accent/30 bg-accent/10 p-3 text-sm leading-6 text-primary">
                       {cartHint}
@@ -426,7 +439,7 @@ export default function AiAssistantWidget() {
                     >
                       {renderMessage(item.text)}
                     </div>
-                  ))}
+                  )                  )}
                   {loading && (
                     <div className="mr-auto rounded-2xl border border-border bg-background px-4 py-3 text-primary">
                       <div className="flex items-center gap-1">
@@ -436,6 +449,7 @@ export default function AiAssistantWidget() {
                       </div>
                     </div>
                   )}
+                  <div ref={messagesEndRef} />
                 </div>
 
                 <div className="shrink-0 border-t border-border bg-background/95 px-3 py-2.5 pb-[calc(env(safe-area-inset-bottom)+0.9rem)] backdrop-blur-sm sm:bg-background/70 sm:pb-3">
