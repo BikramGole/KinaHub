@@ -292,7 +292,7 @@ export default function Login() {
                   <h2 className="text-lg font-bold">Reset password</h2>
                   <p className="mt-1 text-sm text-secondary">We’ll email a reset code to your account.</p>
                 </div>
-                <button type="button" onClick={() => setForgotOpen(false)} className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border text-secondary hover:text-primary" aria-label="Close">×</button>
+                <button type="button" onClick={() => setForgotOpen(false)} className="inline-flex h-11 md:h-9 w-11 md:w-9 items-center justify-center rounded-md border border-border text-secondary hover:text-primary" aria-label="Close">×</button>
               </div>
 
               <div className="mt-5 space-y-4">
