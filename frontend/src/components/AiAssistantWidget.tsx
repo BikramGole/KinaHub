@@ -77,13 +77,17 @@ export default function AiAssistantWidget() {
 
   // Auto-scroll to bottom when new messages arrive
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    setTimeout(() => {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    }, 100);
+  }, [messages, open]); // Also scroll when opening the chat widget
 
   // Auto-scroll when loading state changes (for typing indicator)
   useEffect(() => {
     if (loading) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
+      }, 100);
     }
   }, [loading]);
 
@@ -422,7 +426,7 @@ export default function AiAssistantWidget() {
               </div>
 
               <div className="flex min-h-0 flex-1 flex-col sm:h-[560px] sm:min-h-0 sm:max-h-[min(72vh,44rem)]">
-                <div className="flex-1 space-y-3 overflow-y-auto px-4 py-3" ref={messagesEndRef}>
+                <div className="flex-1 space-y-3 overflow-y-auto px-4 py-3">
                   {cartHint && (
                     <div className="rounded-md border border-accent/30 bg-accent/10 p-3 text-sm leading-6 text-primary">
                       {cartHint}

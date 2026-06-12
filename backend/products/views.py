@@ -1,7 +1,8 @@
 from django.db.models import Avg, Count, DecimalField, Q
 from django.db.models.functions import Coalesce
+from django.core.cache import cache
 from rest_framework import viewsets, permissions
-from rest_framework.decorators import action
+from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.exceptions import PermissionDenied, ValidationError
@@ -497,3 +498,45 @@ class AiChatView(APIView):
             return Response(data)
         except Exception as e:
             return Response({"error": str(e)}, status=500)
+
+@api_view(['GET'])
+@permission_classes([permissions.AllowAny])
+def homepage_data(request):
+    data = cache.get('homepage_data')
+    if data:
+        return Response(data)
+
+    def serialize_products(qs, limit=10):
+        # We manually apply the annotations used in product_queryset so the serializer works correctly.
+        products = qs.select_related('store', 'category', 'brand').prefetch_related('images').annotate(
+            review_count=Count('reviews', distinct=True),
+            average_rating=Coalesce(Avg('reviews__rating'), 'rating', output_field=DecimalField(max_digits=3, decimal_places=2)),
+        )[:limit]
+        return ProductSerializer(products, many=True, context={'request': request}).data
+
+    base_qs = Product.objects.filter(is_active=True)
+
+    random_products = serialize_products(base_qs.order_by('?'), limit=40)
+    newest = serialize_products(base_qs.order_by('-created_at'), limit=16)
+    laptops = serialize_products(base_qs.filter(category__slug='laptops'), limit=10)
+    fashion = serialize_products(base_qs.filter(category__slug='fashion'), limit=10)
+    groceries = serialize_products(base_qs.filter(category__slug='groceries'), limit=10)
+    books = serialize_products(base_qs.filter(category__slug='books'), limit=10)
+    featured = serialize_products(base_qs.filter(is_featured=True), limit=12)
+
+    categories = Category.objects.all()
+    categories_data = CategorySerializer(categories, many=True, context={'request': request}).data
+
+    data = {
+        'random': random_products,
+        'newest': newest,
+        'laptops': laptops,
+        'fashion': fashion,
+        'groceries': groceries,
+        'books': books,
+        'categories': categories_data,
+        'featured': featured,
+    }
+
+    cache.set('homepage_data', data, 60 * 15)  # Cache for 15 minutes
+    return Response(data)

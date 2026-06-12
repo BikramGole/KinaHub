@@ -151,80 +151,39 @@ export default function Home() {
   ];
 
   useEffect(() => {
-    // Random hero/main products
-    fetch(`${API}/items/?random=true`)
+    // Single consolidated fetch for the homepage
+    fetch(`${API}/homepage/`)
       .then((r) => r.json())
-      .then((data: ProductType[]) => {
-        setProducts(data.slice(0, 30));
-        setTimeout(() => setHeroReady(true), 600);
-      })
-      .catch(() => setHeroReady(true));
-
-    // Newest arrivals
-    fetch(`${API}/items/?sort=newest&limit=16`)
-      .then((r) => r.json())
-      .then((data: ProductType[]) => setNewestProducts(data.slice(0, 16)))
-      .catch(() => {});
-
-    // Deals (price_low approximation via discount filter through random + filter client-side)
-    fetch(`${API}/items/?random=true&limit=40`)
-      .then((r) => r.json())
-      .then((data: ProductType[]) => {
-        const discounted = data.filter((p) => p.discount_price && parseFloat(p.discount_price as unknown as string) < parseFloat(p.price as unknown as string));
+      .then((data) => {
+        setProducts(data.random || []);
+        setNewestProducts(data.newest || []);
+        
+        // Deals approximation (products from random that have a discount)
+        const discounted = (data.random || []).filter((p: ProductType) => 
+          p.discount_price && parseFloat(p.discount_price as unknown as string) < parseFloat(p.price as unknown as string)
+        );
         setDealsProducts(discounted.slice(0, 12));
+        
+        setTechProducts(data.laptops || []);
+        setFashionProducts(data.fashion || []);
+        setGroceryProducts(data.groceries || []);
+        setBooksProducts(data.books || []);
+        setCategories((data.categories || []).sort((a: CategoryType, b: CategoryType) => a.name.localeCompare(b.name)));
+        
+        // Immediate featured
+        const immediateFeatured = (data.random || []).filter((product: ProductType) => product.is_featured).slice(0, 8);
+        if (data.featured && data.featured.length > 0) {
+          setFeaturedProducts(data.featured);
+        } else if (immediateFeatured.length > 0) {
+          setFeaturedProducts(immediateFeatured);
+        }
+
+        setTimeout(() => setHeroReady(true), 100);
       })
-      .catch(() => {});
-
-    // Category-specific rows
-    fetch(`${API}/items/?category=laptops&limit=10`)
-      .then((r) => r.json())
-      .then((data: ProductType[]) => setTechProducts(data.slice(0, 10)))
-      .catch(() => {});
-
-    fetch(`${API}/items/?category=fashion&limit=10`)
-      .then((r) => r.json())
-      .then((data: ProductType[]) => setFashionProducts(data.slice(0, 10)))
-      .catch(() => {});
-
-    fetch(`${API}/items/?category=groceries&limit=10`)
-      .then((r) => r.json())
-      .then((data: ProductType[]) => setGroceryProducts(data.slice(0, 10)))
-      .catch(() => {});
-
-    fetch(`${API}/items/?category=books&limit=10`)
-      .then((r) => r.json())
-      .then((data: ProductType[]) => setBooksProducts(data.slice(0, 10)))
-      .catch(() => {});
-
-    // Categories
-    fetch(`${API}/categories/`)
-      .then((r) => r.json())
-      .then((data: CategoryType[]) => setCategories([...data].sort((a, b) => a.name.localeCompare(b.name))))
-      .catch(() => {});
+      .catch(() => {
+        setHeroReady(true);
+      });
   }, []);
-
-  useEffect(() => {
-    if (products.length === 0) return;
-
-    const immediateFeatured = products.filter((product) => product.is_featured).slice(0, 8);
-    if (immediateFeatured.length > 0) {
-      setFeaturedProducts(immediateFeatured);
-    }
-
-    const timer = window.setTimeout(() => {
-      fetch(`${API}/items/?featured=true&limit=12`)
-        .then((r) => r.json())
-        .then((data: ProductType[]) => {
-          const next = Array.isArray(data) ? data.slice(0, 12) : [];
-          setFeaturedProducts(next.length > 0 ? next : immediateFeatured);
-        })
-        .catch(() => {
-          if (immediateFeatured.length > 0) setFeaturedProducts(immediateFeatured);
-        });
-    }, 900);
-
-    return () => window.clearTimeout(timer);
-  }, [products]);
 
   // Rotate hero product
   useEffect(() => {
