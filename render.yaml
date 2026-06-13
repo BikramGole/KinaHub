@@ -1,0 +1,33 @@
+services:
+  # Main backend web service
+  - type: web
+    name: kinahub-backend
+    runtime: python
+    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --no-input
+    # warmup_cache pre-populates the locmem cache with homepage data
+    # so the very first request after a cold start is served from cache.
+    startCommand: python manage.py warmup_cache; gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 90 --preload --keep-alive 5
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.11.0
+      - key: PORT
+        value: 8000
+
+  # Free cron job — pings /ping/ every 10 minutes to prevent cold starts.
+  # Render's free cron jobs do NOT spin down your web service.
+  - type: cron
+    name: kinahub-keep-alive
+    runtime: python
+    buildCommand: pip install requests
+    schedule: "*/10 * * * *"
+    startCommand: python -c "
+import requests, sys;
+try:
+  r = requests.get('https://kinahub.onrender.com/ping/', timeout=30);
+  print(f'Ping OK: {r.status_code}');
+  sys.exit(0)
+except Exception as e:
+  print(f'Ping failed: {e}');
+  sys.exit(1)
+"
+
