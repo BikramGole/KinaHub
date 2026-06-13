@@ -238,8 +238,10 @@ export default function Navbar() {
             />
           </Link>
 
+          {/* Desktop search bar (hidden on mobile) */}
           <SearchBar />
 
+          {/* ── Desktop nav ── */}
           <div className="ml-auto hidden items-center gap-5 md:flex">
             <button onClick={toggleLanguage} className="text-xs font-bold text-secondary hover:text-primary transition-colors">
               {locale === 'en' ? 'EN | NP' : 'NP | EN'}
@@ -265,47 +267,77 @@ export default function Navbar() {
             </Link>
           </div>
 
-          <div className="ml-auto flex items-center gap-2 md:hidden">
-            <button onClick={toggleLanguage} className="text-xs font-bold text-secondary hover:text-primary transition-colors px-2">
-              {locale.toUpperCase()}
-            </button>
-            <SearchBar mobile />
-            <Link to="/ai" className="flex h-10 w-10 items-center justify-center rounded-md border border-border text-secondary hover:text-primary btn-press-effect group" aria-label={t('nav.ai', { defaultValue: 'AI' })}>
-              <Sparkles className="h-5 w-5 icon-hover-effect group-hover:text-accent" />
-            </Link>
-            <ThemeToggle />
+          {/* ── Mobile: inline search bar + hamburger only ── */}
+          <div className="ml-auto flex min-w-0 flex-1 items-center justify-end gap-2 md:hidden">
+            {/* Inline search field on mobile (always visible, no icon-only toggle) */}
+            <div className="min-w-0 flex-1">
+              <SearchBar mobile />
+            </div>
             <button
               type="button"
               onClick={() => setMenuOpen((open) => !open)}
-              className="flex h-10 w-10 items-center justify-center rounded-md border border-border text-secondary hover:text-primary btn-press-effect group"
+              className="flex h-11 w-11 shrink-0 items-center justify-center rounded-md border border-border text-secondary hover:text-primary btn-press-effect"
               aria-label={menuOpen ? t('nav.closeMenu', { defaultValue: 'Close menu' }) : t('nav.openMenu', { defaultValue: 'Open menu' })}
             >
-              {menuOpen ? <X className="h-5 w-5 icon-hover-effect" /> : <Menu className="h-5 w-5 icon-hover-effect" />}
+              {menuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
           </div>
         </div>
 
+        {/* ── Mobile hamburger drawer ── */}
         {menuOpen && (
-          <div className="border-t border-border py-3 md:hidden">
-            <div className="grid grid-cols-2 gap-2 text-sm font-semibold">
-              <Link onClick={closeMenu} to="/products" className="rounded-md bg-background px-3 py-3 text-secondary hover:text-primary">
-                {t('nav.products', { defaultValue: 'Products' })}
-              </Link>
-              <Link onClick={closeMenu} to="/ai" className="rounded-md bg-background px-3 py-3 text-secondary hover:text-primary">
-                {t('nav.ai', { defaultValue: 'AI' })}
-              </Link>
-              <Link onClick={closeMenu} to="/" className="rounded-md bg-background px-3 py-3 text-secondary hover:text-primary">
+          <div className="border-t border-border pb-4 pt-3 md:hidden">
+            {/* Nav links */}
+            <div className="space-y-0.5">
+              <Link onClick={closeMenu} to="/" className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold text-primary hover:bg-muted transition-colors">
                 {t('nav.home', { defaultValue: 'Home' })}
               </Link>
-              <Link onClick={closeMenu} to="/cart" className="rounded-md bg-background px-3 py-3 text-secondary hover:text-primary">
-                {t('nav.cart', { defaultValue: 'Cart' })} {totalCount > 0 ? `(${totalCount})` : ''}
+              <Link onClick={closeMenu} to="/products" className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold text-primary hover:bg-muted transition-colors">
+                {t('nav.products', { defaultValue: 'Products' })}
               </Link>
-              <Link onClick={closeMenu} to={user ? '/dashboard' : '/register'} className="rounded-md bg-background px-3 py-3 text-secondary hover:text-primary">
+              <Link onClick={closeMenu} to="/ai" className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold text-primary hover:bg-muted transition-colors">
+                <Sparkles className="h-4 w-4 text-accent" />
+                {t('nav.ai', { defaultValue: 'AI' })}
+              </Link>
+              <Link onClick={closeMenu} to="/cart" className="flex items-center justify-between rounded-lg px-3 py-3 text-sm font-semibold text-primary hover:bg-muted transition-colors">
+                <span className="flex items-center gap-3">
+                  <ShoppingBag className="h-4 w-4" />
+                  {t('nav.cart', { defaultValue: 'Cart' })}
+                </span>
+                {totalCount > 0 && (
+                  <span className="rounded-full bg-accent px-2 py-0.5 text-[11px] font-bold text-background">
+                    {totalCount}
+                  </span>
+                )}
+              </Link>
+              <Link onClick={closeMenu} to={user ? '/dashboard' : '/login'} className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold text-primary hover:bg-muted transition-colors">
+                <User className="h-4 w-4" />
                 {user ? t('nav.dashboard', { defaultValue: 'Dashboard' }) : t('nav.login', { defaultValue: 'Login' })}
               </Link>
-              <Link onClick={closeMenu} to="/register" className="rounded-md bg-background px-3 py-3 text-secondary hover:text-primary">
-                {t('nav.register', { defaultValue: 'Register' })}
-              </Link>
+              {!user && (
+                <Link onClick={closeMenu} to="/register" className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold text-primary hover:bg-muted transition-colors">
+                  {t('nav.register', { defaultValue: 'Register' })}
+                </Link>
+              )}
+            </div>
+
+            {/* Divider */}
+            <div className="my-3 h-px bg-border" />
+
+            {/* Settings row: theme + language */}
+            <div className="flex items-center justify-between px-3">
+              <span className="text-xs font-semibold uppercase tracking-wide text-secondary">
+                {t('nav.settings', { defaultValue: 'Settings' })}
+              </span>
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={toggleLanguage}
+                  className="rounded-md border border-border px-3 py-1.5 text-xs font-bold text-secondary hover:border-accent hover:text-primary transition-colors"
+                >
+                  {locale === 'en' ? 'EN | NP' : 'NP | EN'}
+                </button>
+                <ThemeToggle />
+              </div>
             </div>
           </div>
         )}
