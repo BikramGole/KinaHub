@@ -100,8 +100,23 @@ WSGI_APPLICATION = 'core.wsgi.application'
 DATABASES = {
     'default': dj_database_url.config(
         default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
+        # conn_max_age=600 keeps DB connections alive between requests
+        # (avoids 3-way TCP handshake + TLS on every request)
         conn_max_age=600,
+        conn_health_checks=True,  # Reuse only healthy connections
     )
+}
+
+# Cache — locmem cache is fast and zero-cost (in-process, no Redis needed)
+# homepage_data and other expensive queries are cached here.
+CACHES = {
+    'default': {
+        'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
+        'LOCATION': 'kinahub-cache',
+        'OPTIONS': {
+            'MAX_ENTRIES': 1000,
+        },
+    }
 }
 
 

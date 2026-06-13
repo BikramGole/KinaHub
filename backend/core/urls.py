@@ -1,6 +1,7 @@
 from django.contrib import admin
 from django.urls import path, include
 from django.views.generic import RedirectView
+from django.http import JsonResponse
 from rest_framework_simplejwt.views import (
     TokenRefreshView,
 )
@@ -10,7 +11,14 @@ from django.conf.urls.static import static
 
 from products.views import curation_view
 
+
+def ping(request):
+    """Lightweight no-DB endpoint for keep-alive pings."""
+    return JsonResponse({'status': 'ok'})
+
+
 urlpatterns = [
+    path('ping/', ping, name='ping'),
     path('', RedirectView.as_view(url='/api/products/')),
     path('curation/', curation_view, name='curation_view'),
     path('admin/', admin.site.urls),
@@ -24,3 +32,4 @@ urlpatterns = [
     path('api/token/verify-2fa/', VerifyOTPView.as_view(), name='token_verify_2fa'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+
