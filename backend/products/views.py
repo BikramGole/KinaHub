@@ -198,7 +198,14 @@ class ProductViewSet(viewsets.ModelViewSet):
         )
 
         scored = []
+        # Filter out products that have the exact same name as the current product
+        current_name = product.name.lower().strip()
+        
         for candidate in candidates:
+            # Skip if it's literally the same product name (database duplicate)
+            if candidate.name.lower().strip() == current_name:
+                continue
+
             score = 0.0
             if candidate.category_id == product.category_id:
                 score += 60
@@ -221,7 +228,19 @@ class ProductViewSet(viewsets.ModelViewSet):
             scored.append((score, candidate))
 
         scored.sort(key=lambda item: (item[0], item[1].rating, item[1].created_at), reverse=True)
-        ranked = [candidate for score, candidate in scored[:12] if score > 0]
+        
+        # Deduplicate recommendations by name so we don't show 5 of the same "iPhone"
+        ranked = []
+        seen_names = {current_name}
+        for score, candidate in scored:
+            if score <= 0:
+                continue
+            name_lower = candidate.name.lower().strip()
+            if name_lower not in seen_names:
+                ranked.append(candidate)
+                seen_names.add(name_lower)
+            if len(ranked) >= 12:
+                break
 
         if len(ranked) < 6:
             fallback = (
@@ -229,12 +248,13 @@ class ProductViewSet(viewsets.ModelViewSet):
                 .exclude(pk=product.pk)
                 .select_related("store", "category", "brand")
                 .prefetch_related("images")
-                .order_by("-rating", "-created_at")[:12]
+                .order_by("-rating", "-created_at")[:24] # Fetch more to account for duplicates
             )
-            existing_ids = {item.pk for item in ranked}
             for candidate in fallback:
-                if candidate.pk not in existing_ids:
+                name_lower = candidate.name.lower().strip()
+                if name_lower not in seen_names:
                     ranked.append(candidate)
+                    seen_names.add(name_lower)
                 if len(ranked) >= 12:
                     break
 
