@@ -475,8 +475,9 @@ class AiChatView(APIView):
         if not api_key:
             return Response({"error": "OPENROUTER_API_KEY not configured on server"}, status=501)
 
-        model = request.data.get("model", "google/gemma-2-9b-it:free")
+        model = request.data.get("model", "meta-llama/llama-3.3-70b-instruct:free")
         
+
         try:
             response = requests.post(
                 "https://openrouter.ai/api/v1/chat/completions",
@@ -496,6 +497,12 @@ class AiChatView(APIView):
             response.raise_for_status()
             data = response.json()
             return Response(data)
+        except requests.exceptions.HTTPError as e:
+            try:
+                error_data = response.json()
+            except Exception:
+                error_data = {"error": str(e)}
+            return Response(error_data, status=response.status_code)
         except Exception as e:
             return Response({"error": str(e)}, status=500)
 
