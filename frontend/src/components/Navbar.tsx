@@ -284,60 +284,87 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* ── Mobile hamburger drawer ── */}
+        {/* ── Mobile hamburger drawer (Off-canvas) ── */}
         {menuOpen && (
-          <div className="border-t border-border pb-4 pt-3 md:hidden">
-            {/* Nav links */}
-            <div className="space-y-0.5">
-              <Link onClick={closeMenu} to="/" className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold text-primary hover:bg-muted transition-colors">
-                {t('nav.home', { defaultValue: 'Home' })}
-              </Link>
-              <Link onClick={closeMenu} to="/products" className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold text-primary hover:bg-muted transition-colors">
-                {t('nav.products', { defaultValue: 'Products' })}
-              </Link>
-              <Link onClick={closeMenu} to="/ai" className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold text-primary hover:bg-muted transition-colors">
-                <Sparkles className="h-4 w-4 text-accent" />
-                {t('nav.ai', { defaultValue: 'AI' })}
-              </Link>
-              <Link onClick={closeMenu} to="/cart" className="flex items-center justify-between rounded-lg px-3 py-3 text-sm font-semibold text-primary hover:bg-muted transition-colors">
-                <span className="flex items-center gap-3">
-                  <ShoppingBag className="h-4 w-4" />
-                  {t('nav.cart', { defaultValue: 'Cart' })}
-                </span>
-                {totalCount > 0 && (
-                  <span className="rounded-full bg-accent px-2 py-0.5 text-[11px] font-bold text-background">
-                    {totalCount}
-                  </span>
-                )}
-              </Link>
-              <Link onClick={closeMenu} to={user ? '/dashboard' : '/login'} className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold text-primary hover:bg-muted transition-colors">
-                <User className="h-4 w-4" />
-                {user ? t('nav.dashboard', { defaultValue: 'Dashboard' }) : t('nav.login', { defaultValue: 'Login' })}
-              </Link>
-              {!user && (
-                <Link onClick={closeMenu} to="/register" className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-semibold text-primary hover:bg-muted transition-colors">
-                  {t('nav.register', { defaultValue: 'Register' })}
-                </Link>
-              )}
-            </div>
-
-            {/* Divider */}
-            <div className="my-3 h-px bg-border" />
-
-            {/* Settings row: theme + language */}
-            <div className="flex items-center justify-between px-3">
-              <span className="text-xs font-semibold uppercase tracking-wide text-secondary">
-                {t('nav.settings', { defaultValue: 'Settings' })}
-              </span>
-              <div className="flex items-center gap-3">
+          <div className="fixed inset-0 z-[100] md:hidden">
+            {/* Backdrop overlay */}
+            <div 
+              className="absolute inset-0 bg-background/80 backdrop-blur-sm transition-opacity"
+              onClick={closeMenu}
+            />
+            
+            {/* Slide-out panel */}
+            <div className="absolute inset-y-0 right-0 w-3/4 max-w-sm border-l border-border bg-surface shadow-2xl flex flex-col animate-in slide-in-from-right duration-200">
+              
+              <div className="flex items-center justify-between border-b border-border p-4">
+                <span className="text-lg font-bold text-primary">Menu</span>
                 <button
-                  onClick={toggleLanguage}
-                  className="rounded-md border border-border px-3 py-1.5 text-xs font-bold text-secondary hover:border-accent hover:text-primary transition-colors"
+                  type="button"
+                  onClick={closeMenu}
+                  className="flex h-10 w-10 items-center justify-center rounded-md text-secondary hover:bg-muted hover:text-primary transition-colors"
+                  aria-label={t('nav.closeMenu', { defaultValue: 'Close menu' })}
                 >
-                  {locale === 'en' ? 'EN | NP' : 'NP | EN'}
+                  <X className="h-5 w-5" />
                 </button>
-                <ThemeToggle />
               </div>
+
+              <div className="flex-1 overflow-y-auto p-4">
+                {/* Nav links */}
+                <div className="space-y-1">
+                  <Link onClick={closeMenu} to="/" className="flex items-center gap-3 rounded-xl px-4 py-3.5 text-base font-semibold text-primary hover:bg-muted transition-colors">
+                    {t('nav.home', { defaultValue: 'Home' })}
+                  </Link>
+                  <Link onClick={closeMenu} to="/products" className="flex items-center gap-3 rounded-xl px-4 py-3.5 text-base font-semibold text-primary hover:bg-muted transition-colors">
+                    {t('nav.products', { defaultValue: 'Products' })}
+                  </Link>
+                  <Link onClick={closeMenu} to="/ai" className="flex items-center gap-3 rounded-xl px-4 py-3.5 text-base font-semibold text-primary hover:bg-muted transition-colors">
+                    <Sparkles className="h-5 w-5 text-accent" />
+                    {t('nav.ai', { defaultValue: 'AI Assistant' })}
+                  </Link>
+                  <Link onClick={closeMenu} to="/cart" className="flex items-center justify-between rounded-xl px-4 py-3.5 text-base font-semibold text-primary hover:bg-muted transition-colors">
+                    <span className="flex items-center gap-3">
+                      <ShoppingBag className="h-5 w-5" />
+                      {t('nav.cart', { defaultValue: 'Cart' })}
+                    </span>
+                    {totalCount > 0 && (
+                      <span className="rounded-full bg-accent px-2.5 py-0.5 text-xs font-bold text-background">
+                        {totalCount}
+                      </span>
+                    )}
+                  </Link>
+                </div>
+
+                <div className="my-4 h-px bg-border" />
+
+                <div className="space-y-1">
+                  <Link onClick={closeMenu} to={user ? '/dashboard' : '/login'} className="flex items-center gap-3 rounded-xl px-4 py-3.5 text-base font-semibold text-primary hover:bg-muted transition-colors">
+                    <User className="h-5 w-5" />
+                    {user ? t('nav.dashboard', { defaultValue: 'Dashboard' }) : t('nav.login', { defaultValue: 'Login' })}
+                  </Link>
+                  {!user && (
+                    <Link onClick={closeMenu} to="/register" className="flex items-center gap-3 rounded-xl px-4 py-3.5 text-base font-semibold text-primary hover:bg-muted transition-colors">
+                      {t('nav.register', { defaultValue: 'Register' })}
+                    </Link>
+                  )}
+                </div>
+              </div>
+
+              {/* Bottom Settings Row */}
+              <div className="border-t border-border bg-muted/30 p-4">
+                <span className="mb-3 block text-xs font-semibold uppercase tracking-wider text-secondary">
+                  {t('nav.settings', { defaultValue: 'Preferences' })}
+                </span>
+                <div className="flex items-center gap-3">
+                  <button
+                    onClick={toggleLanguage}
+                    className="flex-1 rounded-xl border border-border bg-background px-4 py-2.5 text-sm font-bold text-secondary hover:border-accent hover:text-primary transition-colors"
+                  >
+                    {locale === 'en' ? 'Switch to Nepali' : 'Switch to English'}
+                  </button>
+                  <ThemeToggle />
+                </div>
+              </div>
+
             </div>
           </div>
         )}
