@@ -124,18 +124,18 @@ function SearchBar({ mobile = false, onSearch }: { mobile?: boolean; onSearch?: 
 
   if (mobile) {
     return (
-      <div ref={containerRef} className="pb-2 md:hidden">
+      <div ref={containerRef} className="flex w-full justify-end md:hidden">
         {!mobileExpanded ? (
           <button
             type="button"
             onClick={() => setMobileExpanded(true)}
-            className="flex h-10 w-10 items-center justify-center rounded-md border border-border text-secondary hover:text-primary btn-press-effect"
+            className="flex h-11 w-11 items-center justify-center rounded-md border border-border text-secondary hover:text-primary btn-press-effect"
             aria-label={t('nav.searchProducts', { defaultValue: 'Search products' })}
           >
-            <Search className="h-5 w-5 icon-hover-effect" />
+            <Search className="h-5 w-5" />
           </button>
         ) : (
-          <div className="relative">
+          <div className="relative w-full">
             <form onSubmit={submitSearch}>
               <div className="flex items-center gap-2 rounded-md border border-border bg-background px-3">
                 <Search className="h-4 w-4 shrink-0 text-secondary" />
@@ -147,7 +147,7 @@ function SearchBar({ mobile = false, onSearch }: { mobile?: boolean; onSearch?: 
                     if (suggestions.length > 0) setIsOpen(true);
                   }}
                   onKeyDown={handleInputKeyDown}
-                  className="h-10 min-w-0 flex-1 bg-transparent text-base outline-none"
+                  className="h-11 min-w-0 flex-1 bg-transparent text-base outline-none"
                   placeholder={t('nav.searchProducts', { defaultValue: 'Search products' })}
                   autoFocus
                 />
