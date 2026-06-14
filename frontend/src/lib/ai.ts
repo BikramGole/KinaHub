@@ -237,12 +237,9 @@ export function aiChatReply(message: string, items: CartItem[]): string | null {
   return null;
 }
 
-// Ordered by preference — will try each until one succeeds
+// Uses OpenRouter's free auto-router to pick whatever free model is available
 const FREE_MODELS = [
-  'meta-llama/llama-3.3-70b-instruct:free',
-  'google/gemma-4-31b-it:free',
-  'qwen/qwen3-coder:free',
-  'openai/gpt-oss-20b:free',
+  'openrouter/free',
 ];
 
 export async function askOpenRouter(

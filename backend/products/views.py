@@ -475,8 +475,9 @@ class AiChatView(APIView):
         if not api_key:
             return Response({"error": "OPENROUTER_API_KEY not configured on server"}, status=501)
 
-        model = request.data.get("model", "meta-llama/llama-3.3-70b-instruct:free")
+        model = request.data.get("model", "openrouter/free")
         
+
 
         try:
             response = requests.post(
