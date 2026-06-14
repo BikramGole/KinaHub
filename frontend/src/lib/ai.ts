@@ -239,9 +239,9 @@ export function aiChatReply(message: string, items: CartItem[]): string | null {
 
 // Ordered by preference — will try each until one succeeds
 const FREE_MODELS = [
-  'google/gemini-2.5-flash:free',
-  'meta-llama/llama-3-8b-instruct:free',
-  'google/gemma-2-9b-it:free',
+  'meta-llama/llama-3.3-70b-instruct:free',
+  'google/gemma-4-31b-it:free',
+  'qwen/qwen3-coder:free',
   'openai/gpt-oss-20b:free',
 ];
 
