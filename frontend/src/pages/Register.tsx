@@ -1,11 +1,24 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import type { FormEvent } from 'react';
 import { motion } from 'framer-motion';
 import { Store, Mail, Lock, User, ArrowRight, Loader2, X } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
+import { useGoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
 import GoogleAuthButton from '../components/GoogleAuthButton';
+import { HAS_GOOGLE_OAUTH } from '../lib/googleAuth';
 import { useTranslation } from '../i18n/LocaleContext';
+
+function GoogleIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 48 48" aria-hidden="true">
+      <path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z" />
+      <path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z" />
+      <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
+      <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
+    </svg>
+  );
+}
 
 export default function Register() {
   const navigate = useNavigate();
@@ -19,11 +32,29 @@ export default function Register() {
   const [userId, setUserId] = useState<number | null>(null);
   const [requires2FA, setRequires2FA] = useState(false);
   const [googleSellerModalOpen, setGoogleSellerModalOpen] = useState(false);
-  const [googleSellerIsDemo, setGoogleSellerIsDemo] = useState(false);
   const [googleSellerBusinessName, setGoogleSellerBusinessName] = useState('');
   const [googleSellerCode, setGoogleSellerCode] = useState('');
   const [error, setError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const businessInfoRef = useRef({ businessName: '', sellerCode: '' });
+
+  const sellerGoogleLogin = useGoogleLogin({
+    flow: 'implicit',
+    onSuccess: async (tokenResponse) => {
+      const { businessName, sellerCode } = businessInfoRef.current;
+      setIsSubmitting(true);
+      setError('');
+      try {
+        await loginWithGoogle(tokenResponse.access_token, 'seller', businessName, sellerCode);
+        navigate('/seller');
+      } catch (err: any) {
+        setError(err.message || 'Google sign-up failed');
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+  });
 
   async function handleGoogleSuccess(accessToken: string, businessName?: string, sellerCode?: string) {
     setIsSubmitting(true);
@@ -43,30 +74,20 @@ export default function Register() {
     }
   }
 
-  async function handleDemoGoogleClick() {
+  function handleGoogleClick(accessToken?: string) {
     if (role === 'seller') {
       setGoogleSellerModalOpen(true);
       return;
     }
-    await handleGoogleSuccess('__local_demo__');
-  }
-
-  function handleGoogleClick() {
-    if (role === 'seller') {
-      setGoogleSellerIsDemo(false);
-      setGoogleSellerModalOpen(true);
-      return;
-    }
-    handleGoogleSuccess('');
+    handleGoogleSuccess(accessToken || '');
   }
 
   function handleDemoClick() {
     if (role === 'seller') {
-      setGoogleSellerIsDemo(true);
       setGoogleSellerModalOpen(true);
       return;
     }
-    handleDemoGoogleClick();
+    handleGoogleSuccess('__local_demo__');
   }
 
   async function confirmGoogleSellerBusiness() {
@@ -82,23 +103,8 @@ export default function Register() {
     }
 
     setGoogleSellerModalOpen(false);
-    
-    setIsSubmitting(true);
-    setError('');
-    try {
-      const accessToken = googleSellerIsDemo ? '__local_demo__' : '';
-      const user = await loginWithGoogle(
-        accessToken, 
-        'seller', 
-        nextBusinessName,
-        nextSellerCode
-      );
-      navigate(user.effective_role === 'seller' ? '/seller' : '/dashboard');
-    } catch (err: any) {
-      setError(err.message || 'Google sign-up failed');
-    } finally {
-      setIsSubmitting(false);
-    }
+    businessInfoRef.current = { businessName: nextBusinessName, sellerCode: nextSellerCode };
+    sellerGoogleLogin();
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
@@ -258,14 +264,26 @@ export default function Register() {
               <div className="flex-1 h-px bg-border"></div>
             </div>
 
-            <GoogleAuthButton
-              label="Continue with Google"
-              demoLabel="Continue with demo account"
-              disabled={isSubmitting}
-              onGoogleToken={handleGoogleClick}
-              onDemoClick={handleDemoClick}
-              className="w-full mt-4 flex items-center justify-center gap-3 bg-background border border-border rounded-xl py-3.5 hover:bg-card transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
-            />
+            {role === 'seller' && HAS_GOOGLE_OAUTH ? (
+              <button
+                type="button"
+                onClick={() => setGoogleSellerModalOpen(true)}
+                disabled={isSubmitting}
+                className="w-full mt-4 flex items-center justify-center gap-3 bg-background border border-border rounded-xl py-3.5 hover:bg-card transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+              >
+                <GoogleIcon />
+                <span className="font-medium text-secondary">Continue with Google</span>
+              </button>
+            ) : (
+              <GoogleAuthButton
+                label="Continue with Google"
+                demoLabel="Continue with demo account"
+                disabled={isSubmitting}
+                onGoogleToken={handleGoogleClick}
+                onDemoClick={handleDemoClick}
+                className="w-full mt-4 flex items-center justify-center gap-3 bg-background border border-border rounded-xl py-3.5 hover:bg-card transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+              />
+            )}
           </>
         )}
 

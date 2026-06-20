@@ -29,10 +29,14 @@ export default function Login() {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   async function handleGoogleSuccess(accessToken: string) {
+    if (isSellerLogin && !sellerCode) {
+      setError('Please enter your invitation code for seller login.');
+      return;
+    }
     setIsSubmitting(true);
     setError('');
     try {
-      const user = await loginWithGoogle(accessToken, undefined, undefined, isSellerLogin ? sellerCode : undefined);
+      const user = await loginWithGoogle(accessToken, isSellerLogin ? 'seller' : undefined, undefined, isSellerLogin ? sellerCode : undefined);
       const from = (location.state as { from?: string } | null)?.from;
       navigate(from || (user.effective_role === 'seller' ? '/seller' : user.effective_role === 'admin' ? '/admin' : '/dashboard'));
     } catch (err: any) {
