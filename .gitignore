@@ -1,5 +1,5 @@
 # ──────────────────────────────────────────
-#  Dukan .gitignore
+#  KinaHub .gitignore
 # ──────────────────────────────────────────
 
 # Local environment & secrets (NEVER commit these)
@@ -23,15 +23,6 @@ __pycache__/
 # env/
 # .venv/
 # backend/venv/
-
-# Django
-*.log
-local_settings.py
-db.sqlite3
-db.sqlite3-journal
-backend/media/
-backend/staticfiles/
-backend/static_root/
 
 # Migrations (optional — remove if you want to commit them)
 # backend/**/migrations/
