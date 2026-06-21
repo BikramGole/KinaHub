@@ -3,7 +3,7 @@ services:
   - type: web
     name: kinahub-backend
     runtime: python
-    buildCommand: pip install -r requirements.txt && python manage.py collectstatic --no-input
+    buildCommand: pip install -r requirements.txt && python manage.py migrate --no-input && python manage.py collectstatic --no-input
     # warmup_cache pre-populates the locmem cache with homepage data
     # so the very first request after a cold start is served from cache.
     startCommand: python manage.py warmup_cache; gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 90 --preload --keep-alive 5
