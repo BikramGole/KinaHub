@@ -106,3 +106,46 @@ textarea {
 .icon-hover-effect:active {
   transform: scale(0.9);
 }
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fade-in-up {
+  from { opacity: 0; transform: translateY(16px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-down {
+  from { opacity: 0; transform: translateY(-12px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scale-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes toast-in {
+  from { opacity: 0; transform: translateX(100%); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes toast-out {
+  from { opacity: 1; transform: translateX(0); }
+  to { opacity: 0; transform: translateX(100%); }
+}
+
+.anim-fade-in { animation: fade-in 0.3s ease-out; }
+.anim-fade-in-up { animation: fade-in-up 0.35s ease-out; }
+.anim-slide-up { animation: slide-up 0.3s ease-out; }
+.anim-slide-down { animation: slide-down 0.25s ease-out; }
+.anim-scale-in { animation: scale-in 0.2s ease-out; }
+.anim-toast-in { animation: toast-in 0.3s ease-out; }
+.anim-toast-out { animation: toast-out 0.25s ease-in forwards; }

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Send, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+
 import { useCart } from '../context/CartContext';
 import { useTranslation } from '../i18n/LocaleContext';
 import { askOpenRouter, cartAiOverview } from '../lib/ai';
@@ -357,37 +357,21 @@ export default function AiAssistantWidget() {
         </div>
         
         {/* Discord-style notification/status badge */}
-        <AnimatePresence>
-          {showBadge && (
-            <motion.div 
-              initial={{ scale: 0, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0, opacity: 0 }}
-              className="absolute -top-0.5 -right-0.5 z-30 h-4 w-4 rounded-full border-2 border-background bg-red-500 shadow-sm" 
-            />
-          )}
-        </AnimatePresence>
+        {showBadge && (
+          <div className="absolute -top-0.5 -right-0.5 z-30 h-4 w-4 rounded-full border-2 border-background bg-red-500 shadow-sm" />
+        )}
       </button>
 
-      <AnimatePresence>
-        {open && (
-          <>
-            <motion.button
-              type="button"
-              aria-label="Close AI assistant"
-              className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[1px] sm:bg-transparent sm:backdrop-blur-0"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              onClick={() => setOpen(false)}
-            />
+      {open && (
+        <>
+          <button
+            type="button"
+            aria-label="Close AI assistant"
+            className="fixed inset-0 z-40 bg-black/30 backdrop-blur-[1px] sm:bg-transparent sm:backdrop-blur-0"
+            onClick={() => setOpen(false)}
+          />
 
-            <motion.div
-              initial={{ opacity: 0, y: 36 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: 36 }}
-              transition={{ duration: 0.2, ease: 'easeOut' }}
-              className="fixed inset-x-0 bottom-16 z-50 flex max-h-[calc(100svh-8rem)] flex-col overflow-hidden rounded-t-3xl border border-border bg-surface shadow-2xl shadow-black/35 sm:inset-auto sm:bottom-24 sm:right-6 sm:left-auto sm:block sm:w-[420px] sm:rounded-lg sm:max-h-none"
+          <div className="anim-slide-up fixed inset-x-0 bottom-16 z-50 flex max-h-[calc(100svh-8rem)] flex-col overflow-hidden rounded-t-3xl border border-border bg-surface shadow-2xl shadow-black/35 sm:inset-auto sm:bottom-24 sm:right-6 sm:left-auto sm:block sm:w-[420px] sm:rounded-lg sm:max-h-none"
             >
               <div className="flex justify-center pt-2 sm:hidden">
                 <span className="h-1.5 w-12 rounded-full bg-border" />
@@ -486,10 +470,9 @@ export default function AiAssistantWidget() {
                   </form>
                 </div>
               </div>
-            </motion.div>
-          </>
-        )}
-      </AnimatePresence>
+          </div>
+        </>
+      )}
     </>
   );
 }

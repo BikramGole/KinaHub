@@ -1,10 +1,10 @@
 import { useCart } from '../context/CartContext';
 import { Link, useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+
 import { Trash2, ShoppingBag, ArrowRight, Minus, Plus, Box } from 'lucide-react';
 import { price, productImage, formatPrice } from '../lib/products';
 import { useTranslation } from '../i18n/LocaleContext';
-import { categoryName } from '../lib/categoryText';
+
 import AiInsightPanel from '../components/AiInsightPanel';
 import { cartAiOverview } from '../lib/ai';
 
@@ -51,19 +51,13 @@ export default function Cart() {
       <div className="flex flex-col gap-8 lg:flex-row lg:gap-12">
         {/* Cart Items */}
         <div className="space-y-4 lg:w-2/3 lg:space-y-6">
-          <AnimatePresence initial={false}>
-            {items.map(({ product, quantity }) => {
+          {items.map(({ product, quantity }) => {
               const image = productImage(product);
               const itemTotal = price(product) * quantity;
 
               return (
-                <motion.div
+                <div
                   key={product.id}
-                  layout
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: 20, height: 0, marginBottom: 0 }}
-                  transition={{ duration: 0.25 }}
                   className="group relative flex flex-col gap-4 overflow-hidden rounded-2xl border border-border bg-surface p-4 sm:p-5 md:flex-row md:gap-6 lg:p-6"
                 >
                   {/* Product Image */}
@@ -83,7 +77,7 @@ export default function Cart() {
                           {product.brand?.name || 'KinaHub'}
                         </p>
                         <h3 className="text-lg font-semibold sm:text-xl">{product.name}</h3>
-                        <p className="text-sm text-secondary">{product.category ? categoryName(t, product.category.slug, product.category.name) : ''}</p>
+                        <p className="text-sm text-secondary">{product.category ? t(`categories.${product.category.slug}.name`, { defaultValue: product.category.name }) : ''}</p>
                       </Link>
                       <button
                         type="button"
@@ -115,10 +109,9 @@ export default function Cart() {
                       <span className="text-base font-bold sm:text-lg">{formatPrice(itemTotal)}</span>
                     </div>
                   </div>
-                </motion.div>
+                </div>
               );
             })}
-          </AnimatePresence>
         </div>
 
         {/* Order Summary */}

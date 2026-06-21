@@ -2,12 +2,12 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { ArrowUpDown, Filter, Search, Shuffle, X } from 'lucide-react';
-import { AnimatePresence, motion } from 'framer-motion';
+
 import ProductCard from '../components/ProductCard';
 import ProductCardSkeleton from '../components/ProductCardSkeleton';
 import { API } from '../lib/products';
 import { getCategoryIcon } from '../lib/categoryIcons';
-import { categoryDescription, categoryName } from '../lib/categoryText';
+
 import type { CategoryType, ProductType } from '../lib/products';
 import { useTranslation } from '../i18n/LocaleContext';
 import Seo from '../components/Seo';
@@ -35,7 +35,7 @@ export default function Products() {
   const categoryTitle = useMemo(() => {
     if (!categoryFilter) return t('products.allProducts', { defaultValue: 'All products' });
     const category = categories.find((item) => item.slug === categoryFilter);
-    return category ? categoryName(t, category.slug, category.name) : t('products.title', { defaultValue: 'Products' });
+    return category ? t(`categories.${category.slug}.name`, { defaultValue: category.name }) : t('products.title', { defaultValue: 'Products' });
   }, [categories, categoryFilter, t]);
 
   const currentSortLabel = useMemo(
@@ -194,14 +194,8 @@ export default function Products() {
         </div>
       </div>
 
-      <AnimatePresence initial={false}>
-        {filtersOpen && (
-          <motion.section
-            initial={{ opacity: 0, y: -8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -8 }}
-            className="mb-6 rounded-lg border border-border bg-surface p-4 shadow-sm"
-          >
+      {filtersOpen && (
+        <section className="anim-slide-down mb-6 rounded-lg border border-border bg-surface p-4 shadow-sm">
             <div className="mb-4 flex items-center justify-between gap-4">
               <div>
                 <h2 className="flex items-center gap-2 text-lg font-bold">
@@ -255,9 +249,9 @@ export default function Products() {
                           <Icon className="h-4 w-4" aria-hidden="true" />
                         </span>
                         <span className="min-w-0">
-                          <span className="block text-sm font-semibold">{categoryName(t, category.slug, category.name)}</span>
+                          <span className="block text-sm font-semibold">{t(`categories.${category.slug}.name`, { defaultValue: category.name })}</span>
                           <span className={`mt-0.5 line-clamp-2 text-xs ${active ? 'text-background/80' : 'text-secondary'}`}>
-                            {categoryDescription(t, category.slug, category.description || '')}
+                            {t(`categories.${category.slug}.description`, { defaultValue: category.description || '' })}
                           </span>
                         </span>
                       </button>
@@ -348,9 +342,8 @@ export default function Products() {
                 </div>
               </div>
             </div>
-          </motion.section>
-        )}
-      </AnimatePresence>
+        </section>
+      )}
 
       <section>
           <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-sm text-secondary">

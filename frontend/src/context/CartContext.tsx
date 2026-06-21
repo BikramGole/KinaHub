@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef, Component } from 'react';
 import type { ReactNode } from 'react';
-import { AnimatePresence, motion } from 'framer-motion';
+
 import { Check, RotateCcw, X, AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { ProductType } from '../lib/products';
@@ -205,49 +205,41 @@ export function CartProvider({ children }: { children: ReactNode }) {
     >
       {children}
       <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 sm:bottom-6 sm:right-6">
-        <AnimatePresence>
-          {toast && toast.product && (
-            <ToastErrorBoundary fallback={<div className="fixed bottom-4 right-4 z-50" />}>
-              <motion.div
-                key={toast.id}
-                initial={{ opacity: 0, y: 20, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, scale: 0.95 }}
-                className="flex w-full max-w-sm items-center gap-3 rounded-lg border border-border bg-background p-3 shadow-lg"
-              >
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-accent/10">
-                  <Check className="h-5 w-5 text-accent" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-primary">Added to cart</p>
-                  <p className="truncate text-xs text-secondary">{toast.product.name || 'Product'}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <button
-                    onClick={() => {
-                      if (toast.product?.id) removeFromCart(toast.product.id);
-                      setToast(null);
-                    }}
-                    className="flex items-center gap-1 rounded border border-border bg-surface px-2 py-1 text-xs font-semibold text-secondary transition-colors hover:border-accent hover:text-accent"
-                  >
-                    <RotateCcw className="h-3 w-3" />
-                    Undo
-                  </button>
-                  <Link
-                    to="/cart"
-                    onClick={() => setToast(null)}
-                    className="rounded bg-accent px-2 py-1 text-xs font-semibold text-accent-foreground transition-colors hover:bg-accent/90"
-                  >
-                    View
-                  </Link>
-                  <button onClick={() => setToast(null)} className="text-secondary hover:text-primary">
-                    <X className="h-4 w-4" />
-                  </button>
-                </div>
-              </motion.div>
-            </ToastErrorBoundary>
-          )}
-        </AnimatePresence>
+        {toast && toast.product && (
+          <ToastErrorBoundary fallback={<div className="fixed bottom-4 right-4 z-50" />}>
+            <div className="anim-slide-up flex w-full max-w-sm items-center gap-3 rounded-lg border border-border bg-background p-3 shadow-lg">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-accent/10">
+                <Check className="h-5 w-5 text-accent" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-semibold text-primary">Added to cart</p>
+                <p className="truncate text-xs text-secondary">{toast.product.name || 'Product'}</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => {
+                    if (toast.product?.id) removeFromCart(toast.product.id);
+                    setToast(null);
+                  }}
+                  className="flex items-center gap-1 rounded border border-border bg-surface px-2 py-1 text-xs font-semibold text-secondary transition-colors hover:border-accent hover:text-accent"
+                >
+                  <RotateCcw className="h-3 w-3" />
+                  Undo
+                </button>
+                <Link
+                  to="/cart"
+                  onClick={() => setToast(null)}
+                  className="rounded bg-accent px-2 py-1 text-xs font-semibold text-accent-foreground transition-colors hover:bg-accent/90"
+                >
+                  View
+                </Link>
+                <button onClick={() => setToast(null)} className="text-secondary hover:text-primary">
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </ToastErrorBoundary>
+        )}
       </div>
     </CartContext.Provider>
   );

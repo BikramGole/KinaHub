@@ -3,7 +3,7 @@ import { ShoppingBag, Star, Store } from 'lucide-react';
 import { formatPrice, price, productImage } from '../lib/products';
 import type { ProductType } from '../lib/products';
 import { useTranslation } from '../i18n/LocaleContext';
-import { categoryName } from '../lib/categoryText';
+
 
 interface ProductCardProps {
   product: ProductType;
@@ -46,7 +46,7 @@ export default function ProductCard({ product, compact = false }: ProductCardPro
 
         <div className={`${compact ? 'p-3' : 'p-3 sm:p-4'} flex min-h-[132px] flex-col sm:min-h-[168px]`}>
           <div className="mb-2 flex items-center justify-between gap-3 text-xs text-secondary">
-            <span className="truncate uppercase tracking-wide">{categoryName(t, product.category.slug, product.category.name)}</span>
+            <span className="truncate uppercase tracking-wide">{t(`categories.${product.category.slug}.name`, { defaultValue: product.category.name })}</span>
             <span className="flex shrink-0 items-center gap-1 transition-transform duration-300 hover:scale-110">
               <Star className="h-3.5 w-3.5 fill-warning text-warning" />
               {Number(product.rating).toFixed(1)}

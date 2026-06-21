@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import { API, formatPrice } from '../lib/products';
 import type { CategoryType, ProductType } from '../lib/products';
 import { useTranslation } from '../i18n/LocaleContext';
-import { categoryName } from '../lib/categoryText';
+
 
 interface ProductFormState {
   name: string;
@@ -142,7 +142,7 @@ export default function SellerProducts() {
           >
             <option value="">{t('seller.category', { defaultValue: 'Category' })}</option>
             {categories.map((cat) => (
-              <option key={cat.id} value={cat.id}>{categoryName(t, cat.slug, cat.name)}</option>
+              <option key={cat.id} value={cat.id}>{t(`categories.${cat.slug}.name`, { defaultValue: cat.name })}</option>
             ))}
           </select>
           <input
@@ -297,7 +297,7 @@ export default function SellerProducts() {
                       )}
                     </div>
                   </td>
-                  <td className="py-3 pr-4">{categoryName(t, product.category.slug, product.category.name)}</td>
+                  <td className="py-3 pr-4">{t(`categories.${product.category.slug}.name`, { defaultValue: product.category.name })}</td>
                   <td className="py-3 pr-4">{formatPrice(product.discount_price || product.price)}</td>
                   <td className="py-3 pr-4">{product.stock}</td>
                   <td className="py-3">

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
-import { motion } from 'framer-motion';
+
 import { Store, Mail, Lock, ArrowRight, Loader2 } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
@@ -137,12 +137,7 @@ export default function Login() {
 
   return (
     <div className="min-h-screen flex items-start justify-center px-4 py-6 relative overflow-hidden bg-background sm:items-center sm:py-10">
-      <motion.div 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="relative z-10 w-full max-w-md p-6 bg-surface border border-border rounded-lg shadow-xl sm:p-8"
-      >
+      <div className="anim-fade-in-up relative z-10 w-full max-w-md p-6 bg-surface border border-border rounded-lg shadow-xl sm:p-8">
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center justify-center p-3 rounded-lg bg-accent text-background mb-6">
              <Store className="w-7 h-7" />
@@ -290,7 +285,7 @@ export default function Login() {
 
         {forgotOpen && (
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6 backdrop-blur-sm">
-            <motion.div initial={{ opacity: 0, scale: 0.96, y: 12 }} animate={{ opacity: 1, scale: 1, y: 0 }} className="w-full max-w-md rounded-lg border border-border bg-surface p-5 shadow-2xl">
+<div className="anim-scale-in w-full max-w-md rounded-lg border border-border bg-surface p-5 shadow-2xl">
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h2 className="text-lg font-bold">Reset password</h2>
@@ -349,10 +344,11 @@ export default function Login() {
                   <button type="button" onClick={() => void confirmReset()} className="rounded-xl bg-accent px-4 py-3 text-sm font-semibold text-background hover:bg-orange-600" disabled={isSubmitting}>Reset password</button>
                 )}
               </div>
-            </motion.div>
+            </div>
+
           </div>
         )}
-      </motion.div>
+      </div>
     </div>
   );
 }
