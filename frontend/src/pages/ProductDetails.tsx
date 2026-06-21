@@ -2,12 +2,12 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Camera, Check, Film, Mail, MessageCircle, Minus, Plus, ShieldCheck, ShoppingBag, Star, Store, Truck, X } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+
 import { API, formatDate, formatPrice, price, productImage } from '../lib/products';
 import type { ProductType, ReviewType } from '../lib/products';
 import { useCart } from '../context/CartContext';
 import { useTranslation } from '../i18n/LocaleContext';
-import { categoryName } from '../lib/categoryText';
+
 import AiInsightPanel from '../components/AiInsightPanel';
 import { productAiSummary } from '../lib/ai';
 import Seo from '../components/Seo';
@@ -252,11 +252,7 @@ export default function ProductDetails() {
       </Link>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_440px] lg:gap-8">
-        <motion.div
-          initial={{ opacity: 0, y: 16 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="self-start rounded-lg border border-border bg-surface p-4 shadow-sm sm:p-5 lg:p-4 flex flex-col md:flex-row gap-4"
-        >
+        <div className="anim-fade-in self-start rounded-lg border border-border bg-surface p-4 shadow-sm sm:p-5 lg:p-4 flex flex-col md:flex-row gap-4">
           {product.images && product.images.length > 1 && (
             <div className="flex order-2 md:order-1 md:flex-col gap-2 overflow-x-auto md:overflow-y-auto md:max-h-[500px] pb-2 md:pb-0 scrollbar-thin md:w-20 shrink-0">
               {product.images.map((img) => (
@@ -277,13 +273,13 @@ export default function ProductDetails() {
               <div className="flex h-full items-center justify-center text-secondary">{t('products.noImage', { defaultValue: 'No image' })}</div>
             )}
           </div>
-        </motion.div>
+        </div>
 
         <aside className="lg:sticky lg:top-28 lg:h-fit">
           <div className="rounded-lg border border-border bg-surface p-5 shadow-sm sm:p-6">
             <div className="mb-4 flex flex-wrap items-center gap-2">
               <span className="rounded bg-accent/10 px-2 py-1 text-xs font-semibold uppercase tracking-wide text-accent">
-                {categoryName(t, product.category.slug, product.category.name)}
+                {t(`categories.${product.category.slug}.name`, { defaultValue: product.category.name })}
               </span>
               {product.tag && (
                 <span className="rounded bg-muted px-2 py-1 text-xs font-semibold text-secondary">{product.tag}</span>
@@ -365,30 +361,16 @@ export default function ProductDetails() {
               disabled={product.stock === 0}
               className="mt-4 flex w-full items-center justify-center gap-2 rounded-md bg-accent px-5 py-4 font-bold text-background transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-50"
             >
-              <AnimatePresence mode="wait" initial={false}>
-                {added ? (
-                  <motion.span
-                    key="added"
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 8 }}
-                    className="flex items-center gap-2"
-                  >
-                    <Check className="h-5 w-5" /> {t('products.addedToCart', { defaultValue: 'Added to cart!' })}
-                  </motion.span>
-                ) : (
-                  <motion.span
-                    key="add"
-                    initial={{ opacity: 0, y: -8 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    exit={{ opacity: 0, y: 8 }}
-                    className="flex items-center gap-2"
-                  >
-                    <ShoppingBag className="h-5 w-5" />
-                    {product.stock === 0 ? t('products.outOfStock', { defaultValue: 'Out of stock' }) : `${t('products.addToCart', { defaultValue: 'Add to cart' })} — ${formatPrice(subtotal)}`}
-                  </motion.span>
-                )}
-              </AnimatePresence>
+              {added ? (
+                <span className="flex items-center gap-2 anim-fade-in">
+                  <Check className="h-5 w-5" /> {t('products.addedToCart', { defaultValue: 'Added to cart!' })}
+                </span>
+              ) : (
+                <span className="flex items-center gap-2">
+                  <ShoppingBag className="h-5 w-5" />
+                  {product.stock === 0 ? t('products.outOfStock', { defaultValue: 'Out of stock' }) : `${t('products.addToCart', { defaultValue: 'Add to cart' })} — ${formatPrice(subtotal)}`}
+                </span>
+              )}
             </button>
             {added && (
               <button

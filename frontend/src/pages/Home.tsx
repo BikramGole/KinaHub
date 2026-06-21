@@ -1,13 +1,13 @@
 import { useEffect, useState, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, BadgePercent, Truck, ShieldCheck, RefreshCw, Flame, Star, Tag, Sparkles, ChevronLeft, ChevronRight, Store, Clock, TrendingUp, Zap } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+
 import ProductCard from '../components/ProductCard';
 import AiInsightPanel from '../components/AiInsightPanel';
 import { API, formatPrice, price, productImage } from '../lib/products';
 import { marketAiOverview } from '../lib/ai';
 import { getCategoryIcon } from '../lib/categoryIcons';
-import { categoryDescription, categoryName } from '../lib/categoryText';
+
 import type { CategoryType, ProductType } from '../lib/products';
 import { useTranslation } from '../i18n/LocaleContext';
 import Seo from '../components/Seo';
@@ -215,11 +215,7 @@ export default function Home() {
       {/* ── Hero ── */}
       <section className="bg-background border-b border-border">
         <div className="mx-auto grid max-w-7xl grid-cols-1 gap-6 px-4 py-6 sm:px-6 lg:grid-cols-[1.05fr_0.95fr] lg:px-8">
-          <motion.div
-            initial={{ opacity: 0, y: 18 }}
-            animate={{ opacity: 1, y: 0 }}
-            className="rounded-lg border border-border bg-surface p-5 text-primary shadow-sm sm:p-6"
-          >
+          <div className="anim-fade-in rounded-lg border border-border bg-surface p-5 text-primary shadow-sm sm:p-6">
             <div className="mb-5 flex gap-2 overflow-x-auto pb-1 sm:mb-6 sm:flex-wrap sm:overflow-visible sm:pb-0">
               {quickLinks.map((slug) => (
                 <Link
@@ -227,7 +223,7 @@ export default function Home() {
                   to={`/products?category=${slug}`}
                   className="shrink-0 rounded-full border border-border bg-muted px-3 py-1.5 text-sm font-medium text-primary transition-colors hover:border-accent hover:bg-accent hover:text-background"
                 >
-                  {categoryName(t, slug, slug)}
+                  {t(`categories.${slug}.name`, { defaultValue: slug })}
                 </Link>
               ))}
             </div>
@@ -252,17 +248,11 @@ export default function Home() {
                 {t('home.randomFeed', { defaultValue: 'Random feed' })} <RefreshCw className="h-4 w-4" />
               </Link>
             </div>
-          </motion.div>
+          </div>
 
           <div className="rounded-lg border border-border bg-surface p-4 shadow-sm">
-            <AnimatePresence mode="wait">
               {heroProduct && heroReady ? (
-                <motion.div
-                  key="hero"
-                  initial={{ opacity: 0, scale: 0.97 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.5, ease: 'easeOut' }}
-                >
+                <div className="anim-fade-in-up">
                   <Link to={`/product/${heroProduct.slug}`} className="group block">
                     <div className="aspect-[5/4] overflow-hidden rounded-md bg-muted">
                       <img
@@ -276,7 +266,7 @@ export default function Home() {
                     </div>
                     <div className="pt-4">
                       <div className="mb-2 flex items-center justify-between gap-3 text-sm">
-                        <span className="font-semibold text-accent">{heroProduct.tag || categoryName(t, heroProduct.category.slug, heroProduct.category.name)}</span>
+                        <span className="font-semibold text-accent">{heroProduct.tag || t(`categories.${heroProduct.category.slug}.name`, { defaultValue: heroProduct.category.name })}</span>
                         <span className="text-secondary">{heroProduct.stock} {t('home.leftInStock', { defaultValue: 'left' })}</span>
                       </div>
                       <h2 className="line-clamp-1 text-xl font-bold sm:text-2xl">{heroProduct.name}</h2>
@@ -293,16 +283,9 @@ export default function Home() {
                       </div>
                     </div>
                   </Link>
-                </motion.div>
+                </div>
               ) : (
-                <motion.div
-                  key="skeleton"
-                  initial={{ opacity: 0.6 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0 }}
-                  transition={{ duration: 0.3 }}
-                  className="animate-pulse"
-                >
+                <div className="animate-pulse">
                   <div className="aspect-[5/4] rounded-md bg-muted/60" />
                   <div className="pt-4 space-y-3">
                     <div className="flex justify-between">
@@ -313,9 +296,8 @@ export default function Home() {
                     <div className="h-4 w-1/2 rounded bg-muted/60" />
                     <div className="h-8 w-1/3 rounded bg-muted/60" />
                   </div>
-                </motion.div>
+                </div>
               )}
-            </AnimatePresence>
           </div>
         </div>
       </section>
@@ -400,8 +382,8 @@ export default function Home() {
             >
               <div className="mb-3 flex items-start justify-between gap-3">
                 <div>
-                  <p className="font-semibold text-primary">{categoryName(t, category.slug, category.name)}</p>
-                  <p className="mt-1 line-clamp-2 text-xs text-secondary">{categoryDescription(t, category.slug, category.description || '')}</p>
+                  <p className="font-semibold text-primary">{t(`categories.${category.slug}.name`, { defaultValue: category.name })}</p>
+                  <p className="mt-1 line-clamp-2 text-xs text-secondary">{t(`categories.${category.slug}.description`, { defaultValue: category.description || '' })}</p>
                 </div>
                 <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md border border-border bg-background text-accent">
                   {(() => {

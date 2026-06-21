@@ -1,6 +1,6 @@
 import { useState, useRef } from 'react';
 import type { FormEvent } from 'react';
-import { motion } from 'framer-motion';
+
 import { Store, Mail, Lock, User, ArrowRight, Loader2, X } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
@@ -139,12 +139,7 @@ export default function Register() {
 
   return (
     <div className="min-h-screen flex items-start justify-center px-4 py-6 relative overflow-hidden bg-background sm:items-center sm:py-10">
-      <motion.div 
-        initial={{ opacity: 0, scale: 0.95 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ duration: 0.5, ease: 'easeOut' }}
-        className="relative z-10 w-full max-w-md p-6 bg-surface border border-border rounded-lg shadow-xl sm:p-8"
-      >
+      <div className="anim-fade-in-up relative z-10 w-full max-w-md p-6 bg-surface border border-border rounded-lg shadow-xl sm:p-8">
         <div className="text-center mb-8">
           <Link to="/" className="inline-flex items-center justify-center p-3 rounded-lg bg-accent text-background mb-6">
              <Store className="w-7 h-7" />
@@ -292,7 +287,7 @@ export default function Register() {
             {t('auth.haveAccount', { defaultValue: 'Already have an account?' })} <Link to="/login" className="text-accent hover:underline ml-1">{t('auth.switchToLogin', { defaultValue: 'Login' })}</Link>
           </p>
         </div>
-      </motion.div>
+      </div>
 
       {googleSellerModalOpen && (
         <div
@@ -301,11 +296,7 @@ export default function Register() {
           aria-modal="true"
           aria-labelledby="seller-google-title"
         >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.96, y: 12 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            className="w-full max-w-md rounded-lg border border-border bg-surface p-5 shadow-2xl"
-          >
+          <div className="anim-scale-in w-full max-w-md rounded-lg border border-border bg-surface p-5 shadow-2xl">
             <div className="flex items-start justify-between gap-4">
               <div>
                 <h2 id="seller-google-title" className="text-lg font-bold">
@@ -379,7 +370,7 @@ export default function Register() {
                 Continue with Google
               </button>
             </div>
-          </motion.div>
+          </div>
         </div>
       )}
     </div>
