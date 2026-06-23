@@ -17,8 +17,20 @@ def ping(request):
     return JsonResponse({'status': 'ok'})
 
 
+from django.http import HttpResponse
+import traceback
+from django.core.management import call_command
+
+def run_seed(request):
+    try:
+        call_command('seed_spacex')
+        return HttpResponse("Success")
+    except Exception as e:
+        return HttpResponse(f"<pre>{traceback.format_exc()}</pre>")
+
 urlpatterns = [
     path('ping/', ping, name='ping'),
+    path('run-seed/', run_seed, name='run-seed'),
     path('', RedirectView.as_view(url='/api/products/')),
     path('curation/', curation_view, name='curation_view'),
     path('admin/', admin.site.urls),
