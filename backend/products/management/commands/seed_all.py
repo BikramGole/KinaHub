@@ -24,20 +24,20 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         count = Product.objects.count()
-        if count >= EXPECTED_PRODUCT_COUNT:
-            self.stdout.write(self.style.SUCCESS(f"Products exist ({count}), skipping seed"))
-            return
+        if count < EXPECTED_PRODUCT_COUNT:
+            self.stdout.write(f"Products: {count}, expected ~{EXPECTED_PRODUCT_COUNT}, running seeds...")
 
-        self.stdout.write(f"Products: {count}, expected ~{EXPECTED_PRODUCT_COUNT}, running seeds...")
+            for script in ('seed_dukan.py', 'seed_clothes.py', 'seed_groceries.py'):
+                path = os.path.join(SCRIPTS_DIR, script)
+                if os.path.exists(path):
+                    self.stdout.write(f"Running {script}...")
+                    try:
+                        _exec_script(path, script)
+                    except Exception as e:
+                        self.stderr.write(self.style.ERROR(f"{script} failed: {e}"))
+        else:
+            self.stdout.write(self.style.SUCCESS(f"Core products exist ({count}), skipping core seed"))
 
-        for script in ('seed_dukan.py', 'seed_clothes.py', 'seed_groceries.py'):
-            path = os.path.join(SCRIPTS_DIR, script)
-            if os.path.exists(path):
-                self.stdout.write(f"Running {script}...")
-                try:
-                    _exec_script(path, script)
-                except Exception as e:
-                    self.stderr.write(self.style.ERROR(f"{script} failed: {e}"))
-
+        self.stdout.write("Ensuring SpaceX store is seeded...")
         call_command('seed_spacex')
         self.stdout.write(self.style.SUCCESS(f"Seeding done. Total products: {Product.objects.count()}"))
