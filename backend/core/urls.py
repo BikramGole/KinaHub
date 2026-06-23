@@ -21,10 +21,20 @@ from django.http import HttpResponse
 import traceback
 from django.core.management import call_command
 
+from django.core.management.color import no_style
+from django.db import connection
+from django.apps import apps
+
 def run_seed(request):
     try:
+        if connection.vendor == 'postgresql':
+            sequence_sql = connection.ops.sequence_reset_sql(no_style(), apps.get_models())
+            with connection.cursor() as cursor:
+                for sql in sequence_sql:
+                    cursor.execute(sql)
+                    
         call_command('seed_spacex')
-        return HttpResponse("Success")
+        return HttpResponse("Success - Sequences reset and SpaceX seeded")
     except Exception as e:
         return HttpResponse(f"<pre>{traceback.format_exc()}</pre>")
 

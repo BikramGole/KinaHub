@@ -23,6 +23,17 @@ class Command(BaseCommand):
     help = "Seed all stores and products idempotently"
 
     def handle(self, *args, **options):
+        # Fix for Postgres sequences out of sync (prevents UniqueViolation on user creation)
+        from django.core.management.color import no_style
+        from django.db import connection
+        from django.apps import apps
+        if connection.vendor == 'postgresql':
+            self.stdout.write("Resetting database sequences...")
+            sequence_sql = connection.ops.sequence_reset_sql(no_style(), apps.get_models())
+            with connection.cursor() as cursor:
+                for sql in sequence_sql:
+                    cursor.execute(sql)
+                    
         count = Product.objects.count()
         if count < EXPECTED_PRODUCT_COUNT:
             self.stdout.write(f"Products: {count}, expected ~{EXPECTED_PRODUCT_COUNT}, running seeds...")
