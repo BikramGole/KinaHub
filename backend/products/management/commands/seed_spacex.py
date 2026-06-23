@@ -66,7 +66,7 @@ PRODUCTS = [
     {
         "name": "Starship V3",
         "category_slug": "rockets-spacecraft",
-        "price": Decimal("2000000000.00"),
+        "price": Decimal("99000000.00"),
         "stock": 2,
         "rating": Decimal("5.0"),
         "tag": "Super Heavy",
