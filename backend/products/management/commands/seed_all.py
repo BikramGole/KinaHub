@@ -33,6 +33,13 @@ class Command(BaseCommand):
             with connection.cursor() as cursor:
                 for sql in sequence_sql:
                     cursor.execute(sql)
+                # Fallback explicit sequence reset for all models with an 'id' column
+                for model in apps.get_models():
+                    if hasattr(model, '_meta') and model._meta.db_table:
+                        try:
+                            cursor.execute(f"SELECT setval(pg_get_serial_sequence('{model._meta.db_table}', 'id'), coalesce(max(id), 1), max(id) IS NOT null) FROM {model._meta.db_table};")
+                        except Exception:
+                            pass # Table might not have an id column or doesn't use sequence
                     
         count = Product.objects.count()
         if count < EXPECTED_PRODUCT_COUNT:

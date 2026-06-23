@@ -27,14 +27,22 @@ from django.apps import apps
 
 def run_seed(request):
     try:
+        sql_executed = []
         if connection.vendor == 'postgresql':
-            sequence_sql = connection.ops.sequence_reset_sql(no_style(), apps.get_models())
+            from users.models import User
+            sequence_sql = connection.ops.sequence_reset_sql(no_style(), [User])
             with connection.cursor() as cursor:
                 for sql in sequence_sql:
                     cursor.execute(sql)
+                    sql_executed.append(sql)
+                    
+            # Fallback manual reset just in case
+            with connection.cursor() as cursor:
+                cursor.execute("SELECT setval(pg_get_serial_sequence('users_user', 'id'), coalesce(max(id), 1), max(id) IS NOT null) FROM users_user;")
+                sql_executed.append("Manual setval executed")
                     
         call_command('seed_spacex')
-        return HttpResponse("Success - Sequences reset and SpaceX seeded")
+        return HttpResponse(f"Success - Sequences reset and SpaceX seeded. SQL: {sql_executed}")
     except Exception as e:
         return HttpResponse(f"<pre>{traceback.format_exc()}</pre>")
 
