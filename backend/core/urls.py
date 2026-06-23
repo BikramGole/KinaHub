@@ -41,8 +41,9 @@ def run_seed(request):
                 cursor.execute("SELECT setval(pg_get_serial_sequence('users_user', 'id'), coalesce(max(id), 1), max(id) IS NOT null) FROM users_user;")
                 sql_executed.append("Manual setval executed")
                     
-        call_command('seed_spacex')
-        return HttpResponse(f"Success - Sequences reset and SpaceX seeded. SQL: {sql_executed}")
+        cmd = request.GET.get('cmd', 'seed_spacex')
+        call_command(cmd)
+        return HttpResponse(f"Success - Sequences reset and {cmd} executed. SQL: {sql_executed}")
     except Exception as e:
         return HttpResponse(f"<pre>{traceback.format_exc()}</pre>")
 
