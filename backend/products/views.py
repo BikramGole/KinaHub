@@ -423,28 +423,30 @@ def curation_view(request):
             product = Product.objects.get(id=product_id)
             
             if new_image:
-                import os
-                # Ensure target directory exists in the frontend public folder
-                base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__))) # backend dir
-                project_root = os.path.dirname(base_dir) # kina_ai dir
-                target_dir = os.path.join(project_root, 'frontend', 'public', 'product-media')
-                os.makedirs(target_dir, exist_ok=True)
-                
-                # Save the new image as [slug].ext
-                ext = new_image.name.split('.')[-1]
-                if not ext: ext = 'jpg'
-                filename = f"{product.slug}.{ext}"
-                filepath = os.path.join(target_dir, filename)
-                
-                # Remove old file if it exists to overwrite
-                if os.path.exists(filepath):
-                    os.remove(filepath)
-                    
-                fs = FileSystemStorage(location=target_dir)
-                fs.save(filename, new_image)
-                
-                # Update the ProductImage in database to use frontend path
-                new_url = f"/product-media/{filename}"
+                upload_to_cloudinary = bool(getattr(settings, 'CLOUDINARY_CLOUD_NAME', ''))
+                if upload_to_cloudinary:
+                    import cloudinary.uploader
+                    result = cloudinary.uploader.upload(
+                        new_image,
+                        folder='kinahub/products',
+                        public_id=product.slug,
+                        overwrite=True,
+                    )
+                    new_url = result.get('secure_url', '')
+                else:
+                    import os
+                    base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+                    project_root = os.path.dirname(base_dir)
+                    target_dir = os.path.join(project_root, 'frontend', 'public', 'product-media')
+                    os.makedirs(target_dir, exist_ok=True)
+                    ext = new_image.name.split('.')[-1] or 'jpg'
+                    filename = f"{product.slug}.{ext}"
+                    filepath = os.path.join(target_dir, filename)
+                    if os.path.exists(filepath):
+                        os.remove(filepath)
+                    FileSystemStorage(location=target_dir).save(filename, new_image)
+                    new_url = f"/product-media/{filename}"
+
                 product_img = product.images.first()
                 if product_img:
                     product_img.image_url = new_url

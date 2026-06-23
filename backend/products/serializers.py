@@ -20,10 +20,22 @@ class ProductImageSerializer(serializers.ModelSerializer):
         fields = ['id', 'image_url', 'alt_text', 'is_primary', 'order']
 
     def get_image_url(self, obj):
-        request = self.context.get('request')
-        if obj.image_url and obj.image_url.startswith('/media/') and request:
-            return request.build_absolute_uri(obj.image_url)
-        return obj.image_url
+        return resolve_image_url(obj.image_url, self.context)
+
+def resolve_image_url(url, context=None):
+    if not url:
+        return url
+    if url.startswith('/media/'):
+        if context:
+            request = context.get('request')
+            if request:
+                return request.build_absolute_uri(url)
+    if url.startswith('/product-media/') or url.startswith('/media/'):
+        from django.conf import settings
+        frontend = getattr(settings, 'FRONTEND_URL', '').rstrip('/')
+        if frontend:
+            return f'{frontend}{url}'
+    return url
 
 
 class InventorySerializer(serializers.ModelSerializer):
@@ -42,16 +54,10 @@ class ReviewSerializer(serializers.ModelSerializer):
     video_url = serializers.SerializerMethodField()
 
     def get_image_url(self, obj):
-        request = self.context.get('request')
-        if obj.image_url and obj.image_url.startswith('/media/') and request:
-            return request.build_absolute_uri(obj.image_url)
-        return obj.image_url
+        return resolve_image_url(obj.image_url, self.context)
 
     def get_video_url(self, obj):
-        request = self.context.get('request')
-        if obj.video_url and obj.video_url.startswith('/media/') and request:
-            return request.build_absolute_uri(obj.video_url)
-        return obj.video_url
+        return resolve_image_url(obj.video_url, self.context)
 
     class Meta:
         model = Review
