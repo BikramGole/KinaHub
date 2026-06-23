@@ -20,7 +20,7 @@ PRODUCTS = [
     {
         "name": "Falcon 9",
         "category_slug": "rockets-spacecraft",
-        "price": Decimal("67000000.00"),
+        "price": Decimal("67000.00"),
         "stock": 5,
         "rating": Decimal("4.9"),
         "tag": "Reusable",
@@ -43,7 +43,7 @@ PRODUCTS = [
     {
         "name": "Falcon Heavy",
         "category_slug": "rockets-spacecraft",
-        "price": Decimal("97000000.00"),
+        "price": Decimal("97000.00"),
         "stock": 3,
         "rating": Decimal("4.9"),
         "tag": "Heavy Lift",
@@ -66,7 +66,7 @@ PRODUCTS = [
     {
         "name": "Starship V3",
         "category_slug": "rockets-spacecraft",
-        "price": Decimal("99000000.00"),
+        "price": Decimal("99000.00"),
         "stock": 2,
         "rating": Decimal("5.0"),
         "tag": "Super Heavy",
@@ -91,7 +91,7 @@ PRODUCTS = [
     {
         "name": "Crew Dragon",
         "category_slug": "rockets-spacecraft",
-        "price": Decimal("55000000.00"),
+        "price": Decimal("55000.00"),
         "stock": 4,
         "rating": Decimal("4.8"),
         "tag": "Crewed",
