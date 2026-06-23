@@ -48,6 +48,7 @@ class Command(BaseCommand):
 
         restored = 0
         fallback_used = 0
+        created = 0
 
         for pi in ProductImage.objects.filter(
             image_url__startswith='https://images.unsplash.com'
@@ -67,7 +68,30 @@ class Command(BaseCommand):
                     pi.save(update_fields=['image_url'])
                     fallback_used += 1
 
+        # Also create image rows for products that have NO images at all
+        from products.models import Product
+        products_without_images = Product.objects.filter(images__isnull=True).select_related('category')
+        for product in products_without_images.iterator():
+            slug_lower = product.slug.lower()
+            if slug_lower in files:
+                image_url = f"/product-media/{files[slug_lower]}"
+            else:
+                cat_slug = product.category.slug if product.category else ''
+                image_url = FALLBACKS.get(cat_slug,
+                    "https://images.unsplash.com/photo-1472851294608-062f824d29cc?auto=format&fit=crop&w=900&q=80")
+            ProductImage.objects.create(
+                product=product,
+                image_url=image_url,
+                alt_text=product.name,
+                is_primary=True,
+                order=0,
+            )
+            created += 1
+            self.stdout.write(f"  Created image for: {product.slug}")
+
         self.stdout.write(self.style.SUCCESS(f"Restored {restored} images from local files"))
         if fallback_used:
             self.stdout.write(f"Kept fallback for {fallback_used} products (no matching file)")
+        if created:
+            self.stdout.write(self.style.SUCCESS(f"Created {created} new image rows for imageless products"))
         self.stdout.write(self.style.SUCCESS("Done"))

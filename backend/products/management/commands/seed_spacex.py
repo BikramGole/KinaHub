@@ -187,7 +187,7 @@ class Command(BaseCommand):
             defaults={"business_name": "SpaceX", "phone": "+1-310-363-6000", "status": "verified"},
         )
 
-        store, _ = Store.objects.update_or_create(
+        store, store_created = Store.objects.get_or_create(
             seller=seller_profile,
             defaults={
                 "name": "SpaceX",
@@ -207,6 +207,14 @@ class Command(BaseCommand):
                 "is_active": True,
             },
         )
+        if not store_created:
+            # Update mutable fields without touching the slug
+            Store.objects.filter(pk=store.pk).update(
+                name="SpaceX",
+                is_active=True,
+                logo_url="https://images.unsplash.com/photo-1517976487492-5750f3195933?auto=format&fit=crop&w=600&q=80",
+                banner_url="https://images.unsplash.com/photo-1778034499052-0314f29f48a4?auto=format&fit=crop&w=1600&q=80",
+            )
         self.stdout.write(self.style.SUCCESS(f"Store: {store.name} (slug: {store.slug})"))
 
         rocket_cat, _ = Category.objects.update_or_create(
@@ -224,6 +232,7 @@ class Command(BaseCommand):
         self.stdout.write(self.style.SUCCESS("Brand ready"))
 
         for pdata in PRODUCTS:
+            pdata = dict(pdata)  # copy so we don't mutate the module-level list
             image_url = pdata.pop("image_url")
             cat_slug = pdata.pop("category_slug")
 
