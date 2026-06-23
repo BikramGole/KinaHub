@@ -183,7 +183,7 @@ else:
 AUTH_USER_MODEL = 'users.User'
 
 # CORS Config
-FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
+FRONTEND_URL = os.environ.get('FRONTEND_URL', 'https://kinahub.vercel.app')
 CORS_ALLOWED_ORIGINS = [
     FRONTEND_URL,
     'https://kinahub.vercel.app',
