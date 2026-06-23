@@ -188,13 +188,14 @@ export default function Checkout() {
 
   const addressSuggestions = useMemo(
     () => {
-      const suggestions = getKathmanduSuggestions(addressQuery).filter((item) => item.label !== addressQuery.trim());
-      // Reset focus index when suggestions change
-      setFocusedSuggestionIndex(-1);
-      return suggestions;
+      return getKathmanduSuggestions(addressQuery).filter((item) => item.label !== addressQuery.trim());
     },
     [addressQuery]
   );
+
+  useEffect(() => {
+    setFocusedSuggestionIndex(-1);
+  }, [addressQuery]);
 
   useEffect(() => {
     if (focusedSuggestionIndex >= 0) {
