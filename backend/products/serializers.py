@@ -26,15 +26,20 @@ def resolve_image_url(url, context=None):
     if not url:
         return url
     if url.startswith('/media/'):
-        if context:
-            request = context.get('request')
-            if request:
-                return request.build_absolute_uri(url)
-    if url.startswith('/product-media/') or url.startswith('/media/'):
+        request = context.get('request') if context else None
+        if request:
+            return request.build_absolute_uri(url)
         from django.conf import settings
         frontend = getattr(settings, 'FRONTEND_URL', '').rstrip('/')
         if frontend:
             return f'{frontend}{url}'
+        return url
+    if url.startswith('/product-media/'):
+        from django.conf import settings
+        frontend = getattr(settings, 'FRONTEND_URL', '').rstrip('/')
+        if frontend:
+            return f'{frontend}{url}'
+        return url
     return url
 
 
