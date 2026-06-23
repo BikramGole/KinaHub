@@ -53,8 +53,8 @@ function App() {
     <LocaleProvider>
       <ThemeProvider>
         <AuthProvider>
-          <CartProvider>
-            <BrowserRouter>
+          <BrowserRouter>
+            <CartProvider>
               <ScrollToTop />
               <CookieConsent />
               <Suspense fallback={<RouteFallback />}>
@@ -97,8 +97,8 @@ function App() {
                   </Routes>
                 </ErrorBoundary>
               </Suspense>
-            </BrowserRouter>
-          </CartProvider>
+            </CartProvider>
+          </BrowserRouter>
         </AuthProvider>
       </ThemeProvider>
     </LocaleProvider>

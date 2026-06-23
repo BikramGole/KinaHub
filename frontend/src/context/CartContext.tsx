@@ -59,15 +59,34 @@ const CartContext = createContext<CartContextType | null>(null);
 const CART_KEY = 'kinahub_cart';
 
 function normalizeProductForCart(product: ProductType): ProductType {
+  const normalizedCategory =
+    product.category && typeof product.category === 'object' && 'slug' in product.category && 'name' in product.category
+      ? product.category
+      : {
+          id: 0,
+          name: 'Uncategorized',
+          slug: 'uncategorized',
+        };
+
+  const normalizedBrand =
+    product.brand && typeof product.brand === 'object' && 'slug' in product.brand && 'name' in product.brand
+      ? product.brand
+      : null;
+
+  const normalizedStore =
+    product.store && typeof product.store === 'object' && 'slug' in product.store && 'name' in product.store
+      ? product.store
+      : null;
+
+  const normalizedImages = Array.isArray(product.images)
+    ? product.images.filter((image): image is ProductType['images'][number] => Boolean(image && typeof image === 'object' && typeof image.image_url === 'string'))
+    : [];
+
   return {
     ...product,
-    store: product.store ?? null,
-    brand: product.brand ?? null,
-    category: product.category ?? {
-      id: 0,
-      name: 'Uncategorized',
-      slug: 'uncategorized',
-    },
+    store: normalizedStore,
+    brand: normalizedBrand,
+    category: normalizedCategory,
     description: product.description || '',
     specifications: product.specifications || '',
     specs: Array.isArray(product.specs) ? product.specs : [],
@@ -78,7 +97,7 @@ function normalizeProductForCart(product: ProductType): ProductType {
     tag: product.tag ?? null,
     is_featured: Boolean(product.is_featured),
     is_active: Boolean(product.is_active),
-    images: Array.isArray(product.images) ? product.images : [],
+    images: normalizedImages,
   };
 }
 
