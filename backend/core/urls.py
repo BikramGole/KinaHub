@@ -62,7 +62,10 @@ def run_seed(request):
             except Exception as e:
                 return HttpResponse(f"Error: {e}")
         elif cmd:
-            call_command(cmd)
+            import io
+            out = io.StringIO()
+            call_command(cmd, stdout=out, stderr=out, no_color=True)
+            return HttpResponse(f"SQL: {sql_executed}\n\nOutput:\n{out.getvalue()}", content_type="text/plain")
         return HttpResponse(f"Success - cmd executed. SQL: {sql_executed}")
     except Exception as e:
         return HttpResponse(f"<pre>{traceback.format_exc()}</pre>")
