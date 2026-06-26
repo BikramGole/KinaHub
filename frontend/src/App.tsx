@@ -16,9 +16,11 @@ function SentryTestButton() {
   return (
     <button
       onClick={() => { throw new Error('Sentry test error from KinaHub'); }}
-      style={{ position: 'fixed', bottom: 0, right: 0, width: 4, height: 4, opacity: 0.01, zIndex: 9999 }}
-      aria-label="hidden sentry test"
-    />
+      className="fixed bottom-0 right-0 z-50 px-2 py-1 text-[10px] text-zinc-400 hover:text-red-400 transition-colors"
+      aria-label="sentry test"
+    >
+      test
+    </button>
   );
 }
 import { GOOGLE_OAUTH_CLIENT_ID, HAS_GOOGLE_OAUTH } from './lib/googleAuth';
