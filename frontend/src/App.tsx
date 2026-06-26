@@ -1,28 +1,5 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
-import * as Sentry from '@sentry/react';
-import { GoogleOAuthProvider } from '@react-oauth/google';
-import RootLayout from './layouts/RootLayout';
-import { CartProvider } from './context/CartContext';
-import { AuthProvider } from './context/AuthContext';
-import { ThemeProvider } from './context/ThemeContext';
-import { LocaleProvider } from './i18n/LocaleContext';
-import ProtectedRoute from './components/ProtectedRoute';
-import ScrollToTop from './components/ScrollToTop';
-import CookieConsent from './components/CookieConsent';
-import { ErrorBoundary } from './components/ErrorBoundary';
-
-function SentryTestButton() {
-  return (
-    <button
-      onClick={() => { throw new Error('Sentry test error from KinaHub'); }}
-      className="fixed bottom-0 right-0 z-50 px-2 py-1 text-[10px] text-zinc-400 hover:text-red-400 transition-colors"
-      aria-label="sentry test"
-    >
-      test
-    </button>
-  );
-}
 import { GOOGLE_OAUTH_CLIENT_ID, HAS_GOOGLE_OAUTH } from './lib/googleAuth';
 
 const Home = lazy(() => import('./pages/Home'));
@@ -58,6 +35,18 @@ function RouteFallback() {
         </div>
       </div>
     </div>
+  );
+}
+
+function SentryTestButton() {
+  return (
+    <button
+      onClick={() => { throw new Error('Sentry test error from KinaHub'); }}
+      className="fixed bottom-0 right-0 z-50 px-2 py-1 text-[10px] text-zinc-400 hover:text-red-400 transition-colors"
+      aria-label="sentry test"
+    >
+      test
+    </button>
   );
 }
 
