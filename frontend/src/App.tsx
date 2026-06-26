@@ -48,18 +48,6 @@ function RouteFallback() {
   );
 }
 
-function SentryTestButton() {
-  return (
-    <button
-      onClick={() => { throw new Error('Sentry test error from KinaHub'); }}
-      className="fixed bottom-0 right-0 z-50 px-2 py-1 text-[10px] text-zinc-400 hover:text-red-400 transition-colors"
-      aria-label="sentry test"
-    >
-      test
-    </button>
-  );
-}
-
 function App() {
   const app = (
     <LocaleProvider>
@@ -69,7 +57,6 @@ function App() {
             <CartProvider>
               <ScrollToTop />
               <CookieConsent />
-              <SentryTestButton />
               <Suspense fallback={<RouteFallback />}>
                 <ErrorBoundary>
                   <Routes>
