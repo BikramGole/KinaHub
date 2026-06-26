@@ -4,10 +4,14 @@
 
 # Local environment & secrets (NEVER commit these)
 .env
+.ev
 .env.local
 .env.*.local
 frontend/.env.local
 backend/.env
+
+# opencode config
+.opencode/
 
 # ── Python / Django ────────────────────────
 __pycache__/
