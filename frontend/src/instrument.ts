@@ -25,7 +25,7 @@ Sentry.init({
   ],
 
   tracesSampleRate: 1.0,
-  tracePropagationTargets: ["localhost", /^https:\/\/kinahub\.onrender\.com/],
+  tracePropagationTargets: ["localhost"],
 
   replaysSessionSampleRate: 0.1,
   replaysOnErrorSampleRate: 1.0,
