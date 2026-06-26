@@ -6,7 +6,7 @@ import {
 } from "react-router";
 
 Sentry.init({
-  dsn: import.meta.env.VITE_SENTRY_DSN,
+  dsn: import.meta.env.VITE_SENTRY_DSN || "https://e3dbb2f088831243bbdb73bc3fd85481@o4511632499343360.ingest.de.sentry.io/4511632659644496",
   environment: import.meta.env.MODE,
   release: import.meta.env.VITE_APP_VERSION,
 
