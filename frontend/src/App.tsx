@@ -1,5 +1,15 @@
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { GoogleOAuthProvider } from '@react-oauth/google';
+import RootLayout from './layouts/RootLayout';
+import { CartProvider } from './context/CartContext';
+import { AuthProvider } from './context/AuthContext';
+import { ThemeProvider } from './context/ThemeContext';
+import { LocaleProvider } from './i18n/LocaleContext';
+import ProtectedRoute from './components/ProtectedRoute';
+import ScrollToTop from './components/ScrollToTop';
+import CookieConsent from './components/CookieConsent';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import { GOOGLE_OAUTH_CLIENT_ID, HAS_GOOGLE_OAUTH } from './lib/googleAuth';
 
 const Home = lazy(() => import('./pages/Home'));
