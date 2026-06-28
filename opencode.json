@@ -1,16 +1,4 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "instructions": ["AGENTS.md"],
-  "provider": {
-    "opencode": {
-      "options": {
-        "apiKey": "${OPENCODE_API_KEY}"
-      }
-    },
-    "openrouter": {
-      "options": {
-        "apiKey": "${OPENROUTER_API_KEY}"
-      }
-    }
-  }
+  "instructions": ["AGENTS.md"]
 }
