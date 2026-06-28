@@ -15,9 +15,6 @@ import os
 from dotenv import load_dotenv
 import dj_database_url
 
-import sentry_sdk
-from sentry_sdk.integrations.django import DjangoIntegration
-
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -25,20 +22,6 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(os.path.join(BASE_DIR, '.env.local'))
 load_dotenv(os.path.join(BASE_DIR, '.env'))
 
-# Sentry
-SENTRY_DSN = os.environ.get('SENTRY_DSN', '')
-if SENTRY_DSN:
-    sentry_sdk.init(
-        dsn=SENTRY_DSN,
-        integrations=[DjangoIntegration()],
-        send_default_pii=False,
-        traces_sample_rate=0.1,
-        profiles_sample_rate=0.1,
-        environment='production' if not DEBUG else 'development',
-    )
-else:
-    # Also check for SENTRY_DSN_FRONTEND (frontend-only setup) — skip backend init
-    pass
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
@@ -51,6 +34,20 @@ DEBUG = os.environ.get('DEBUG', 'True').lower() in ('true', '1', 'yes')
 
 ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', '*').split(',')
 
+# Sentry
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
+
+SENTRY_DSN = os.environ.get('SENTRY_DSN', '')
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[DjangoIntegration()],
+        send_default_pii=False,
+        traces_sample_rate=0.1,
+        profiles_sample_rate=0.1,
+        environment='production' if not DEBUG else 'development',
+    )
 
 # Application definition
 
@@ -111,9 +108,6 @@ WSGI_APPLICATION = 'core.wsgi.application'
 
 
 # Database
-# https://docs.djangoproject.com/en/6.0/ref/settings/#databases
-# Uses DATABASE_URL env var in production (Neon PostgreSQL), falls back to SQLite locally
-
 DATABASES = {
     'default': dj_database_url.config(
         default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
@@ -122,7 +116,7 @@ DATABASES = {
     )
 }
 
-# Cache — locmem cache is fast and zero-cost (in-process, no Redis needed)
+# Cache
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
@@ -132,7 +126,6 @@ CACHES = {
         },
     }
 }
-
 
 # Password validation
 PASSWORD_VALIDATORS = [
@@ -150,15 +143,13 @@ PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 LANGUAGE_CODE = 'en-us'
 TIME_ZONE = 'UTC'
 USE_I18N = True
 USE_TZ = True
 
-
-# Static files (CSS, JavaScript, Images)
+# Static files
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STORAGES = {
@@ -167,7 +158,7 @@ STORAGES = {
     },
 }
 
-# Media files — Cloudinary in production, local filesystem in dev
+# Media files
 CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME', '')
 
 if CLOUDINARY_CLOUD_NAME:
@@ -246,7 +237,7 @@ EMAIL_TIMEOUT = int(os.environ.get('EMAIL_TIMEOUT', '5' if DEBUG else '10'))
 # Google OAuth2 Client ID
 GOOGLE_OAUTH2_CLIENT_ID = os.environ.get('GOOGLE_OAUTH2_CLIENT_ID', 'dummy-client-id' if DEBUG else '')
 
-# Seller Code for registration/login
+# Seller Code
 if DEBUG:
     SELLER_REGISTRATION_CODE = os.environ.get('SELLER_REGISTRATION_CODE', 'demo')
 else:
