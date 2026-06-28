@@ -39,7 +39,7 @@ jobs:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
         run: |
           opencode run -m opencode/deepseek-v4-flash-free --no-replay \
-            "This Sentry error needs fixing in the codebase. Issue: ${{ github.event.issue.title }}. Details: ${{ github.event.issue.body }}. Find and fix the root cause."
+            "This Sentry error needs fixing in the codebase. Issue: ${{ github.event.issue.title }}. Details: ${{ github.event.issue.body }}. Find and fix the root cause." || true
           if [ -n "$(git status --porcelain)" ]; then
             echo "fixed=true" >> $GITHUB_OUTPUT
           fi
@@ -51,9 +51,10 @@ jobs:
         timeout-minutes: 5
         env:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
         run: |
           opencode run -m google/gemini-2.5-flash --no-replay \
-            "This Sentry error needs fixing in the codebase. Issue: ${{ github.event.issue.title }}. Details: ${{ github.event.issue.body }}. Find and fix the root cause."
+            "This Sentry error needs fixing in the codebase. Issue: ${{ github.event.issue.title }}. Details: ${{ github.event.issue.body }}. Find and fix the root cause." || true
           if [ -n "$(git status --porcelain)" ]; then
             echo "fixed=true" >> $GITHUB_OUTPUT
           fi
@@ -67,7 +68,7 @@ jobs:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
           opencode run -m deepseek/deepseek-v4-flash --no-replay \
-            "This Sentry error needs fixing in the codebase. Issue: ${{ github.event.issue.title }}. Details: ${{ github.event.issue.body }}. Find and fix the root cause."
+            "This Sentry error needs fixing in the codebase. Issue: ${{ github.event.issue.title }}. Details: ${{ github.event.issue.body }}. Find and fix the root cause." || true
           if [ -n "$(git status --porcelain)" ]; then
             echo "fixed=true" >> $GITHUB_OUTPUT
           fi
