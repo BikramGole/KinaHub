@@ -53,3 +53,19 @@ jobs:
           else
             echo "No PR found for issue #${{ github.event.issue.number }}"
           fi
+
+      - name: Close issue after PR merges
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          for i in $(seq 1 60); do
+            PR_NUMBER=$(gh pr list --search "#${{ github.event.issue.number }}" --state merged --json number --jq '.[0].number' 2>/dev/null || echo "")
+            if [ -n "$PR_NUMBER" ] && [ "$PR_NUMBER" != "null" ]; then
+              gh issue close ${{ github.event.issue.number }} --comment "Auto-fixed by PR #$PR_NUMBER"
+              echo "Closed issue #${{ github.event.issue.number }} (fixed by PR #$PR_NUMBER)"
+              exit 0
+            fi
+            sleep 10
+          done
+          echo "PR did not merge within 10 minutes. Issue #${{ github.event.issue.number }} remains open."
