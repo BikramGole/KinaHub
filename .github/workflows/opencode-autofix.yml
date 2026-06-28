@@ -25,89 +25,66 @@ jobs:
           git config --global user.name "opencode[bot]"
 
       - name: Install opencode
-        id: install
-        continue-on-error: true
         run: |
           if ! command -v opencode &>/dev/null; then
             curl -fsSL https://opencode.ai/install | bash
           fi
           echo "$HOME/.opencode/bin" >> $GITHUB_PATH
-          opencode --version
 
-      - name: Run OpenCode fix
-        id: fix
+      - name: Fix with OpenCode Zen
+        id: zen
+        continue-on-error: true
+        timeout-minutes: 5
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          opencode run -m opencode/deepseek-v4-flash-free --no-replay \
+            "This Sentry error needs fixing in the codebase. Issue: ${{ github.event.issue.title }}. Details: ${{ github.event.issue.body }}. Find and fix the root cause."
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "fixed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Fix with Gemini
+        id: gemini
+        if: steps.zen.outputs.fixed != 'true'
+        continue-on-error: true
+        timeout-minutes: 5
+        env:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
-          GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          opencode run -m google/gemini-2.5-flash --no-replay \
+            "This Sentry error needs fixing in the codebase. Issue: ${{ github.event.issue.title }}. Details: ${{ github.event.issue.body }}. Find and fix the root cause."
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "fixed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Fix with OpenRouter
+        id: or
+        if: steps.zen.outputs.fixed != 'true' && steps.gemini.outputs.fixed != 'true'
+        continue-on-error: true
+        timeout-minutes: 5
+        env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
-          set +e
-          PROMPT="This issue was reported from Sentry error monitoring. \
-          Analyze the error described in this issue, find the root cause in the codebase, \
-          implement a fix, and open a pull request with the changes. \
-          If the issue lacks details, look at recent Sentry errors or check the codebase \
-          for related issues. \
-          \
-          Issue title: ${{ github.event.issue.title }} \
-          Issue body: ${{ github.event.issue.body }}"
-
-          # Try OpenCode Zen
-          echo "::group::Trying OpenCode Zen (opencode/deepseek-v4-flash-free)"
-          if opencode run -m opencode/deepseek-v4-flash-free --no-replay --print-logs "$PROMPT" 2>&1; then
-            echo "::endgroup::"
-            echo "status=success" >> $GITHUB_OUTPUT
-            exit 0
+          opencode run -m deepseek/deepseek-v4-flash --no-replay \
+            "This Sentry error needs fixing in the codebase. Issue: ${{ github.event.issue.title }}. Details: ${{ github.event.issue.body }}. Find and fix the root cause."
+          if [ -n "$(git status --porcelain)" ]; then
+            echo "fixed=true" >> $GITHUB_OUTPUT
           fi
-          echo "::endgroup::"
 
-          # Try Gemini
-          echo "::group::Trying Gemini (google/gemini-2.5-flash)"
-          if opencode run -m google/gemini-2.5-flash --no-replay --print-logs "$PROMPT" 2>&1; then
-            echo "::endgroup::"
-            echo "status=success" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-          echo "::endgroup::"
-
-          # Try OpenRouter
-          echo "::group::Trying OpenRouter (deepseek/deepseek-v4-flash)"
-          if opencode run -m deepseek/deepseek-v4-flash --no-replay --print-logs "$PROMPT" 2>&1; then
-            echo "::endgroup::"
-            echo "status=success" >> $GITHUB_OUTPUT
-            exit 0
-          fi
-          echo "::endgroup::"
-
-          echo "status=failure" >> $GITHUB_OUTPUT
-
-      - name: Create PR if changes were made
-        if: steps.fix.outputs.status == 'success'
+      - name: Create PR
+        if: steps.zen.outputs.fixed == 'true' || steps.gemini.outputs.fixed == 'true' || steps.or.outputs.fixed == 'true'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ -z "$(git status --porcelain)" ]; then
-            echo "No changes to commit"
-            exit 0
-          fi
-
           BRANCH="opencode/autofix-${{ github.event.issue.number }}-$(date +%s)"
           git checkout -b "$BRANCH"
           git add .
           git commit -m "Auto-fix: ${{ github.event.issue.title }}"
           git push -u origin "$BRANCH"
-
-          PR_URL=$(gh pr create \
-            --base main \
-            --head "$BRANCH" \
+          PR_URL=$(gh pr create --base main --head "$BRANCH" \
             --title "Auto-fix: ${{ github.event.issue.title }}" \
-            --body "Automated fix for issue #${{ github.event.issue.number }}
-
-          Closes #${{ github.event.issue.number }}" 2>&1)
-          echo "PR created: $PR_URL"
-
-          # Enable auto-merge
+            --body "Automated fix for issue #${{ github.event.issue.number }}\n\nCloses #${{ github.event.issue.number }}")
           PR_NUMBER=$(echo "$PR_URL" | grep -oP '\d+$')
           gh pr merge --auto --squash "$PR_NUMBER" --subject "Auto-fix: ${{ github.event.issue.title }}"
 
@@ -120,9 +97,7 @@ jobs:
             PR_NUMBER=$(gh pr list --search "#${{ github.event.issue.number }}" --state merged --json number --jq '.[0].number' 2>/dev/null || echo "")
             if [ -n "$PR_NUMBER" ] && [ "$PR_NUMBER" != "null" ]; then
               gh issue close ${{ github.event.issue.number }} --comment "Auto-fixed by PR #$PR_NUMBER"
-              echo "Closed issue #${{ github.event.issue.number }} (fixed by PR #$PR_NUMBER)"
               exit 0
             fi
             sleep 10
           done
-          echo "PR did not merge within 10 minutes. Issue #${{ github.event.issue.number }} remains open."
