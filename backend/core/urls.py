@@ -14,7 +14,7 @@ from products.views import curation_view
 
 def ping(request):
     """Lightweight no-DB endpoint for keep-alive pings."""
-    return JsonResponse({'status': 'ok'})
+    return JsonResponse({'status': ok})
 
 
 from django.http import HttpResponse
@@ -119,4 +119,3 @@ urlpatterns = [
     path('api/token/verify-2fa/', VerifyOTPView.as_view(), name='token_verify_2fa'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
 ] + static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
-
