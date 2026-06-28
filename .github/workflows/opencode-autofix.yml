@@ -16,8 +16,8 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          persist-credentials: false
           fetch-depth: 0
+          token: ${{ secrets.GH_PAT }}
 
       - name: Configure git
         run: |
