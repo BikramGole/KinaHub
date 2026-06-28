@@ -33,7 +33,7 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          model: groq/llama-3.3-70b-versatile
+          model: google/gemini-2.5-flash
           use_github_token: true
           prompt: |
             This issue was reported from Sentry error monitoring.
