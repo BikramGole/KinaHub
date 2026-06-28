@@ -18,6 +18,7 @@ jobs:
           SENTRY_ORG: bikramgole
           SENTRY_PROJECT: kinahub
         with:
+          github-token: ${{ secrets.GH_PAT }}
           script: |
             const { SENTRY_AUTH_TOKEN, SENTRY_ORG, SENTRY_PROJECT } = process.env;
             const query = `is:unresolved`;
