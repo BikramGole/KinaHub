@@ -76,16 +76,17 @@ jobs:
       - name: Create PR
         if: steps.zen.outputs.fixed == 'true' || steps.gemini.outputs.fixed == 'true' || steps.or.outputs.fixed == 'true'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           BRANCH="opencode/autofix-${{ github.event.issue.number }}-$(date +%s)"
           git checkout -b "$BRANCH"
           git add .
           git commit -m "Auto-fix: ${{ github.event.issue.title }}"
           git push -u origin "$BRANCH"
+          BODY=$(printf "Automated fix for issue #%s\n\nCloses #%s" "${{ github.event.issue.number }}" "${{ github.event.issue.number }}")
           PR_URL=$(gh pr create --base main --head "$BRANCH" \
             --title "Auto-fix: ${{ github.event.issue.title }}" \
-            --body "Automated fix for issue #${{ github.event.issue.number }}\n\nCloses #${{ github.event.issue.number }}")
+            --body "$BODY")
           PR_NUMBER=$(echo "$PR_URL" | grep -oP '\d+$')
           gh pr merge --auto --squash "$PR_NUMBER" --subject "Auto-fix: ${{ github.event.issue.title }}"
 
