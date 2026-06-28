@@ -21,7 +21,7 @@ jobs:
           script: |
             const { SENTRY_AUTH_TOKEN, SENTRY_ORG, SENTRY_PROJECT } = process.env;
             const query = `is:unresolved`;
-            const url = `https://de.sentry.io/api/0/projects/${SENTRY_ORG}/${SENTRY_PROJECT}/issues/?query=${encodeURIComponent(query)}&sort=new&statsPeriod=1h`;
+            const url = `https://de.sentry.io/api/0/projects/${SENTRY_ORG}/${SENTRY_PROJECT}/issues/?query=${encodeURIComponent(query)}&sort=new&statsPeriod=24h`;
 
             console.log(`Fetching Sentry issues from project ${SENTRY_PROJECT}...`);
             const sentryResp = await fetch(url, {
