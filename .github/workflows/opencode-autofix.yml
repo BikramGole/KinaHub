@@ -6,7 +6,7 @@ on:
 
 jobs:
   autofix:
-    if: contains(github.event.issue.body, 'Sentry') || contains(github.event.issue.title, 'Error') || contains(github.event.issue.labels.*.name, 'sentry')
+    if: contains(github.event.issue.body, 'Sentry') || contains(github.event.issue.title, 'Error') || contains(github.event.issue.title, 'Exception')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -21,11 +21,27 @@ jobs:
       - name: Run OpenCode
         uses: anomalyco/opencode/github@latest
         env:
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         with:
-          model: groq/llama-3.3-70b-versatile
+          model: google/gemini-2.5-flash
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           prompt: |
             This issue was reported from Sentry error monitoring.
-            Analyze the error, find the root cause in the codebase, implement a fix,
-            and open a pull request with the changes.
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+            Analyze the error described in this issue, find the root cause in the codebase,
+            implement a fix, and open a pull request with the changes.
+            If the issue lacks details, look at recent Sentry errors or check the codebase
+            for related issues.
+
+      - name: Enable auto-merge on created PR
+        if: success()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          PR_NUMBER=$(gh issue view ${{ github.event.issue.number }} --json closedByPRs --jq '.closedByPRs[-1].number' 2>/dev/null || echo "")
+          if [ -n "$PR_NUMBER" ] && [ "$PR_NUMBER" != "null" ]; then
+            gh pr merge --auto --squash "$PR_NUMBER" --subject "Auto-fix: $(gh issue view ${{ github.event.issue.number }} --json title --jq '.title' 2>/dev/null || echo 'fix')"
+            echo "Auto-merge enabled on PR #$PR_NUMBER"
+          else
+            echo "No PR found to auto-merge"
+          fi
