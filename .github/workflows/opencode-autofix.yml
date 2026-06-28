@@ -60,34 +60,16 @@ jobs:
             If the issue lacks details, look at recent Sentry errors or check the codebase
             for related issues.
 
-      - name: Run OpenCode (Groq fallback)
-        id: groq
-        if: steps.zen.outcome == 'failure' && steps.gemini.outcome == 'failure'
-        continue-on-error: true
-        uses: anomalyco/opencode/github@latest
-        env:
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          model: groq/llama-3.3-70b-versatile
-          use_github_token: true
-          prompt: |
-            This issue was reported from Sentry error monitoring.
-            Analyze the error described in this issue, find the root cause in the codebase,
-            implement a fix, and open a pull request with the changes.
-            If the issue lacks details, look at recent Sentry errors or check the codebase
-            for related issues.
-
       - name: Run OpenCode (OpenRouter fallback)
         id: or
-        if: steps.zen.outcome == 'failure' && steps.gemini.outcome == 'failure' && steps.groq.outcome == 'failure'
+        if: steps.zen.outcome == 'failure' && steps.gemini.outcome == 'failure'
         continue-on-error: true
         uses: anomalyco/opencode/github@latest
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          model: openrouter/auto
+          model: deepseek/deepseek-v4-flash
           use_github_token: true
           prompt: |
             This issue was reported from Sentry error monitoring.
