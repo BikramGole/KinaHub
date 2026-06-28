@@ -15,6 +15,9 @@ import os
 from dotenv import load_dotenv
 import dj_database_url
 
+import sentry_sdk
+from sentry_sdk.integrations.django import DjangoIntegration
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -22,6 +25,20 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 load_dotenv(os.path.join(BASE_DIR, '.env.local'))
 load_dotenv(os.path.join(BASE_DIR, '.env'))
 
+# Sentry
+SENTRY_DSN = os.environ.get('SENTRY_DSN', '')
+if SENTRY_DSN:
+    sentry_sdk.init(
+        dsn=SENTRY_DSN,
+        integrations=[DjangoIntegration()],
+        send_default_pii=False,
+        traces_sample_rate=0.1,
+        profiles_sample_rate=0.1,
+        environment='production' if not DEBUG else 'development',
+    )
+else:
+    # Also check for SENTRY_DSN_FRONTEND (frontend-only setup) — skip backend init
+    pass
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
@@ -100,15 +117,12 @@ WSGI_APPLICATION = 'core.wsgi.application'
 DATABASES = {
     'default': dj_database_url.config(
         default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
-        # conn_max_age=600 keeps DB connections alive between requests
-        # (avoids 3-way TCP handshake + TLS on every request)
         conn_max_age=600,
-        conn_health_checks=True,  # Reuse only healthy connections
+        conn_health_checks=True,
     )
 }
 
 # Cache — locmem cache is fast and zero-cost (in-process, no Redis needed)
-# homepage_data and other expensive queries are cached here.
 CACHES = {
     'default': {
         'BACKEND': 'django.core.cache.backends.locmem.LocMemCache',
@@ -121,9 +135,7 @@ CACHES = {
 
 
 # Password validation
-# https://docs.djangoproject.com/en/6.0/ref/settings/#auth-password-validators
-
-AUTH_PASSWORD_VALIDATORS = [
+PASSWORD_VALIDATORS = [
     {
         'NAME': 'django.contrib.auth.password_validation.UserAttributeSimilarityValidator',
     },
@@ -140,20 +152,13 @@ AUTH_PASSWORD_VALIDATORS = [
 
 
 # Internationalization
-# https://docs.djangoproject.com/en/6.0/topics/i18n/
-
 LANGUAGE_CODE = 'en-us'
-
 TIME_ZONE = 'UTC'
-
 USE_I18N = True
-
 USE_TZ = True
 
 
 # Static files (CSS, JavaScript, Images)
-# https://docs.djangoproject.com/en/6.0/howto/static-files/
-
 STATIC_URL = 'static/'
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')
 STORAGES = {
@@ -166,7 +171,6 @@ STORAGES = {
 CLOUDINARY_CLOUD_NAME = os.environ.get('CLOUDINARY_CLOUD_NAME', '')
 
 if CLOUDINARY_CLOUD_NAME:
-    # Production: use Cloudinary
     DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
     CLOUDINARY_STORAGE = {
         'CLOUD_NAME': CLOUDINARY_CLOUD_NAME,
@@ -175,7 +179,6 @@ if CLOUDINARY_CLOUD_NAME:
     }
     MEDIA_URL = f'https://res.cloudinary.com/{CLOUDINARY_CLOUD_NAME}/'
 else:
-    # Local dev: use filesystem
     MEDIA_URL = '/media/'
     MEDIA_ROOT = os.path.join(BASE_DIR, 'media')
 
@@ -190,7 +193,7 @@ CORS_ALLOWED_ORIGINS = [
     'http://localhost:5173',
     'http://localhost:3000',
 ]
-CORS_ALLOW_ALL_ORIGINS = DEBUG  # Only allow all in dev
+CORS_ALLOW_ALL_ORIGINS = DEBUG
 CORS_ALLOW_CREDENTIALS = True
 
 # DRF Config
@@ -217,7 +220,7 @@ SIMPLE_JWT = {
     'UPDATE_LAST_LOGIN': False,
 }
 
-# Security Headers (Session Management & Basic Security)
+# Security Headers
 SECURE_BROWSER_XSS_FILTER = True
 SECURE_CONTENT_TYPE_NOSNIFF = True
 X_FRAME_OPTIONS = 'DENY'
@@ -244,8 +247,6 @@ EMAIL_TIMEOUT = int(os.environ.get('EMAIL_TIMEOUT', '5' if DEBUG else '10'))
 GOOGLE_OAUTH2_CLIENT_ID = os.environ.get('GOOGLE_OAUTH2_CLIENT_ID', 'dummy-client-id' if DEBUG else '')
 
 # Seller Code for registration/login
-# In DEBUG mode, fallback to 'demo' if not set (for local development)
-# In production, SELLER_REGISTRATION_CODE MUST be set in environment
 if DEBUG:
     SELLER_REGISTRATION_CODE = os.environ.get('SELLER_REGISTRATION_CODE', 'demo')
 else:
@@ -253,5 +254,4 @@ else:
     if not SELLER_REGISTRATION_CODE:
         raise ValueError("SELLER_REGISTRATION_CODE must be set in production environment")
 
-# Default primary key field type
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
