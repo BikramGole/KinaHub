@@ -4,14 +4,12 @@
   "provider": {
     "opencode": {
       "options": {
-        "apiKey": "${OPENCODE_API_KEY}",
-        "baseURL": "https://opencode.ai/zen/v1"
+        "apiKey": "${OPENCODE_API_KEY}"
       }
     },
     "openrouter": {
       "options": {
-        "apiKey": "${OPENROUTER_API_KEY}",
-        "baseURL": "https://openrouter.ai/api/v1"
+        "apiKey": "${OPENROUTER_API_KEY}"
       }
     }
   }
