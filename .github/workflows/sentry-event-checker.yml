@@ -1,0 +1,78 @@
+name: sentry-event-checker
+
+on:
+  schedule:
+    - cron: '*/5 * * * *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+
+jobs:
+  check-events:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v7
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: bikramgole
+          SENTRY_PROJECT: kinahub
+          GITHUB_REPO: KinaHub
+        with:
+          script: |
+            const { SENTRY_AUTH_TOKEN, SENTRY_ORG, SENTRY_PROJECT, GITHUB_REPO } = process.env;
+
+            // Fetch unresolved Sentry issues from last 1 hour
+            const sentryResp = await fetch(
+              `https://de.sentry.io/api/0/projects/${SENTRY_ORG}/${SENTRY_PROJECT}/issues/?query=is:unresolved&sort=new&statsPeriod=1h`,
+              { headers: { Authorization: `Bearer ${SENTRY_AUTH_TOKEN}` } }
+            );
+            if (!sentryResp.ok) {
+              console.log(`Sentry API error: ${sentryResp.status}`);
+              return;
+            }
+            const issues = await sentryResp.json();
+            console.log(`Found ${issues.length} unresolved Sentry issues`);
+
+            // List existing GitHub issues with sentry label
+            const existingResp = await github.rest.issues.listForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              labels: 'sentry',
+              state: 'open',
+              per_page: 100,
+            });
+            const existingTitles = new Set(existingResp.data.map(i => i.title));
+
+            for (const issue of issues) {
+              const title = `Sentry Error: ${issue.title}`;
+              if (existingTitles.has(title)) {
+                console.log(`Skipping existing: ${title}`);
+                continue;
+              }
+
+              const body = [
+                `Sentry Issue: [${issue.shortId}](${issue.permalink})`,
+                '',
+                `${issue.metadata?.value || issue.title}`,
+                '',
+                `**Level:** ${issue.level}`,
+                `**First Seen:** ${issue.firstSeen}`,
+                `**Last Seen:** ${issue.lastSeen}`,
+                `**Events:** ${issue.count}`,
+                `**Users Affected:** ${issue.userCount}`,
+                '',
+                issue.culprit ? `**Culprit:** ${issue.culprit}` : '',
+                '',
+                '<!-- sentry-issue -->',
+              ].join('\n');
+
+              await github.rest.issues.create({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                title,
+                body,
+                labels: ['sentry'],
+              });
+              console.log(`Created issue: ${title}`);
+            }
