@@ -24,8 +24,26 @@ jobs:
           git config --global user.email "opencode[bot]@users.noreply.github.com"
           git config --global user.name "opencode[bot]"
 
-      - name: Run OpenCode (Gemini)
+      - name: Run OpenCode (OpenCode Zen)
+        id: zen
+        continue-on-error: true
+        uses: anomalyco/opencode/github@latest
+        env:
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          model: opencode/deepseek-v4-flash-free
+          use_github_token: true
+          prompt: |
+            This issue was reported from Sentry error monitoring.
+            Analyze the error described in this issue, find the root cause in the codebase,
+            implement a fix, and open a pull request with the changes.
+            If the issue lacks details, look at recent Sentry errors or check the codebase
+            for related issues.
+
+      - name: Run OpenCode (Gemini fallback)
         id: gemini
+        if: steps.zen.outcome == 'failure'
         continue-on-error: true
         uses: anomalyco/opencode/github@latest
         env:
@@ -44,7 +62,7 @@ jobs:
 
       - name: Run OpenCode (Groq fallback)
         id: groq
-        if: steps.gemini.outcome == 'failure'
+        if: steps.zen.outcome == 'failure' && steps.gemini.outcome == 'failure'
         continue-on-error: true
         uses: anomalyco/opencode/github@latest
         env:
@@ -52,24 +70,6 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           model: groq/llama-3.3-70b-versatile
-          use_github_token: true
-          prompt: |
-            This issue was reported from Sentry error monitoring.
-            Analyze the error described in this issue, find the root cause in the codebase,
-            implement a fix, and open a pull request with the changes.
-            If the issue lacks details, look at recent Sentry errors or check the codebase
-            for related issues.
-
-      - name: Run OpenCode (OpenCode Zen fallback)
-        id: zen
-        if: steps.gemini.outcome == 'failure' && steps.groq.outcome == 'failure'
-        continue-on-error: true
-        uses: anomalyco/opencode/github@latest
-        env:
-          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          model: opencode/deepseek-v4-flash-free
           use_github_token: true
           prompt: |
             This issue was reported from Sentry error monitoring.
