@@ -1,4 +1,12 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "instructions": ["AGENTS.md"]
+  "instructions": ["AGENTS.md"],
+  "provider": {
+    "opencode": {
+      "options": {
+        "apiKey": "${OPENCODE_API_KEY}",
+        "baseURL": "https://opencode.ai/zen/v1"
+      }
+    }
+  }
 }
