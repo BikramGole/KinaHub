@@ -24,72 +24,92 @@ jobs:
           git config --global user.email "opencode[bot]@users.noreply.github.com"
           git config --global user.name "opencode[bot]"
 
-      - name: Run OpenCode (OpenCode Zen)
-        id: zen
+      - name: Install opencode
+        id: install
         continue-on-error: true
-        uses: anomalyco/opencode/github@latest
+        run: |
+          if ! command -v opencode &>/dev/null; then
+            curl -fsSL https://opencode.ai/install | bash
+          fi
+          echo "$HOME/.opencode/bin" >> $GITHUB_PATH
+          opencode --version
+
+      - name: Run OpenCode fix
+        id: fix
         env:
           OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          model: opencode/deepseek-v4-flash-free
-          use_github_token: true
-          prompt: |
-            This issue was reported from Sentry error monitoring.
-            Analyze the error described in this issue, find the root cause in the codebase,
-            implement a fix, and open a pull request with the changes.
-            If the issue lacks details, look at recent Sentry errors or check the codebase
-            for related issues.
-
-      - name: Run OpenCode (Gemini fallback)
-        id: gemini
-        if: steps.zen.outcome == 'failure'
-        continue-on-error: true
-        uses: anomalyco/opencode/github@latest
-        env:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          model: google/gemini-2.5-flash
-          use_github_token: true
-          prompt: |
-            This issue was reported from Sentry error monitoring.
-            Analyze the error described in this issue, find the root cause in the codebase,
-            implement a fix, and open a pull request with the changes.
-            If the issue lacks details, look at recent Sentry errors or check the codebase
-            for related issues.
-
-      - name: Run OpenCode (OpenRouter fallback)
-        id: or
-        if: steps.zen.outcome == 'failure' && steps.gemini.outcome == 'failure'
-        continue-on-error: true
-        uses: anomalyco/opencode/github@latest
-        env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          model: deepseek/deepseek-v4-flash
-          use_github_token: true
-          prompt: |
-            This issue was reported from Sentry error monitoring.
-            Analyze the error described in this issue, find the root cause in the codebase,
-            implement a fix, and open a pull request with the changes.
-            If the issue lacks details, look at recent Sentry errors or check the codebase
-            for related issues.
+        run: |
+          set +e
+          PROMPT="This issue was reported from Sentry error monitoring. \
+          Analyze the error described in this issue, find the root cause in the codebase, \
+          implement a fix, and open a pull request with the changes. \
+          If the issue lacks details, look at recent Sentry errors or check the codebase \
+          for related issues. \
+          \
+          Issue title: ${{ github.event.issue.title }} \
+          Issue body: ${{ github.event.issue.body }}"
 
-      - name: Enable auto-merge on created PR
-        if: always()
+          # Try OpenCode Zen
+          echo "::group::Trying OpenCode Zen (opencode/deepseek-v4-flash-free)"
+          if opencode run -m opencode/deepseek-v4-flash-free --no-replay --print-logs "$PROMPT" 2>&1; then
+            echo "::endgroup::"
+            echo "status=success" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          echo "::endgroup::"
+
+          # Try Gemini
+          echo "::group::Trying Gemini (google/gemini-2.5-flash)"
+          if opencode run -m google/gemini-2.5-flash --no-replay --print-logs "$PROMPT" 2>&1; then
+            echo "::endgroup::"
+            echo "status=success" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          echo "::endgroup::"
+
+          # Try OpenRouter
+          echo "::group::Trying OpenRouter (deepseek/deepseek-v4-flash)"
+          if opencode run -m deepseek/deepseek-v4-flash --no-replay --print-logs "$PROMPT" 2>&1; then
+            echo "::endgroup::"
+            echo "status=success" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+          echo "::endgroup::"
+
+          echo "status=failure" >> $GITHUB_OUTPUT
+
+      - name: Create PR if changes were made
+        if: steps.fix.outputs.status == 'success'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          PR_NUMBER=$(gh pr list --search "#${{ github.event.issue.number }}" --state open --json number --jq '.[0].number' 2>/dev/null || echo "")
-          if [ -n "$PR_NUMBER" ] && [ "$PR_NUMBER" != "null" ]; then
-            gh pr merge --auto --squash "$PR_NUMBER" --subject "Auto-fix: ${{ github.event.issue.title }}"
-            echo "Auto-merge enabled on PR #$PR_NUMBER"
-          else
-            echo "No PR found for issue #${{ github.event.issue.number }}"
+          if [ -z "$(git status --porcelain)" ]; then
+            echo "No changes to commit"
+            exit 0
           fi
+
+          BRANCH="opencode/autofix-${{ github.event.issue.number }}-$(date +%s)"
+          git checkout -b "$BRANCH"
+          git add .
+          git commit -m "Auto-fix: ${{ github.event.issue.title }}"
+          git push -u origin "$BRANCH"
+
+          PR_URL=$(gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "Auto-fix: ${{ github.event.issue.title }}" \
+            --body "Automated fix for issue #${{ github.event.issue.number }}
+
+          Closes #${{ github.event.issue.number }}" 2>&1)
+          echo "PR created: $PR_URL"
+
+          # Enable auto-merge
+          PR_NUMBER=$(echo "$PR_URL" | grep -oP '\d+$')
+          gh pr merge --auto --squash "$PR_NUMBER" --subject "Auto-fix: ${{ github.event.issue.title }}"
 
       - name: Close issue after PR merges
         if: always()
