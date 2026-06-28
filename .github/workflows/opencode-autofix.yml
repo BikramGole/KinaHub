@@ -35,8 +35,6 @@ jobs:
         id: zen
         continue-on-error: true
         timeout-minutes: 5
-        env:
-          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
         run: |
           opencode run -m opencode/deepseek-v4-flash-free --no-replay \
             "This Sentry error needs fixing in the codebase. Issue: ${{ github.event.issue.title }}. Details: ${{ github.event.issue.body }}. Find and fix the root cause." || true
