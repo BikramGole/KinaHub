@@ -6,7 +6,7 @@ on:
 
 jobs:
   autofix:
-    if: contains(github.event.issue.body, 'Sentry') || contains(github.event.issue.title, 'Error') || contains(github.event.issue.title, 'Exception')
+    if: contains(github.event.issue.body, 'Sentry') || contains(github.event.issue.title, 'Error') || contains(github.event.issue.title, 'Exception') || contains(github.event.issue.body, 'sentry')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -38,10 +38,10 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          PR_NUMBER=$(gh issue view ${{ github.event.issue.number }} --json closedByPRs --jq '.closedByPRs[-1].number' 2>/dev/null || echo "")
+          PR_NUMBER=$(gh pr list --search "#${{ github.event.issue.number }}" --state open --json number --jq '.[0].number' 2>/dev/null || echo "")
           if [ -n "$PR_NUMBER" ] && [ "$PR_NUMBER" != "null" ]; then
-            gh pr merge --auto --squash "$PR_NUMBER" --subject "Auto-fix: $(gh issue view ${{ github.event.issue.number }} --json title --jq '.title' 2>/dev/null || echo 'fix')"
+            gh pr merge --auto --squash "$PR_NUMBER" --subject "Auto-fix: ${{ github.event.issue.title }}"
             echo "Auto-merge enabled on PR #$PR_NUMBER"
           else
-            echo "No PR found to auto-merge"
+            echo "No PR found for issue #${{ github.event.issue.number }}"
           fi
