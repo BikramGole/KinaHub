@@ -1,4 +1,16 @@
 {
   "$schema": "https://opencode.ai/config.json",
-  "plugin": ["./.opencode/plugins/ponytail.mjs"]
+  "plugin": ["./.opencode/plugins/ponytail.mjs"],
+  "mcp": {
+    "vercel": {
+      "type": "remote",
+      "url": "https://mcp.vercel.com",
+      "oauth": {}
+    },
+    "sentry": {
+      "type": "remote",
+      "url": "https://mcp.sentry.dev/mcp",
+      "oauth": {}
+    }
+  }
 }
