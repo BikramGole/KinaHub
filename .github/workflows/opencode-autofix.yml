@@ -2,7 +2,7 @@ name: opencode-autofix
 
 on:
   issues:
-    types: [opened]
+    types: [opened, reopened]
 
 jobs:
   autofix:
@@ -12,6 +12,7 @@ jobs:
       contents: write
       pull-requests: write
       issues: write
+      id-token: write
     steps:
       - uses: actions/checkout@v6
         with:
@@ -25,7 +26,7 @@ jobs:
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
         with:
           model: google/gemini-2.5-flash
-          github_token: ${{ secrets.GITHUB_TOKEN }}
+          use_github_token: true
           prompt: |
             This issue was reported from Sentry error monitoring.
             Analyze the error described in this issue, find the root cause in the codebase,
