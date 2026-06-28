@@ -17,24 +17,25 @@ jobs:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           SENTRY_ORG: bikramgole
           SENTRY_PROJECT: kinahub
-          GITHUB_REPO: KinaHub
         with:
           script: |
-            const { SENTRY_AUTH_TOKEN, SENTRY_ORG, SENTRY_PROJECT, GITHUB_REPO } = process.env;
+            const { SENTRY_AUTH_TOKEN, SENTRY_ORG, SENTRY_PROJECT } = process.env;
+            const query = `is:unresolved`;
+            const url = `https://de.sentry.io/api/0/projects/${SENTRY_ORG}/${SENTRY_PROJECT}/issues/?query=${encodeURIComponent(query)}&sort=new&statsPeriod=1h`;
 
-            // Fetch unresolved Sentry issues from last 1 hour
-            const sentryResp = await fetch(
-              `https://de.sentry.io/api/0/projects/${SENTRY_ORG}/${SENTRY_PROJECT}/issues/?query=is:unresolved&sort=new&statsPeriod=1h`,
-              { headers: { Authorization: `Bearer ${SENTRY_AUTH_TOKEN}` } }
-            );
+            console.log(`Fetching Sentry issues from project ${SENTRY_PROJECT}...`);
+            const sentryResp = await fetch(url, {
+              headers: { Authorization: `Bearer ${SENTRY_AUTH_TOKEN}` }
+            });
             if (!sentryResp.ok) {
               console.log(`Sentry API error: ${sentryResp.status}`);
+              const text = await sentryResp.text();
+              console.log(`Response: ${text.slice(0, 200)}`);
               return;
             }
             const issues = await sentryResp.json();
             console.log(`Found ${issues.length} unresolved Sentry issues`);
 
-            // List existing GitHub issues with sentry label
             const existingResp = await github.rest.issues.listForRepo({
               owner: context.repo.owner,
               repo: context.repo.repo,
@@ -54,7 +55,7 @@ jobs:
               const body = [
                 `Sentry Issue: [${issue.shortId}](${issue.permalink})`,
                 '',
-                `${issue.metadata?.value || issue.title}`,
+                issue.metadata?.value || issue.title,
                 '',
                 `**Level:** ${issue.level}`,
                 `**First Seen:** ${issue.firstSeen}`,
