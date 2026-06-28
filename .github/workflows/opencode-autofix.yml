@@ -29,10 +29,11 @@ jobs:
         env:
           GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
           GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GOOGLE_API_KEY_2: ${{ secrets.GOOGLE_GEMINI_KEY2 }}
           GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          model: google/gemini-2.5-flash
+          model: groq/llama-3.3-70b-versatile
           use_github_token: true
           prompt: |
             This issue was reported from Sentry error monitoring.
