@@ -7,10 +7,11 @@ is served from cache, not a cold DB query.
 
 Usage: python manage.py warmup_cache
 """
+import random
+from django.db.models import Avg, Case, Count, DecimalField, When
+from django.db.models.functions import Coalesce
 from django.core.management.base import BaseCommand
 from django.core.cache import cache
-from django.db.models import Avg, Count, DecimalField
-from django.db.models.functions import Coalesce
 
 
 class Command(BaseCommand):
@@ -31,8 +32,16 @@ class Command(BaseCommand):
 
             base_qs = Product.objects.filter(is_active=True)
 
+            pks = list(base_qs.values_list('pk', flat=True))
+            if pks:
+                random_pks = random.sample(pks, min(len(pks), 40))
+                preserved = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(random_pks)])
+                random_products = serialize_products(base_qs.filter(pk__in=random_pks).order_by(preserved))
+            else:
+                random_products = []
+
             data = {
-                'random': serialize_products(base_qs.order_by('?'), limit=40),
+                'random': random_products,
                 'newest': serialize_products(base_qs.order_by('-created_at'), limit=16),
                 'laptops': serialize_products(base_qs.filter(category__slug='laptops'), limit=10),
                 'fashion': serialize_products(base_qs.filter(category__slug='fashion'), limit=10),

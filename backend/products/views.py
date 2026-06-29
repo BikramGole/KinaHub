@@ -1,4 +1,5 @@
-from django.db.models import Avg, Count, DecimalField, Q
+import random
+from django.db.models import Avg, Case, Count, DecimalField, Q, When
 from django.db.models.functions import Coalesce
 from django.core.cache import cache
 from rest_framework import viewsets, permissions
@@ -118,9 +119,12 @@ class ProductViewSet(viewsets.ModelViewSet):
         elif sort == 'featured':
             queryset = queryset.order_by('-is_featured', '-created_at')
         elif is_random:
-            # Note: order_by('?') is expensive on large datasets, but for small-mid size tech site it's fine.
-            # Alternately we could fetch all IDs and shuffle them in memory if needed.
-            return queryset.order_by('?')
+            pks = list(queryset.values_list('pk', flat=True))
+            if pks:
+                random_pks = random.sample(pks, min(len(pks), 100))
+                preserved_order = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(random_pks)])
+                return queryset.filter(pk__in=random_pks).order_by(preserved_order)
+            return queryset.none()
 
         return queryset
 
@@ -546,7 +550,13 @@ def homepage_data(request):
 
     base_qs = Product.objects.filter(is_active=True)
 
-    random_products = serialize_products(base_qs.order_by('?'), limit=40)
+    pks = list(base_qs.values_list('pk', flat=True))
+    if pks:
+        random_pks = random.sample(pks, min(len(pks), 40))
+        preserved_order = Case(*[When(pk=pk, then=pos) for pos, pk in enumerate(random_pks)])
+        random_products = serialize_products(base_qs.filter(pk__in=random_pks).order_by(preserved_order))
+    else:
+        random_products = []
     newest = serialize_products(base_qs.order_by('-created_at'), limit=16)
     laptops = serialize_products(base_qs.filter(category__slug='laptops'), limit=10)
     fashion = serialize_products(base_qs.filter(category__slug='fashion'), limit=10)
