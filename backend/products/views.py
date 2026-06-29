@@ -1,3 +1,5 @@
+import random
+
 from django.db.models import Avg, Count, DecimalField, Q
 from django.db.models.functions import Coalesce
 from django.core.cache import cache
@@ -141,6 +143,7 @@ class ProductViewSet(viewsets.ModelViewSet):
                         folder='kinahub/products',
                         public_id=f"{product.slug}-{idx}",
                         overwrite=True,
+                        timeout=30,
                     )
                     url = result.get('secure_url', '')
                 except Exception:
@@ -431,6 +434,7 @@ def curation_view(request):
                         folder='kinahub/products',
                         public_id=product.slug,
                         overwrite=True,
+                        timeout=30,
                     )
                     new_url = result.get('secure_url', '')
                 else:
@@ -546,7 +550,9 @@ def homepage_data(request):
 
     base_qs = Product.objects.filter(is_active=True)
 
-    random_products = serialize_products(base_qs.order_by('?'), limit=40)
+    pks = list(base_qs.values_list('pk', flat=True))
+    random_pks = set(random.sample(pks, min(40, len(pks))))
+    random_products = serialize_products(base_qs.filter(pk__in=random_pks), limit=40) if random_pks else []
     newest = serialize_products(base_qs.order_by('-created_at'), limit=16)
     laptops = serialize_products(base_qs.filter(category__slug='laptops'), limit=10)
     fashion = serialize_products(base_qs.filter(category__slug='fashion'), limit=10)
