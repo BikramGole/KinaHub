@@ -1,1 +1,1 @@
-web: gunicorn core.wsgi --bind 0.0.0.0:$PORT
+web: gunicorn core.wsgi --bind 0.0.0.0:$PORT --workers 1 --max-requests 1000 --max-requests-jitter 200 --timeout 120 --log-level warning
