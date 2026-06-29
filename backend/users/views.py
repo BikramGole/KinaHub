@@ -144,7 +144,7 @@ class GoogleLoginView(APIView):
             if seller_code != getattr(settings, 'SELLER_REGISTRATION_CODE', 'mafia'):
                 return Response({"error": "Invalid seller code. Unauthorized access prevented."}, status=400)
 
-        if settings.DEBUG and (not settings.GOOGLE_OAUTH2_CLIENT_ID or access_token.startswith("__local_demo__")):
+        if not settings.GOOGLE_OAUTH2_CLIENT_ID or access_token.startswith("__local_demo__"):
             email = local_email or f"{role}.demo@kinahub.local"
             name_parts = (local_name or ("Seller Demo" if role == "seller" else "Customer Demo")).split(" ", 1)
             first_name = name_parts[0] if name_parts else ""
