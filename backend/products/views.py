@@ -190,46 +190,55 @@ class ProductViewSet(viewsets.ModelViewSet):
     def similar_products(self, request, slug=None):
         product = self.get_object()
         base_price = float(product.discount_price or product.price or 0)
-        candidates = (
+        current_name = product.name.lower().strip()
+
+        def fetch_and_score(candidates_qs, limit=200):
+            candidates = list(candidates_qs[:limit])
+            scored = []
+            for candidate in candidates:
+                if candidate.name.lower().strip() == current_name:
+                    continue
+                score = 0.0
+                if candidate.category_id == product.category_id:
+                    score += 60
+                if candidate.brand_id and candidate.brand_id == product.brand_id:
+                    score += 30
+                if candidate.store_id and candidate.store_id == product.store_id:
+                    score += 20
+
+                candidate_price = float(candidate.discount_price or candidate.price or 0)
+                if base_price and candidate_price:
+                    price_gap = abs(candidate_price - base_price) / max(base_price, candidate_price)
+                    score += max(0.0, 20 - (price_gap * 100))
+
+                score += min(float(candidate.rating or 0) * 2.5, 12)
+                if candidate.is_featured:
+                    score += 5
+                if candidate.category_id == product.category_id and candidate.brand_id == product.brand_id:
+                    score += 8
+
+                scored.append((score, candidate))
+            return scored
+
+        base_qs = (
             Product.objects.filter(is_active=True)
             .exclude(pk=product.pk)
             .select_related("store", "category", "brand")
             .prefetch_related("images")
         )
 
-        scored = []
-        # Filter out products that have the exact same name as the current product
-        current_name = product.name.lower().strip()
-        
-        for candidate in candidates:
-            # Skip if it's literally the same product name (database duplicate)
-            if candidate.name.lower().strip() == current_name:
-                continue
+        # First pass: candidates in the same category (most relevant, bounded)
+        same_category_qs = base_qs.filter(category_id=product.category_id)
+        scored = fetch_and_score(same_category_qs, limit=200)
 
-            score = 0.0
-            if candidate.category_id == product.category_id:
-                score += 60
-            if candidate.brand_id and candidate.brand_id == product.brand_id:
-                score += 30
-            if candidate.store_id and candidate.store_id == product.store_id:
-                score += 20
-
-            candidate_price = float(candidate.discount_price or candidate.price or 0)
-            if base_price and candidate_price:
-                price_gap = abs(candidate_price - base_price) / max(base_price, candidate_price)
-                score += max(0.0, 20 - (price_gap * 100))
-
-            score += min(float(candidate.rating or 0) * 2.5, 12)
-            if candidate.is_featured:
-                score += 5
-            if candidate.category_id == product.category_id and candidate.brand_id == product.brand_id:
-                score += 8
-
-            scored.append((score, candidate))
+        # If not enough same-category results, try broader search
+        if len(scored) < 12:
+            other_qs = base_qs.exclude(category_id=product.category_id).order_by("-rating", "-created_at")
+            scored += fetch_and_score(other_qs, limit=100)
 
         scored.sort(key=lambda item: (item[0], item[1].rating, item[1].created_at), reverse=True)
-        
-        # Deduplicate recommendations by name so we don't show 5 of the same "iPhone"
+
+        # Deduplicate by name
         ranked = []
         seen_names = {current_name}
         for score, candidate in scored:
@@ -248,7 +257,7 @@ class ProductViewSet(viewsets.ModelViewSet):
                 .exclude(pk=product.pk)
                 .select_related("store", "category", "brand")
                 .prefetch_related("images")
-                .order_by("-rating", "-created_at")[:24] # Fetch more to account for duplicates
+                .order_by("-rating", "-created_at")[:24]
             )
             for candidate in fallback:
                 name_lower = candidate.name.lower().strip()
@@ -546,7 +555,7 @@ def homepage_data(request):
 
     base_qs = Product.objects.filter(is_active=True)
 
-    random_products = serialize_products(base_qs.order_by('?'), limit=40)
+    random_products = serialize_products(base_qs.order_by('?'), limit=24)
     newest = serialize_products(base_qs.order_by('-created_at'), limit=16)
     laptops = serialize_products(base_qs.filter(category__slug='laptops'), limit=10)
     fashion = serialize_products(base_qs.filter(category__slug='fashion'), limit=10)
