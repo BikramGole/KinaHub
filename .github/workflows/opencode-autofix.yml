@@ -67,8 +67,15 @@ jobs:
         env:
           OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
         run: |
-          opencode run -m deepseek/deepseek-v4-flash --no-replay \
-            "This Sentry error needs fixing in the codebase. Issue: ${{ github.event.issue.title }}. Details: ${{ github.event.issue.body }}. Find and fix the root cause." || true
+          if [ -f opencode.json ]; then
+            cp opencode.json opencode.json.bak
+          fi
+          printf '{"instructions":["AGENTS.md"],"provider":{"openrouter":{"options":{"apiKey":"%s","baseURL":"https://openrouter.ai/api/v1"}}}}' "$OPENROUTER_API_KEY" > opencode.json
+          opencode run -m openrouter/deepseek/deepseek-v4-flash --no-replay \
+            "This Sentry error needs fixing in the codebase. Issue: ${{ github.event.issue.title }}. Details: ${{ github.event.issue.body }}. Find and fix the root cause." 2>&1 || true
+          if [ -f opencode.json.bak ]; then
+            mv opencode.json.bak opencode.json
+          fi
           if [ -n "$(git status --porcelain)" ]; then
             echo "fixed=true" >> $GITHUB_OUTPUT
           fi
