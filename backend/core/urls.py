@@ -14,7 +14,7 @@ from products.views import curation_view
 
 def ping(request):
     """Lightweight no-DB endpoint for keep-alive pings."""
-        return JsonResponse({'status': "ok"})
+    return JsonResponse({'status': "ok"})
 
 
 
@@ -24,7 +24,6 @@ from django.core.management import call_command
 
 from django.core.management.color import no_style
 from django.db import connection
-from django.apps import apps
 
 def run_seed(request):
     try:
