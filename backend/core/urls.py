@@ -14,7 +14,8 @@ from products.views import curation_view
 
 def ping(request):
     """Lightweight no-DB endpoint for keep-alive pings."""
-    return JsonResponse({'status': 'ok'})
+        return JsonResponse({'status': "ok"})
+
 
 
 from django.http import HttpResponse
