@@ -21,7 +21,7 @@ jobs:
           token: ${{ secrets.GH_PAT }}
 
       - name: Install opencode CLI
-        run: curl -fsSL https://opencode.ai/install.sh | sh
+        run: npm i -g opencode-ai@latest
 
       - name: Clean up stale branches
         env:
@@ -173,7 +173,7 @@ jobs:
               if [ -n "$SENTRY_NUMERIC_ID" ]; then
                 gh api -X PUT \
                   -H "Authorization: Bearer ${{ secrets.SENTRY_AUTH_TOKEN }}" \
-                  "https://de.sentry.io/api/0/projects/bikramgole/${{ github.event.repository.name }}/issues/$SENTRY_NUMERIC_ID/" \
+                  "https://de.sentry.io/api/0/issues/$SENTRY_NUMERIC_ID/" \
                   -F "status=resolved" --silent 2>/dev/null && echo "Sentry issue resolved" || true
               fi
               exit 0
