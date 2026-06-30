@@ -1,80 +1,85 @@
-name: sentry-event-checker
+name: Sentry Event Checker
 
 on:
+  workflow_dispatch:
   schedule:
     - cron: '*/5 * * * *'
-  workflow_dispatch:
 
 permissions:
+  contents: read
   issues: write
 
 jobs:
-  check-events:
+  check-sentry:
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+
     steps:
-      - uses: actions/github-script@v7
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Check Sentry for unresolved issues
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          SENTRY_ORG: bikramgole
-          SENTRY_PROJECT: kinahub
-        with:
-          github-token: ${{ secrets.GH_PAT }}
-          script: |
-            const { SENTRY_AUTH_TOKEN, SENTRY_ORG, SENTRY_PROJECT } = process.env;
-            const query = `is:unresolved`;
-            const url = `https://de.sentry.io/api/0/projects/${SENTRY_ORG}/${SENTRY_PROJECT}/issues/?query=${encodeURIComponent(query)}&sort=new&statsPeriod=24h`;
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          set -e
 
-            console.log(`Fetching Sentry issues from project ${SENTRY_PROJECT}...`);
-            const sentryResp = await fetch(url, {
-              headers: { Authorization: `Bearer ${SENTRY_AUTH_TOKEN}` }
-            });
-            if (!sentryResp.ok) {
-              console.log(`Sentry API error: ${sentryResp.status}`);
-              const text = await sentryResp.text();
-              console.log(`Response: ${text.slice(0, 200)}`);
-              return;
-            }
-            const issues = await sentryResp.json();
-            console.log(`Found ${issues.length} unresolved Sentry issues`);
+          NOISE_PATTERNS=(
+            "WORKER TIMEOUT"
+            "sent SIGKILL"
+            "out of memory"
+            "SystemExit"
+          )
 
-            const existingResp = await github.rest.issues.listForRepo({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              labels: 'sentry',
-              state: 'open',
-              per_page: 100,
-            });
-            const existingTitles = new Set(existingResp.data.map(i => i.title));
+          ISSUES=$(gh api \
+            -H "Authorization: Bearer $SENTRY_AUTH_TOKEN" \
+            -H "Content-Type: application/json" \
+            "https://de.sentry.io/api/0/organizations/bikramgole/issues/?query=is:unresolved&limit=5&statsPeriod=14d" \
+            --jq '.[] // empty' 2>/dev/null || echo "")
 
-            for (const issue of issues) {
-              const title = `Sentry Error: ${issue.title}`;
-              if (existingTitles.has(title)) {
-                console.log(`Skipping existing: ${title}`);
-                continue;
-              }
+          if [ -z "$ISSUES" ]; then
+            echo "No unresolved issues found."
+            exit 0
+          fi
 
-              const body = [
-                `Sentry Issue: [${issue.shortId}](${issue.permalink})`,
-                '',
-                issue.metadata?.value || issue.title,
-                '',
-                `**Level:** ${issue.level}`,
-                `**First Seen:** ${issue.firstSeen}`,
-                `**Last Seen:** ${issue.lastSeen}`,
-                `**Events:** ${issue.count}`,
-                `**Users Affected:** ${issue.userCount}`,
-                '',
-                issue.culprit ? `**Culprit:** ${issue.culprit}` : '',
-                '',
-                '<!-- sentry-issue -->',
-              ].join('\n');
+          echo "$ISSUES" | jq -c '.' | while IFS= read -r issue; do
+            SHORT_ID=$(echo "$issue" | jq -r '.shortId // "unknown"')
+            TITLE=$(echo "$issue" | jq -r '.title // ""')
+            ID=$(echo "$issue" | jq -r '.id // ""')
 
-              await github.rest.issues.create({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                title,
-                body,
-                labels: ['sentry'],
-              });
-              console.log(`Created issue: ${title}`);
-            }
+            IS_NOISE=false
+            for pattern in "${NOISE_PATTERNS[@]}"; do
+              if echo "$TITLE" | grep -qiE "$pattern"; then
+                IS_NOISE=true
+                break
+              fi
+            done
+
+            if [ "$IS_NOISE" = true ]; then
+              echo "Ignoring noise: $SHORT_ID — $TITLE"
+              gh api \
+                -X PUT \
+                -H "Authorization: Bearer $SENTRY_AUTH_TOKEN" \
+                "https://de.sentry.io/api/0/projects/bikramgole/${{ github.event.repository.name }}/issues/$ID/" \
+                -F "status=ignored" \
+                -F "ignoreCount=999999" 2>/dev/null || true
+              continue
+            fi
+
+            EXISTING=$(gh issue list --repo "${{ github.repository }}" --state open \
+              --json title --jq ".[] | select(.title | contains(\"$SHORT_ID\")) | .title" | head -1)
+
+            if [ -n "$EXISTING" ]; then
+              echo "Issue already exists for $SHORT_ID, skipping."
+              continue
+            fi
+
+            gh issue create \
+              --repo "${{ github.repository }}" \
+              --title "Sentry: $SHORT_ID — $TITLE" \
+              --body "Sentry issue: https://de.sentry.io/issues/$SHORT_ID/
+
+            Details: $(echo "$issue" | jq -r '.metadata.value // .metadata.title // "No details"')" 2>&1 || true
+          done
