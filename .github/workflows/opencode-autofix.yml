@@ -1,126 +1,183 @@
-name: opencode-autofix
+name: OpenCode AutoFix Pipeline
 
 on:
-  issues:
-    types: [opened, reopened]
+  workflow_dispatch:
+  schedule:
+    - cron: '*/5 * * * *'
+
+permissions:
+  contents: write
+  pull-requests: write
+  issues: write
 
 jobs:
   autofix:
-    if: contains(github.event.issue.body, 'Sentry') || contains(github.event.issue.title, 'Error') || contains(github.event.issue.title, 'Exception') || contains(github.event.issue.body, 'sentry')
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-      issues: write
-      id-token: write
+    timeout-minutes: 25
+
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v4
         with:
-          fetch-depth: 1
           token: ${{ secrets.GH_PAT }}
 
-      - name: Configure git
+      - name: Install opencode CLI
+        run: curl -fsSL https://opencode.ai/install.sh | sh
+
+      - name: Clean up stale branches
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
-          git config --global user.email "opencode[bot]@users.noreply.github.com"
-          git config --global user.name "opencode[bot]"
+          for branch in $(gh api repos/${{ github.repository }}/git/refs/heads --jq '.[].ref' | sed 's|refs/heads/||' | grep -E '^(opencode/|autofix/)' || echo ""); do
+            PR_STATE=$(gh pr list --repo ${{ github.repository }} --head "$branch" --state all --json state --jq '.[0].state' 2>/dev/null || echo "")
+            if [ "$PR_STATE" = "MERGED" ] || [ "$PR_STATE" = "CLOSED" ]; then
+              echo "Deleting stale branch: $branch"
+              gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/$branch" --silent 2>/dev/null || true
+            fi
+          done
 
-      - name: Run OpenCode (OpenCode Zen)
-        id: zen
-        continue-on-error: true
-        uses: anomalyco/opencode/github@latest
+      - name: Fetch latest Sentry issue
+        id: sentry
         env:
-          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          model: opencode/deepseek-v4-flash-free
-          use_github_token: true
-          prompt: |
-            This issue was reported from Sentry error monitoring.
-            Analyze the error described in this issue, find the root cause in the codebase,
-            implement a fix, and open a pull request with the changes.
-            If the issue lacks details, look at recent Sentry errors or check the codebase
-            for related issues.
-
-      - name: Run OpenCode (Gemini fallback)
-        id: gemini
-        if: steps.zen.outcome == 'failure'
-        continue-on-error: true
-        uses: anomalyco/opencode/github@latest
-        env:
-          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
-          GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          model: google/gemini-2.5-flash
-          use_github_token: true
-          prompt: |
-            This issue was reported from Sentry error monitoring.
-            Analyze the error described in this issue, find the root cause in the codebase,
-            implement a fix, and open a pull request with the changes.
-            If the issue lacks details, look at recent Sentry errors or check the codebase
-            for related issues.
-
-      - name: Run OpenCode (Groq fallback)
-        id: groq
-        if: steps.zen.outcome == 'failure' && steps.gemini.outcome == 'failure'
-        continue-on-error: true
-        uses: anomalyco/opencode/github@latest
-        env:
-          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          model: groq/llama-3.3-70b-versatile
-          use_github_token: true
-          prompt: |
-            This issue was reported from Sentry error monitoring.
-            Analyze the error described in this issue, find the root cause in the codebase,
-            implement a fix, and open a pull request with the changes.
-            If the issue lacks details, look at recent Sentry errors or check the codebase
-            for related issues.
-
-      - name: Run OpenCode (OpenRouter fallback)
-        id: or
-        if: steps.zen.outcome == 'failure' && steps.gemini.outcome == 'failure' && steps.groq.outcome == 'failure'
-        continue-on-error: true
-        uses: anomalyco/opencode/github@latest
-        env:
-          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          model: openrouter/auto
-          use_github_token: true
-          prompt: |
-            This issue was reported from Sentry error monitoring.
-            Analyze the error described in this issue, find the root cause in the codebase,
-            implement a fix, and open a pull request with the changes.
-            If the issue lacks details, look at recent Sentry errors or check the codebase
-            for related issues.
-
-      - name: Enable auto-merge on created PR
-        if: always()
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
-          PR_NUMBER=$(gh pr list --search "#${{ github.event.issue.number }}" --state open --json number --jq '.[0].number' 2>/dev/null || echo "")
-          if [ -n "$PR_NUMBER" ] && [ "$PR_NUMBER" != "null" ]; then
-            gh pr merge --auto --squash "$PR_NUMBER" --subject "Auto-fix: ${{ github.event.issue.title }}"
-            echo "Auto-merge enabled on PR #$PR_NUMBER"
-          else
-            echo "No PR found for issue #${{ github.event.issue.number }}"
+          ISSUE_JSON=$(gh api \
+            -H "Authorization: Bearer $SENTRY_AUTH_TOKEN" \
+            -H "Content-Type: application/json" \
+            "https://de.sentry.io/api/0/organizations/bikramgole/issues/?query=is:unresolved&limit=1&statsPeriod=14d" \
+            --jq '.[0] // empty' 2>/dev/null || echo "")
+
+          if [ -z "$ISSUE_JSON" ] || [ "$ISSUE_JSON" = "null" ]; then
+            echo "No unresolved Sentry issues found."
+            echo "has_issue=false" >> $GITHUB_OUTPUT
+            exit 0
           fi
 
-      - name: Close issue after PR merges
-        if: always()
+          SHORT_ID=$(echo "$ISSUE_JSON" | jq -r '.shortId')
+          TITLE=$(echo "$ISSUE_JSON" | jq -r '.title')
+          ID=$(echo "$ISSUE_JSON" | jq -r '.id')
+          echo "Found: $SHORT_ID — $TITLE"
+          echo "has_issue=true" >> $GITHUB_OUTPUT
+          echo "issue_id=$SHORT_ID" >> $GITHUB_OUTPUT
+          echo "sentry_numeric_id=$ID" >> $GITHUB_OUTPUT
+          echo "title=$TITLE" >> $GITHUB_OUTPUT
+          echo "$ISSUE_JSON" | jq -r '.metadata.value // .metadata.title // empty' > /tmp/sentry_error.txt
+
+      - name: Fix with AI
+        id: fix
+        if: steps.sentry.outputs.has_issue == 'true'
         env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OPENCODE_API_KEY: ${{ secrets.OPENCODE_API_KEY }}
+          GOOGLE_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          GOOGLE_GENERATIVE_AI_API_KEY: ${{ secrets.GOOGLE_API_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
+          set -e
+          ISSUE_ID="${{ steps.sentry.outputs.issue_id }}"
+          TITLE="${{ steps.sentry.outputs.title }}"
+          TS=$(date +%s)
+          BRANCH="autofix/${ISSUE_ID}-${TS}"
+          ERROR_MSG=$(cat /tmp/sentry_error.txt)
+
+          git config user.name "opencode-autofix"
+          git config user.email "opencode-autofix@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+
+          FIX_PROMPT="Fix this Sentry error in the codebase. Error: $TITLE. Details: $ERROR_MSG. Look at the codebase, find the relevant files, and fix the root cause. Do NOT add any explanatory comments. Return ONLY the fix."
+
+          echo "=== TIER 1: OpenCode Zen ==="
+          opencode run --model opencode/deepseek-v4-flash-free --prompt "$FIX_PROMPT" 2>&1 || true
+
+          CHANGED=$( { git diff --name-only HEAD && git status --porcelain; } 2>/dev/null | sort -u | grep -v '^$' | wc -l || echo "0")
+
+          if [ "$CHANGED" = "0" ]; then
+            git checkout -- . 2>/dev/null; git clean -fd 2>/dev/null
+            echo "=== TIER 2: Gemini ==="
+            opencode run --model google/gemini-2.0-flash-001 --prompt "$FIX_PROMPT" 2>&1 || true
+          fi
+
+          CHANGED=$( { git diff --name-only HEAD && git status --porcelain; } 2>/dev/null | sort -u | grep -v '^$' | wc -l || echo "0")
+
+          if [ "$CHANGED" = "0" ]; then
+            git checkout -- . 2>/dev/null; git clean -fd 2>/dev/null
+            echo "=== TIER 3: OpenRouter ==="
+            cat > /tmp/openrouter_payload.json << 'EOF'
+          {
+            "model": "openrouter/auto",
+            "messages": [{"role":"user","content":"PLACEHOLDER"}]
+          }
+          EOF
+            jq --arg p "$(echo "$FIX_PROMPT" | jq -Rs .)" '.messages[0].content = ($p | fromjson)' /tmp/openrouter_payload.json > /tmp/or_payload.json
+            curl -s -X POST "https://openrouter.ai/api/v1/chat/completions" \
+              -H "Authorization: Bearer $OPENROUTER_API_KEY" \
+              -H "Content-Type: application/json" \
+              -d @/tmp/or_payload.json | jq -r '.choices[0].message.content' > /tmp/or_fix.txt 2>/dev/null || true
+            if [ -s /tmp/or_fix.txt ]; then
+              echo "OpenRouter gave a fix, but cannot auto-apply it without a file path."
+              cat /tmp/or_fix.txt
+            fi
+          fi
+
+          CHANGED=$( { git diff --name-only HEAD && git status --porcelain; } 2>/dev/null | sort -u | grep -v '^$' | wc -l || echo "0")
+
+          if [ "$CHANGED" = "0" ]; then
+            echo "No changes made by any model."
+            echo "pr_created=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          git add -A
+          git commit -m "fix: $TITLE [autofix]"
+          git push origin "$BRANCH" 2>&1 || { echo "Push failed"; echo "pr_created=false" >> $GITHUB_OUTPUT; exit 0; }
+
+          PR_URL=$(gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "fix: $TITLE [autofix]" \
+            --body "Auto-fix for Sentry issue $ISSUE_ID.
+
+          Error: $TITLE
+
+          Auto-fixed by OpenCode pipeline." 2>&1 || true)
+
+          if echo "$PR_URL" | grep -q "https://"; then
+            PR_NUMBER=$(echo "$PR_URL" | grep -oP '\d+$' || echo "")
+            if [ -n "$PR_NUMBER" ]; then
+              gh pr merge --auto --squash "$PR_NUMBER" 2>&1 || true
+              echo "Enabled auto-merge on PR #$PR_NUMBER"
+              echo "pr_created=true" >> $GITHUB_OUTPUT
+              echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
+              echo "branch=$BRANCH" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "$PR_URL"
+            echo "pr_created=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Wait for merge and cleanup
+        if: steps.fix.outputs.pr_created == 'true'
+        env:
+          GH_TOKEN: ${{ secrets.GH_PAT }}
+        run: |
+          PR_NUMBER="${{ steps.fix.outputs.pr_number }}"
+          BRANCH="${{ steps.fix.outputs.branch }}"
+          ISSUE_ID="${{ steps.sentry.outputs.issue_id }}"
+          SENTRY_NUMERIC_ID="${{ steps.sentry.outputs.sentry_numeric_id }}"
+
           for i in $(seq 1 60); do
-            PR_NUMBER=$(gh pr list --search "#${{ github.event.issue.number }}" --state merged --json number --jq '.[0].number' 2>/dev/null || echo "")
-            if [ -n "$PR_NUMBER" ] && [ "$PR_NUMBER" != "null" ]; then
-              gh issue close ${{ github.event.issue.number }} --comment "Auto-fixed by PR #$PR_NUMBER"
-              echo "Closed issue #${{ github.event.issue.number }} (fixed by PR #$PR_NUMBER)"
+            STATE=$(gh pr view "$PR_NUMBER" --repo ${{ github.repository }} --json state,merged --jq 'if .merged then "MERGED" else .state end' 2>/dev/null || echo "")
+            if [ "$STATE" = "MERGED" ]; then
+              echo "PR #$PR_NUMBER merged!"
+              gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/$BRANCH" --silent 2>/dev/null && echo "Branch deleted" || true
+              if [ -n "$SENTRY_NUMERIC_ID" ]; then
+                gh api -X PUT \
+                  -H "Authorization: Bearer ${{ secrets.SENTRY_AUTH_TOKEN }}" \
+                  "https://de.sentry.io/api/0/projects/bikramgole/${{ github.event.repository.name }}/issues/$SENTRY_NUMERIC_ID/" \
+                  -F "status=resolved" --silent 2>/dev/null && echo "Sentry issue resolved" || true
+              fi
               exit 0
             fi
             sleep 10
           done
-          echo "PR did not merge within 10 minutes. Issue #${{ github.event.issue.number }} remains open."
+          echo "PR did not merge within 10 minutes."
