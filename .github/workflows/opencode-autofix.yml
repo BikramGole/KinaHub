@@ -76,137 +76,14 @@ jobs:
           TS=$(date +%s)
           BRANCH="autofix/${ISSUE_ID}-${TS}"
           ERROR_MSG=$(cat /tmp/sentry_error.txt)
+          FILE_LIST=$(git ls-files | head -100)
 
           git config user.name "opencode-autofix"
           git config user.email "opencode-autofix@users.noreply.github.com"
           git checkout -b "$BRANCH"
 
-          FILE_LIST=$(git ls-files | head -100)
-
-          FIX_PROMPT="Fix this Sentry error in the codebase.
-Error: $TITLE
-Details: $ERROR_MSG
-
-Repository contents:
-$FILE_LIST
-
-Output ONLY a JSON array of file changes. Each change must have:
-- \"file\": relative file path
-- \"content\": the COMPLETE new file content (the whole file, not just the diff)
-
-Example:
-[{\"file\": \"path/to/file.py\", \"content\": \"new content here\"}]
-
-Make sure the JSON is valid and complete. Do NOT include any other text outside the JSON."
-
-          apply_changes() {
-            local response="$1"
-            local content
-            content=$(echo "$response" | jq -r '.choices[0].message.content // .candidates[0].content.parts[0].text // empty' 2>/dev/null)
-            [ -z "$content" ] && return 1
-            echo "$content" > /tmp/ai_changes.txt
-
-            python3 -c "
-import json, os, sys
-
-with open('/tmp/ai_changes.txt') as f:
-    raw = f.read()
-
-raw = raw.strip()
-
-start = raw.find('[')
-end = raw.rfind(']') + 1
-if start < 0 or end <= start:
-    for marker in ['\`\`\`json', '\`\`\`']:
-        if marker in raw:
-            parts = raw.split(marker)
-            for i, part in enumerate(parts):
-                start = part.find('[')
-                end = part.rfind(']') + 1
-                if start >= 0 and end > start:
-                    raw = part[start:end]
-                    break
-            else:
-                continue
-            break
-    else:
-        print('FAIL: No JSON array found')
-        sys.exit(1)
-else:
-    raw = raw[start:end]
-
-try:
-    changes = json.loads(raw)
-except json.JSONDecodeError as e:
-    print(f'FAIL: JSON parse error: {e}')
-    sys.exit(1)
-
-if not isinstance(changes, list):
-    changes = [changes]
-
-count = 0
-for c in changes:
-    fp = c.get('file', '')
-    content = c.get('content', '')
-    if not fp or not content:
-        continue
-    d = os.path.dirname(fp)
-    if d:
-        os.makedirs(d, exist_ok=True)
-    with open(fp, 'w') as f:
-        f.write(content)
-    count += 1
-    print(f'Applied: {fp}')
-
-if count == 0:
-    print('FAIL: No valid file changes in JSON')
-    sys.exit(1)
-print(f'OK: {count} files changed')
-" 2>&1
-          }
-
-          echo "=== TIER 1: OpenCode Zen (direct API) ==="
-          T1_PAYLOAD=$(jq -n --arg prompt "$FIX_PROMPT" \
-            '{"model": "deepseek-v4-flash-free", "messages": [{"role": "user", "content": $prompt}]}')
-          ZEN_RESPONSE=$(curl -s -X POST "https://opencode.ai/zen/v1/chat/completions" \
-            -H "Authorization: Bearer $OPENCODE_API_KEY" \
-            -H "Content-Type: application/json" \
-            -d "$T1_PAYLOAD" 2>&1 || echo "")
-          echo "$ZEN_RESPONSE" | jq -r '.choices[0].message.content' 2>/dev/null | head -c 500
-          echo ""
-          apply_changes "$ZEN_RESPONSE" && echo "TIER 1 OK" || echo "TIER 1 FAILED"
-
-          CHANGED=$( { git diff --name-only HEAD && git status --porcelain; } 2>/dev/null | sort -u | grep -v '^$' | wc -l || echo "0")
-
-          if [ "$CHANGED" = "0" ]; then
-            git checkout -- . 2>/dev/null; git clean -fd 2>/dev/null
-            echo "=== TIER 2: Gemini (direct API) ==="
-            T2_PAYLOAD=$(jq -n --arg prompt "$FIX_PROMPT" \
-              '{"contents": [{"parts": [{"text": $prompt}]}]}')
-            GEMINI_RESPONSE=$(curl -s -X POST \
-              "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent?key=$GOOGLE_API_KEY" \
-              -H "Content-Type: application/json" \
-              -d "$T2_PAYLOAD" 2>&1 || echo "")
-            echo "$GEMINI_RESPONSE" | jq -r '.candidates[0].content.parts[0].text // empty' 2>/dev/null | head -c 500
-            echo ""
-            apply_changes "$GEMINI_RESPONSE" && echo "TIER 2 OK" || echo "TIER 2 FAILED"
-          fi
-
-          CHANGED=$( { git diff --name-only HEAD && git status --porcelain; } 2>/dev/null | sort -u | grep -v '^$' | wc -l || echo "0")
-
-          if [ "$CHANGED" = "0" ]; then
-            git checkout -- . 2>/dev/null; git clean -fd 2>/dev/null
-            echo "=== TIER 3: OpenRouter (direct API) ==="
-            T3_PAYLOAD=$(jq -n --arg prompt "$FIX_PROMPT" \
-              '{"model": "openrouter/auto", "messages": [{"role": "user", "content": $prompt}]}')
-            OR_RESPONSE=$(curl -s -X POST "https://openrouter.ai/api/v1/chat/completions" \
-              -H "Authorization: Bearer $OPENROUTER_API_KEY" \
-              -H "Content-Type: application/json" \
-              -d "$T3_PAYLOAD" 2>&1 || echo "")
-            echo "$OR_RESPONSE" | jq -r '.choices[0].message.content // empty' 2>/dev/null | head -c 500
-            echo ""
-            apply_changes "$OR_RESPONSE" && echo "TIER 3 OK" || echo "TIER 3 FAILED"
-          fi
+          echo 'aW1wb3J0IGpzb24sIG9zLCBzeXMsIHN1YnByb2Nlc3MsIHVybGxpYi5yZXF1ZXN0LCB1cmxsaWIuZXJyb3IKCmRlZiBjYWxsX3plbihwcm9tcHQpOgogICAgYXBpX2tleSA9IG9zLmVudmlyb24uZ2V0KCdPUEVOQ09ERV9BUElfS0VZJywgJycpCiAgICBkYXRhID0ganNvbi5kdW1wcyh7Im1vZGVsIjogImRlZXBzZWVrLXY0LWZsYXNoLWZyZWUiLCAibWVzc2FnZXMiOiBbeyJyb2xlIjogInVzZXIiLCAiY29udGVudCI6IHByb21wdH1dfSkuZW5jb2RlKCkKICAgIHJlcSA9IHVybGxpYi5yZXF1ZXN0LlJlcXVlc3QoImh0dHBzOi8vb3BlbmNvZGUuYWkvemVuL3YxL2NoYXQvY29tcGxldGlvbnMiLAogICAgICAgIGRhdGE9ZGF0YSwgaGVhZGVycz17IkF1dGhvcml6YXRpb24iOiBmIkJlYXJlciB7YXBpX2tleX0iLCAiQ29udGVudC1UeXBlIjogImFwcGxpY2F0aW9uL2pzb24ifSkKICAgIHJlc3AgPSB1cmxsaWIucmVxdWVzdC51cmxvcGVuKHJlcSkKICAgIHJldHVybiBqc29uLmxvYWRzKHJlc3AucmVhZCgpKQoKZGVmIGNhbGxfZ2VtaW5pKHByb21wdCk6CiAgICBhcGlfa2V5ID0gb3MuZW52aXJvbi5nZXQoJ0dPT0dMRV9BUElfS0VZJywgJycpCiAgICBkYXRhID0ganNvbi5kdW1wcyh7ImNvbnRlbnRzIjogW3sicGFydHMiOiBbeyJ0ZXh0IjogcHJvbXB0fV19XX0pLmVuY29kZSgpCiAgICByZXEgPSB1cmxsaWIucmVxdWVzdC5SZXF1ZXN0KAogICAgICAgIGYiaHR0cHM6Ly9nZW5lcmF0aXZlbGFuZ3VhZ2UuZ29vZ2xlYXBpcy5jb20vdjFiZXRhL21vZGVscy9nZW1pbmktMi4wLWZsYXNoLTAwMTpnZW5lcmF0ZUNvbnRlbnQ/a2V5PXthcGlfa2V5fSIsCiAgICAgICAgZGF0YT1kYXRhLCBoZWFkZXJzPXsiQ29udGVudC1UeXBlIjogImFwcGxpY2F0aW9uL2pzb24ifSkKICAgIHJlc3AgPSB1cmxsaWIucmVxdWVzdC51cmxvcGVuKHJlcSkKICAgIHJlc3VsdCA9IGpzb24ubG9hZHMocmVzcC5yZWFkKCkpCiAgICByZXR1cm4geyJjaG9pY2VzIjogW3sibWVzc2FnZSI6IHsiY29udGVudCI6IHJlc3VsdC5nZXQoImNhbmRpZGF0ZXMiLCBbe31dKVswXS5nZXQoImNvbnRlbnQiLCB7fSkuZ2V0KCJwYXJ0cyIsIFt7fV0pWzBdLmdldCgidGV4dCIsICIiKX19XX0KCmRlZiBjYWxsX29wZW5yb3V0ZXIocHJvbXB0KToKICAgIGFwaV9rZXkgPSBvcy5lbnZpcm9uLmdldCgnT1BFTlJPVVRFUl9BUElfS0VZJywgJycpCiAgICBkYXRhID0ganNvbi5kdW1wcyh7Im1vZGVsIjogIm9wZW5yb3V0ZXIvYXV0byIsICJtZXNzYWdlcyI6IFt7InJvbGUiOiAidXNlciIsICJjb250ZW50IjogcHJvbXB0fV19KS5lbmNvZGUoKQogICAgcmVxID0gdXJsbGliLnJlcXVlc3QuUmVxdWVzdCgiaHR0cHM6Ly9vcGVucm91dGVyLmFpL2FwaS92MS9jaGF0L2NvbXBsZXRpb25zIiwKICAgICAgICBkYXRhPWRhdGEsIGhlYWRlcnM9eyJBdXRob3JpemF0aW9uIjogZiJCZWFyZXIge2FwaV9rZXl9IiwgIkNvbnRlbnQtVHlwZSI6ICJhcHBsaWNhdGlvbi9qc29uIn0pCiAgICByZXNwID0gdXJsbGliLnJlcXVlc3QudXJsb3BlbihyZXEpCiAgICByZXR1cm4ganNvbi5sb2FkcyhyZXNwLnJlYWQoKSkKCmRlZiBhcHBseV9jaGFuZ2VzKHJlc3BvbnNlKToKICAgIGlmICdjaG9pY2VzJyBpbiByZXNwb25zZToKICAgICAgICBjb250ZW50ID0gcmVzcG9uc2VbJ2Nob2ljZXMnXVswXVsnbWVzc2FnZSddWydjb250ZW50J10KICAgIGVsc2U6CiAgICAgICAgcHJpbnQoIkZBSUw6IE5vIGNob2ljZXMgaW4gcmVzcG9uc2UiKQogICAgICAgIHJldHVybiBGYWxzZQoKICAgIHN0YXJ0ID0gY29udGVudC5maW5kKCdbJykKICAgIGVuZCA9IGNvbnRlbnQucmZpbmQoJ10nKSArIDEKICAgIGlmIHN0YXJ0IDwgMCBvciBlbmQgPD0gc3RhcnQ6CiAgICAgICAgZm9yIG1hcmtlciBpbiBbJ2BgYGpzb24nLCAnYGBgJ106CiAgICAgICAgICAgIGlmIG1hcmtlciBpbiBjb250ZW50OgogICAgICAgICAgICAgICAgcGFydHMgPSBjb250ZW50LnNwbGl0KG1hcmtlcikKICAgICAgICAgICAgICAgIGZvciBwYXJ0IGluIHBhcnRzOgogICAgICAgICAgICAgICAgICAgIHMgPSBwYXJ0LmZpbmQoJ1snKQogICAgICAgICAgICAgICAgICAgIGUgPSBwYXJ0LnJmaW5kKCddJykgKyAxCiAgICAgICAgICAgICAgICAgICAgaWYgcyA+PSAwIGFuZCBlID4gczoKICAgICAgICAgICAgICAgICAgICAgICAgY29udGVudCA9IHBhcnRbczplXQogICAgICAgICAgICAgICAgICAgICAgICBicmVhawogICAgICAgICAgICAgICAgZWxzZToKICAgICAgICAgICAgICAgICAgICBjb250aW51ZQogICAgICAgICAgICAgICAgYnJlYWsKICAgICAgICBlbHNlOgogICAgICAgICAgICBwcmludCgiRkFJTDogTm8gSlNPTiBhcnJheSBmb3VuZCIpCiAgICAgICAgICAgIHJldHVybiBGYWxzZQogICAgZWxzZToKICAgICAgICBjb250ZW50ID0gY29udGVudFtzdGFydDplbmRdCgogICAgdHJ5OgogICAgICAgIGNoYW5nZXMgPSBqc29uLmxvYWRzKGNvbnRlbnQpCiAgICBleGNlcHQganNvbi5KU09ORGVjb2RlRXJyb3IgYXMgZToKICAgICAgICBwcmludChmIkZBSUw6IEpTT04gcGFyc2UgZXJyb3I6IHtlfSIpCiAgICAgICAgcmV0dXJuIEZhbHNlCgogICAgaWYgbm90IGlzaW5zdGFuY2UoY2hhbmdlcywgbGlzdCk6CiAgICAgICAgY2hhbmdlcyA9IFtjaGFuZ2VzXQoKICAgIGNvdW50ID0gMAogICAgZm9yIGMgaW4gY2hhbmdlczoKICAgICAgICBmcCA9IGMuZ2V0KCdmaWxlJywgJycpCiAgICAgICAgY29udGVudCA9IGMuZ2V0KCdjb250ZW50JywgJycpCiAgICAgICAgaWYgbm90IGZwIG9yIG5vdCBjb250ZW50OgogICAgICAgICAgICBjb250aW51ZQogICAgICAgIGQgPSBvcy5wYXRoLmRpcm5hbWUoZnApCiAgICAgICAgaWYgZDoKICAgICAgICAgICAgb3MubWFrZWRpcnMoZCwgZXhpc3Rfb2s9VHJ1ZSkKICAgICAgICB3aXRoIG9wZW4oZnAsICd3JykgYXMgZjoKICAgICAgICAgICAgZi53cml0ZShjb250ZW50KQogICAgICAgIGNvdW50ICs9IDEKICAgICAgICBwcmludChmIkFwcGxpZWQ6IHtmcH0iKQoKICAgIGlmIGNvdW50ID09IDA6CiAgICAgICAgcHJpbnQoIkZBSUw6IE5vIHZhbGlkIGZpbGUgY2hhbmdlcyBpbiBKU09OIikKICAgICAgICByZXR1cm4gRmFsc2UKICAgIHByaW50KGYiT0s6IHtjb3VudH0gZmlsZXMgY2hhbmdlZCIpCiAgICByZXR1cm4gVHJ1ZQoKZGVmIG1haW4oKToKICAgIGVycm9yX21zZyA9IHN5cy5hcmd2WzFdCiAgICB0aXRsZSA9IHN5cy5hcmd2WzJdCiAgICBmaWxlX2xpc3QgPSBzeXMuYXJndlszXQoKICAgIHByb21wdCA9IGYiIiJGaXggdGhpcyBTZW50cnkgZXJyb3IgaW4gdGhlIGNvZGViYXNlLgpFcnJvcjoge3RpdGxlfQpEZXRhaWxzOiB7ZXJyb3JfbXNnfQoKUmVwb3NpdG9yeSBjb250ZW50czoKe2ZpbGVfbGlzdH0KCk91dHB1dCBPTkxZIGEgSlNPTiBhcnJheSBvZiBmaWxlIGNoYW5nZXMuIEVhY2ggY2hhbmdlIG11c3QgaGF2ZToKLSAiZmlsZSI6IHJlbGF0aXZlIGZpbGUgcGF0aAotICJjb250ZW50IjogdGhlIENPTVBMRVRFIG5ldyBmaWxlIGNvbnRlbnQgKHRoZSB3aG9sZSBmaWxlLCBub3QganVzdCB0aGUgZGlmZikKCkV4YW1wbGU6Clt7eyJmaWxlIjogInBhdGgvdG8vZmlsZS5weSIsICJjb250ZW50IjogIm5ldyBjb250ZW50IGhlcmUifX1dCgpNYWtlIHN1cmUgdGhlIEpTT04gaXMgdmFsaWQgYW5kIGNvbXBsZXRlLiBEbyBOT1QgaW5jbHVkZSBhbnkgb3RoZXIgdGV4dCBvdXRzaWRlIHRoZSBKU09OLiIiIgoKICAgIHRpZXJzID0gWwogICAgICAgICgiVElFUiAxOiBPcGVuQ29kZSBaZW4iLCBjYWxsX3plbiksCiAgICAgICAgKCJUSUVSIDI6IEdlbWluaSIsIGNhbGxfZ2VtaW5pKSwKICAgICAgICAoIlRJRVIgMzogT3BlblJvdXRlciIsIGNhbGxfb3BlbnJvdXRlciksCiAgICBdCgogICAgZm9yIG5hbWUsIGNhbGxlciBpbiB0aWVyczoKICAgICAgICBwcmludChmIj09PSB7bmFtZX0gPT09IikKICAgICAgICB0cnk6CiAgICAgICAgICAgIHJlc3BvbnNlID0gY2FsbGVyKHByb21wdCkKICAgICAgICAgICAgaWYgYXBwbHlfY2hhbmdlcyhyZXNwb25zZSk6CiAgICAgICAgICAgICAgICBwcmludChmIntuYW1lfSBPSyIpCiAgICAgICAgICAgICAgICByZXR1cm4KICAgICAgICBleGNlcHQgRXhjZXB0aW9uIGFzIGU6CiAgICAgICAgICAgIHByaW50KGYie25hbWV9IEVSUk9SOiB7ZX0iKQoKICAgICAgICBzdWJwcm9jZXNzLnJ1bihbImdpdCIsICJjaGVja291dCIsICItLSIsICIuIl0sIGNhcHR1cmVfb3V0cHV0PVRydWUpCiAgICAgICAgc3VicHJvY2Vzcy5ydW4oWyJnaXQiLCAiY2xlYW4iLCAiLWZkIl0sIGNhcHR1cmVfb3V0cHV0PVRydWUpCgogICAgcHJpbnQoIk5vIGNoYW5nZXMgbWFkZSBieSBhbnkgbW9kZWwuIikKICAgIHN5cy5leGl0KDEpCgppZiBfX25hbWVfXyA9PSAiX19tYWluX18iOgogICAgbWFpbigpCg==' | base64 -d > /tmp/autofix.py
+          python3 /tmp/autofix.py "$ERROR_MSG" "$TITLE" "$FILE_LIST" || true
 
           CHANGED=$( { git diff --name-only HEAD && git status --porcelain; } 2>/dev/null | sort -u | grep -v '^$' | wc -l || echo "0")
 
@@ -226,9 +103,9 @@ print(f'OK: {count} files changed')
             --title "fix: $TITLE [autofix]" \
             --body "Auto-fix for Sentry issue $ISSUE_ID.
 
-Error: $TITLE
+          Error: $TITLE
 
-Auto-fixed by OpenCode pipeline." 2>&1 || true)
+          Auto-fixed by OpenCode pipeline." 2>&1 || true)
 
           if echo "$PR_URL" | grep -q "https://"; then
             PR_NUMBER=$(echo "$PR_URL" | grep -oP '\d+$' || echo "")
