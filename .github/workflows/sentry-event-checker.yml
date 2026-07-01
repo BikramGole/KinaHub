@@ -1,85 +1,52 @@
-name: Sentry Event Checker
-
-on:
-  workflow_dispatch:
-  schedule:
-    - cron: '*/5 * * * *'
-
-permissions:
-  contents: read
-  issues: write
-
-jobs:
-  check-sentry:
-    runs-on: ubuntu-latest
-    timeout-minutes: 10
-
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          token: ${{ secrets.GH_PAT }}
-
-      - name: Check Sentry for unresolved issues
-        env:
-          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
-          GH_TOKEN: ${{ secrets.GH_PAT }}
-        run: |
-          set -e
-
-          NOISE_PATTERNS=(
-            "WORKER TIMEOUT"
-            "sent SIGKILL"
-            "out of memory"
-            "SystemExit"
-          )
-
-          ISSUES=$(gh api \
-            -H "Authorization: Bearer $SENTRY_AUTH_TOKEN" \
-            -H "Content-Type: application/json" \
-            "https://de.sentry.io/api/0/organizations/bikramgole/issues/?query=is:unresolved&limit=5&statsPeriod=14d" \
-            --jq '.[] // empty' 2>/dev/null || echo "")
-
-          if [ -z "$ISSUES" ]; then
-            echo "No unresolved issues found."
-            exit 0
-          fi
-
-          echo "$ISSUES" | jq -c '.' | while IFS= read -r issue; do
-            SHORT_ID=$(echo "$issue" | jq -r '.shortId // "unknown"')
-            TITLE=$(echo "$issue" | jq -r '.title // ""')
-            ID=$(echo "$issue" | jq -r '.id // ""')
-
-            IS_NOISE=false
-            for pattern in "${NOISE_PATTERNS[@]}"; do
-              if echo "$TITLE" | grep -qiE "$pattern"; then
-                IS_NOISE=true
-                break
-              fi
-            done
-
-            if [ "$IS_NOISE" = true ]; then
-              echo "Ignoring noise: $SHORT_ID — $TITLE"
-              gh api \
-                -X PUT \
-                -H "Authorization: Bearer $SENTRY_AUTH_TOKEN" \
-                "https://de.sentry.io/api/0/projects/bikramgole/${{ github.event.repository.name }}/issues/$ID/" \
-                -F "status=ignored" \
-                -F "ignoreCount=999999" 2>/dev/null || true
-              continue
-            fi
-
-            EXISTING=$(gh issue list --repo "${{ github.repository }}" --state open \
-              --json title --jq ".[] | select(.title | contains(\"$SHORT_ID\")) | .title" | head -1)
-
-            if [ -n "$EXISTING" ]; then
-              echo "Issue already exists for $SHORT_ID, skipping."
-              continue
-            fi
-
-            gh issue create \
-              --repo "${{ github.repository }}" \
-              --title "Sentry: $SHORT_ID — $TITLE" \
-              --body "Sentry issue: https://de.sentry.io/issues/$SHORT_ID/
-
-            Details: $(echo "$issue" | jq -r '.metadata.value // .metadata.title // "No details"')" 2>&1 || true
-          done
+bmFtZTogU2VudHJ5IEV2ZW50IENoZWNrZXIKCm9uOgogIHdvcmtmbG93X2Rpc3BhdGNoOgogIHNj
+aGVkdWxlOgogICAgLSBjcm9uOiAnKi81ICogKiAqIConCgpwZXJtaXNzaW9uczoKICBjb250ZW50
+czogcmVhZAogIGlzc3Vlczogd3JpdGUKCmpvYnM6CiAgY2hlY2stc2VudHJ5OgogICAgcnVucy1v
+bjogdWJ1bnR1LWxhdGVzdAogICAgdGltZW91dC1taW51dGVzOiAxMAoKICAgIHN0ZXBzOgogICAg
+ICAtIHVzZXM6IGFjdGlvbnMvY2hlY2tvdXRAdjQKICAgICAgICB3aXRoOgogICAgICAgICAgdG9r
+ZW46ICR7eyBzZWNyZXRzLkdIX1BBVCB9fQoKICAgICAgLSBuYW1lOiBDaGVjayBTZW50cnkgZm9y
+IHVucmVzb2x2ZWQgaXNzdWVzCiAgICAgICAgZW52OgogICAgICAgICAgU0VOVFJZX0FVVEhfVE9L
+RU46ICR7eyBzZWNyZXRzLlNFTlRSWV9BVVRIX1RPS0VOIH19CiAgICAgICAgICBHSF9UT0tFTjog
+JHt7IHNlY3JldHMuR0hfUEFUIH19CiAgICAgICAgcnVuOiB8CiAgICAgICAgICBzZXQgLWUKCiAg
+ICAgICAgICBOT0lTRV9QQVRURVJOUz0oCiAgICAgICAgICAgICJXT1JLRVIgVElNRU9VVCIKICAg
+ICAgICAgICAgInNlbnQgU0lHS0lMTCIKICAgICAgICAgICAgIm91dCBvZiBtZW1vcnkiCiAgICAg
+ICAgICAgICJTeXN0ZW1FeGl0IgogICAgICAgICAgKQoKICAgICAgICAgIElTU1VFUz0kKGdoIGFw
+aSBcCiAgICAgICAgICAgIC1IICJBdXRob3JpemF0aW9uOiBCZWFyZXIgJFNFTlRSWV9BVVRIX1RP
+S0VOIiBcCiAgICAgICAgICAgIC1IICJDb250ZW50LVR5cGU6IGFwcGxpY2F0aW9uL2pzb24iIFwK
+ICAgICAgICAgICAgImh0dHBzOi8vZGUuc2VudHJ5LmlvL2FwaS8wL29yZ2FuaXphdGlvbnMvYmlr
+cmFtZ29sZS9pc3N1ZXMvP3F1ZXJ5PWlzOnVucmVzb2x2ZWQgcHJvamVjdDpudWxsImh0dHBzOi8v
+ZGUuc2VudHJ5LmlvL2FwaS8wL29yZ2FuaXphdGlvbnMvYmlrcmFtZ29sZS9pc3N1ZXMvP3F1ZXJ5
+PWlzOnVucmVzb2x2ZWQmbGltaXQ9NSZzdGF0c1BlcmlvZD0xNGQibGltaXQ9NSJodHRwczovL2Rl
+LnNlbnRyeS5pby9hcGkvMC9vcmdhbml6YXRpb25zL2Jpa3JhbWdvbGUvaXNzdWVzLz9xdWVyeT1p
+czp1bnJlc29sdmVkJmxpbWl0PTUmc3RhdHNQZXJpb2Q9MTRkInN0YXRzUGVyaW9kPTE0ZCIgXAog
+ICAgICAgICAgICAtLWpxICcuW10gLy8gZW1wdHknIDI+L2Rldi9udWxsIHx8IGVjaG8gIiIpCgog
+ICAgICAgICAgaWYgWyAteiAiJElTU1VFUyIgXTsgdGhlbgogICAgICAgICAgICBlY2hvICJObyB1
+bnJlc29sdmVkIGlzc3VlcyBmb3VuZC4iCiAgICAgICAgICAgIGV4aXQgMAogICAgICAgICAgZmkK
+CiAgICAgICAgICBlY2hvICIkSVNTVUVTIiB8IGpxIC1jICcuJyB8IHdoaWxlIElGUz0gcmVhZCAt
+ciBpc3N1ZTsgZG8KICAgICAgICAgICAgU0hPUlRfSUQ9JChlY2hvICIkaXNzdWUiIHwganEgLXIg
+Jy5zaG9ydElkIC8vICJ1bmtub3duIicpCiAgICAgICAgICAgIFRJVExFPSQoZWNobyAiJGlzc3Vl
+IiB8IGpxIC1yICcudGl0bGUgLy8gIiInKQogICAgICAgICAgICBJRD0kKGVjaG8gIiRpc3N1ZSIg
+fCBqcSAtciAnLmlkIC8vICIiJykKCiAgICAgICAgICAgIElTX05PSVNFPWZhbHNlCiAgICAgICAg
+ICAgIGZvciBwYXR0ZXJuIGluICIke05PSVNFX1BBVFRFUk5TW0BdfSI7IGRvCiAgICAgICAgICAg
+ICAgaWYgZWNobyAiJFRJVExFIiB8IGdyZXAgLXFpRSAiJHBhdHRlcm4iOyB0aGVuCiAgICAgICAg
+ICAgICAgICBJU19OT0lTRT10cnVlCiAgICAgICAgICAgICAgICBicmVhawogICAgICAgICAgICAg
+IGZpCiAgICAgICAgICAgIGRvbmUKCiAgICAgICAgICAgIGlmIFsgIiRJU19OT0lTRSIgPSB0cnVl
+IF07IHRoZW4KICAgICAgICAgICAgICBlY2hvICJJZ25vcmluZyBub2lzZTogJFNIT1JUX0lEIOKA
+lCAkVElUTEUiCiAgICAgICAgICAgICAgZ2ggYXBpIFwKICAgICAgICAgICAgICAgIC1YIFBVVCBc
+CiAgICAgICAgICAgICAgICAtSCAiQXV0aG9yaXphdGlvbjogQmVhcmVyICRTRU5UUllfQVVUSF9U
+T0tFTiIgXAogICAgICAgICAgICAgICAgImh0dHBzOi8vZGUuc2VudHJ5LmlvL2FwaS8wL3Byb2pl
+Y3RzL2Jpa3JhbWdvbGUvJHt7IGdpdGh1Yi5ldmVudC5yZXBvc2l0b3J5Lm5hbWUgfX0vaXNzdWVz
+LyRJRC8iIFwKICAgICAgICAgICAgICAgIC1GICJzdGF0dXM9aWdub3JlZCIgXAogICAgICAgICAg
+ICAgICAgLUYgImlnbm9yZUNvdW50PTk5OTk5OSIgMj4vZGV2L251bGwgfHwgdHJ1ZQogICAgICAg
+ICAgICAgIGNvbnRpbnVlCiAgICAgICAgICAgIGZpCgogICAgICAgICAgICBFWElTVElORz0kKGdo
+IGlzc3VlIGxpc3QgLS1yZXBvICIke3sgZ2l0aHViLnJlcG9zaXRvcnkgfX0iIC0tc3RhdGUgb3Bl
+biBcCiAgICAgICAgICAgICAgLS1qc29uIHRpdGxlIC0tanEgIi5bXSB8IHNlbGVjdCgudGl0bGUg
+fCBjb250YWlucyhcIiRTSE9SVF9JRFwiKSkgfCAudGl0bGUiIHwgaGVhZCAtMSkKCiAgICAgICAg
+ICAgIGlmIFsgLW4gIiRFWElTVElORyIgXTsgdGhlbgogICAgICAgICAgICAgIGVjaG8gIklzc3Vl
+IGFscmVhZHkgZXhpc3RzIGZvciAkU0hPUlRfSUQsIHNraXBwaW5nLiIKICAgICAgICAgICAgICBj
+b250aW51ZQogICAgICAgICAgICBmaQoKICAgICAgICAgICAgZ2ggaXNzdWUgY3JlYXRlIFwKICAg
+ICAgICAgICAgICAtLXJlcG8gIiR7eyBnaXRodWIucmVwb3NpdG9yeSB9fSIgXAogICAgICAgICAg
+ICAgIC0tdGl0bGUgIlNlbnRyeTogJFNIT1JUX0lEIOKAlCAkVElUTEUiIFwKICAgICAgICAgICAg
+ICAtLWJvZHkgIlNlbnRyeSBpc3N1ZTogaHR0cHM6Ly9kZS5zZW50cnkuaW8vaXNzdWVzLyRTSE9S
+VF9JRC8KCiAgICAgICAgICAgIERldGFpbHM6ICQoZWNobyAiJGlzc3VlIiB8IGpxIC1yICcubWV0
+YWRhdGEudmFsdWUgLy8gLm1ldGFkYXRhLnRpdGxlIC8vICJObyBkZXRhaWxzIicpIiAyPiYxIHx8
+IHRydWUKICAgICAgICAgIGRvbmUK
