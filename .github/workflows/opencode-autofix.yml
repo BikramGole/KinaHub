@@ -20,9 +20,6 @@ jobs:
         with:
           token: ${{ secrets.GH_PAT }}
 
-      - name: Install opencode CLI
-        run: npm i -g opencode-ai@latest
-
       - name: Clean up stale branches
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
@@ -56,14 +53,14 @@ jobs:
           SHORT_ID=$(echo "$ISSUE_JSON" | jq -r '.shortId')
           TITLE=$(echo "$ISSUE_JSON" | jq -r '.title')
           ID=$(echo "$ISSUE_JSON" | jq -r '.id')
-          echo "Found: $SHORT_ID — $TITLE"
+          echo "Found: $SHORT_ID -- $TITLE"
           echo "has_issue=true" >> $GITHUB_OUTPUT
           echo "issue_id=$SHORT_ID" >> $GITHUB_OUTPUT
           echo "sentry_numeric_id=$ID" >> $GITHUB_OUTPUT
           echo "title=$TITLE" >> $GITHUB_OUTPUT
           echo "$ISSUE_JSON" | jq -r '.metadata.value // .metadata.title // empty' > /tmp/sentry_error.txt
 
-      - name: Fix with AI
+      - name: Fix with AI (direct API calls)
         id: fix
         if: steps.sentry.outputs.has_issue == 'true'
         env:
@@ -84,54 +81,131 @@ jobs:
           git config user.email "opencode-autofix@users.noreply.github.com"
           git checkout -b "$BRANCH"
 
-          FIX_PROMPT="Fix this Sentry error in the codebase. Error: $TITLE. Details: $ERROR_MSG. Look at the codebase, find the relevant files, and fix the root cause. Do NOT add any explanatory comments. Return ONLY the fix."
+          FILE_LIST=$(git ls-files | head -100)
 
-          # Write API keys to opencode auth store (CLI needs auth.json, not just env vars)
-          mkdir -p ~/.local/share/opencode
-          jq -n             --arg ock "$OPENCODE_API_KEY"             --arg gk "$GOOGLE_GENERATIVE_AI_API_KEY"             --arg ork "$OPENROUTER_API_KEY"             '{opencode: {type: "api", key: $ock}, google: {type: "api", key: $gk}, openrouter: {type: "api", key: $ork}}'             > ~/.local/share/opencode/auth.json
-          echo "=== Auth check ==="
-          ls -la ~/.local/share/opencode/auth.json 2>&1 || echo "NO AUTH FILE"
-          head -3 ~/.local/share/opencode/auth.json 2>/dev/null
-          echo "=== End auth check ==="
-          echo "=== TIER 1: OpenCode Zen ==="
-          echo "--- Direct API test ---"
-          curl -s -w "\nHTTP_CODE: %{http_code}" \
-            -X POST "https://opencode.ai/zen/v1/chat/completions" \
+          FIX_PROMPT="Fix this Sentry error in the codebase.
+Error: $TITLE
+Details: $ERROR_MSG
+
+Repository contents:
+$FILE_LIST
+
+Output ONLY a JSON array of file changes. Each change must have:
+- \"file\": relative file path
+- \"content\": the COMPLETE new file content (the whole file, not just the diff)
+
+Example:
+[{\"file\": \"path/to/file.py\", \"content\": \"new content here\"}]
+
+Make sure the JSON is valid and complete. Do NOT include any other text outside the JSON."
+
+          apply_changes() {
+            local response="$1"
+            local content
+            content=$(echo "$response" | jq -r '.choices[0].message.content // .candidates[0].content.parts[0].text // empty' 2>/dev/null)
+            [ -z "$content" ] && return 1
+            echo "$content" > /tmp/ai_changes.txt
+
+            python3 -c "
+import json, os, sys
+
+with open('/tmp/ai_changes.txt') as f:
+    raw = f.read()
+
+raw = raw.strip()
+
+start = raw.find('[')
+end = raw.rfind(']') + 1
+if start < 0 or end <= start:
+    for marker in ['\`\`\`json', '\`\`\`']:
+        if marker in raw:
+            parts = raw.split(marker)
+            for i, part in enumerate(parts):
+                start = part.find('[')
+                end = part.rfind(']') + 1
+                if start >= 0 and end > start:
+                    raw = part[start:end]
+                    break
+            else:
+                continue
+            break
+    else:
+        print('FAIL: No JSON array found')
+        sys.exit(1)
+else:
+    raw = raw[start:end]
+
+try:
+    changes = json.loads(raw)
+except json.JSONDecodeError as e:
+    print(f'FAIL: JSON parse error: {e}')
+    sys.exit(1)
+
+if not isinstance(changes, list):
+    changes = [changes]
+
+count = 0
+for c in changes:
+    fp = c.get('file', '')
+    content = c.get('content', '')
+    if not fp or not content:
+        continue
+    d = os.path.dirname(fp)
+    if d:
+        os.makedirs(d, exist_ok=True)
+    with open(fp, 'w') as f:
+        f.write(content)
+    count += 1
+    print(f'Applied: {fp}')
+
+if count == 0:
+    print('FAIL: No valid file changes in JSON')
+    sys.exit(1)
+print(f'OK: {count} files changed')
+" 2>&1
+          }
+
+          echo "=== TIER 1: OpenCode Zen (direct API) ==="
+          T1_PAYLOAD=$(jq -n --arg prompt "$FIX_PROMPT" \
+            '{"model": "deepseek-v4-flash-free", "messages": [{"role": "user", "content": $prompt}]}')
+          ZEN_RESPONSE=$(curl -s -X POST "https://opencode.ai/zen/v1/chat/completions" \
             -H "Authorization: Bearer $OPENCODE_API_KEY" \
             -H "Content-Type: application/json" \
-            -d '{"model":"deepseek-v4-flash-free","messages":[{"role":"user","content":"say hi in 1 word"}]}' 2>&1 || true
+            -d "$T1_PAYLOAD" 2>&1 || echo "")
+          echo "$ZEN_RESPONSE" | jq -r '.choices[0].message.content' 2>/dev/null | head -c 500
           echo ""
-          echo "--- End API test ---"
-          opencode run --model opencode/deepseek-v4-flash-free --log-level DEBUG "$FIX_PROMPT" --auto 2>&1 || true
+          apply_changes "$ZEN_RESPONSE" && echo "TIER 1 OK" || echo "TIER 1 FAILED"
 
           CHANGED=$( { git diff --name-only HEAD && git status --porcelain; } 2>/dev/null | sort -u | grep -v '^$' | wc -l || echo "0")
 
           if [ "$CHANGED" = "0" ]; then
             git checkout -- . 2>/dev/null; git clean -fd 2>/dev/null
-            echo "=== TIER 2: Gemini ==="
-            opencode run --model google/gemini-2.0-flash-001 "$FIX_PROMPT" --auto 2>&1 || true
+            echo "=== TIER 2: Gemini (direct API) ==="
+            T2_PAYLOAD=$(jq -n --arg prompt "$FIX_PROMPT" \
+              '{"contents": [{"parts": [{"text": $prompt}]}]}')
+            GEMINI_RESPONSE=$(curl -s -X POST \
+              "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash-001:generateContent?key=$GOOGLE_API_KEY" \
+              -H "Content-Type: application/json" \
+              -d "$T2_PAYLOAD" 2>&1 || echo "")
+            echo "$GEMINI_RESPONSE" | jq -r '.candidates[0].content.parts[0].text // empty' 2>/dev/null | head -c 500
+            echo ""
+            apply_changes "$GEMINI_RESPONSE" && echo "TIER 2 OK" || echo "TIER 2 FAILED"
           fi
 
           CHANGED=$( { git diff --name-only HEAD && git status --porcelain; } 2>/dev/null | sort -u | grep -v '^$' | wc -l || echo "0")
 
           if [ "$CHANGED" = "0" ]; then
             git checkout -- . 2>/dev/null; git clean -fd 2>/dev/null
-            echo "=== TIER 3: OpenRouter ==="
-            cat > /tmp/openrouter_payload.json << 'EOF'
-          {
-            "model": "openrouter/auto",
-            "messages": [{"role":"user","content":"PLACEHOLDER"}]
-          }
-          EOF
-            jq --arg p "$(echo "$FIX_PROMPT" | jq -Rs .)" '.messages[0].content = ($p | fromjson)' /tmp/openrouter_payload.json > /tmp/or_payload.json
-            curl -s -X POST "https://openrouter.ai/api/v1/chat/completions" \
+            echo "=== TIER 3: OpenRouter (direct API) ==="
+            T3_PAYLOAD=$(jq -n --arg prompt "$FIX_PROMPT" \
+              '{"model": "openrouter/auto", "messages": [{"role": "user", "content": $prompt}]}')
+            OR_RESPONSE=$(curl -s -X POST "https://openrouter.ai/api/v1/chat/completions" \
               -H "Authorization: Bearer $OPENROUTER_API_KEY" \
               -H "Content-Type: application/json" \
-              -d @/tmp/or_payload.json | jq -r '.choices[0].message.content' > /tmp/or_fix.txt 2>/dev/null || true
-            if [ -s /tmp/or_fix.txt ]; then
-              echo "OpenRouter gave a fix, but cannot auto-apply it without a file path."
-              cat /tmp/or_fix.txt
-            fi
+              -d "$T3_PAYLOAD" 2>&1 || echo "")
+            echo "$OR_RESPONSE" | jq -r '.choices[0].message.content // empty' 2>/dev/null | head -c 500
+            echo ""
+            apply_changes "$OR_RESPONSE" && echo "TIER 3 OK" || echo "TIER 3 FAILED"
           fi
 
           CHANGED=$( { git diff --name-only HEAD && git status --porcelain; } 2>/dev/null | sort -u | grep -v '^$' | wc -l || echo "0")
@@ -152,9 +226,9 @@ jobs:
             --title "fix: $TITLE [autofix]" \
             --body "Auto-fix for Sentry issue $ISSUE_ID.
 
-          Error: $TITLE
+Error: $TITLE
 
-          Auto-fixed by OpenCode pipeline." 2>&1 || true)
+Auto-fixed by OpenCode pipeline." 2>&1 || true)
 
           if echo "$PR_URL" | grep -q "https://"; then
             PR_NUMBER=$(echo "$PR_URL" | grep -oP '\d+$' || echo "")
