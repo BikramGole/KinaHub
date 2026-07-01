@@ -86,7 +86,7 @@ jobs:
 
           FIX_PROMPT="Fix this Sentry error in the codebase. Error: $TITLE. Details: $ERROR_MSG. Look at the codebase, find the relevant files, and fix the root cause. Do NOT add any explanatory comments. Return ONLY the fix."
 
-# Write API keys to opencode auth store (CLI needs auth.json, not just env vars)
+          # Write API keys to opencode auth store (CLI needs auth.json, not just env vars)
           mkdir -p ~/.local/share/opencode
           jq -n             --arg ock "$OPENCODE_API_KEY"             --arg gk "$GOOGLE_GENERATIVE_AI_API_KEY"             --arg ork "$OPENROUTER_API_KEY"             '{opencode: {type: "api", key: $ock}, google: {type: "api", key: $gk}, openrouter: {type: "api", key: $ork}}'             > ~/.local/share/opencode/auth.json
           echo "=== TIER 1: OpenCode Zen ==="
