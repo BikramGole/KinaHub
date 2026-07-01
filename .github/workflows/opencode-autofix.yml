@@ -87,14 +87,14 @@ jobs:
           FIX_PROMPT="Fix this Sentry error in the codebase. Error: $TITLE. Details: $ERROR_MSG. Look at the codebase, find the relevant files, and fix the root cause. Do NOT add any explanatory comments. Return ONLY the fix."
 
           echo "=== TIER 1: OpenCode Zen ==="
-          opencode run --model opencode/deepseek-v4-flash-free --prompt "$FIX_PROMPT" --auto 2>&1 || true
+          opencode run --model opencode/deepseek-v4-flash-free $FIX_PROMPT--auto 2>&1 || true
 
           CHANGED=$( { git diff --name-only HEAD && git status --porcelain; } 2>/dev/null | sort -u | grep -v '^$' | wc -l || echo "0")
 
           if [ "$CHANGED" = "0" ]; then
             git checkout -- . 2>/dev/null; git clean -fd 2>/dev/null
             echo "=== TIER 2: Gemini ==="
-            opencode run --model google/gemini-2.0-flash-001 --prompt "$FIX_PROMPT" --auto 2>&1 || true
+            opencode run --model google/gemini-2.0-flash-001 $FIX_PROMPT--auto 2>&1 || true
           fi
 
           CHANGED=$( { git diff --name-only HEAD && git status --porcelain; } 2>/dev/null | sort -u | grep -v '^$' | wc -l || echo "0")
