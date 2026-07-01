@@ -110,7 +110,10 @@ jobs:
           if echo "$PR_URL" | grep -q "https://"; then
             PR_NUMBER=$(echo "$PR_URL" | grep -oP '\d+$' || echo "")
             if [ -n "$PR_NUMBER" ]; then
-              gh pr merge --auto --squash "$PR_NUMBER" 2>&1 || true
+              PR_NODE=$(gh pr view "$PR_NUMBER" --json id --jq '.id' 2>/dev/null || echo "")
+    if [ -n "$PR_NODE" ]; then
+      gh api graphql -f query='mutation { enablePullRequestAutoMerge(input: { pullRequestId: "'"$PR_NODE"'" , mergeMethod: SQUASH }) { pullRequest { id } } }' 2>&1 || echo "GraphQL auto-merge failed"
+    fi
               echo "Enabled auto-merge on PR #$PR_NUMBER"
               echo "pr_created=true" >> $GITHUB_OUTPUT
               echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
