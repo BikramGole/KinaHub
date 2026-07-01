@@ -111,10 +111,7 @@ jobs:
             PR_NUMBER=$(echo "$PR_URL" | grep -oP '\d+$' || echo "")
             if [ -n "$PR_NUMBER" ]; then
               PR_NODE=$(gh pr view "$PR_NUMBER" --json id --jq '.id' 2>/dev/null || echo "")
-              if [ -n "$PR_NODE" ]; then
-                gh api graphql -f query='mutation { enablePullRequestAutoMerge(input: { pullRequestId: "'"$PR_NODE"'" , mergeMethod: SQUASH }) { pullRequest { id } } }' 2>&1 || echo "GraphQL auto-merge failed"
-              fi
-              echo "Enabled auto-merge on PR #$PR_NUMBER"
+              gh pr merge "$PR_NUMBER" --repo ${{ github.repository }} --squash --delete-branch 2>&1 || echo "Direct merge failed"
               echo "pr_created=true" >> $GITHUB_OUTPUT
               echo "pr_number=$PR_NUMBER" >> $GITHUB_OUTPUT
               echo "branch=$BRANCH" >> $GITHUB_OUTPUT
@@ -124,29 +121,14 @@ jobs:
             echo "pr_created=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Wait for merge and cleanup
-        if: steps.fix.outputs.pr_created == 'true'
+      - name: Resolve issue
         env:
           GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
-          PR_NUMBER="${{ steps.fix.outputs.pr_number }}"
-          BRANCH="${{ steps.fix.outputs.branch }}"
-          ISSUE_ID="${{ steps.sentry.outputs.issue_id }}"
           SENTRY_NUMERIC_ID="${{ steps.sentry.outputs.sentry_numeric_id }}"
-
-          for i in $(seq 1 60); do
-            STATE=$(gh pr view "$PR_NUMBER" --repo ${{ github.repository }} --json state,merged --jq 'if .merged then "MERGED" else .state end' 2>/dev/null || echo "")
-            if [ "$STATE" = "MERGED" ]; then
-              echo "PR #$PR_NUMBER merged!"
-              gh api -X DELETE "repos/${{ github.repository }}/git/refs/heads/$BRANCH" --silent 2>/dev/null && echo "Branch deleted" || true
-              if [ -n "$SENTRY_NUMERIC_ID" ]; then
-                gh api -X PUT \
-                  -H "Authorization: Bearer ${{ secrets.SENTRY_AUTH_TOKEN }}" \
-                  "https://de.sentry.io/api/0/issues/$SENTRY_NUMERIC_ID/" \
-                  -F "status=resolved" --silent 2>/dev/null && echo "Sentry issue resolved" || true
-              fi
-              exit 0
-            fi
-            sleep 10
-          done
-          echo "PR did not merge within 10 minutes."
+          if [ -n "$SENTRY_NUMERIC_ID" ]; then
+            gh api -X PUT \
+              -H "Authorization: Bearer ${{ secrets.SENTRY_AUTH_TOKEN }}" \
+              "https://de.sentry.io/api/0/issues/$SENTRY_NUMERIC_ID/" \
+              -F "status=resolved" --silent 2>/dev/null && echo "Sentry issue resolved" || true
+          fi
