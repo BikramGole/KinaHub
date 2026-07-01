@@ -94,7 +94,15 @@ jobs:
           head -3 ~/.local/share/opencode/auth.json 2>/dev/null
           echo "=== End auth check ==="
           echo "=== TIER 1: OpenCode Zen ==="
-          opencode run --model opencode/deepseek-v4-flash-free "$FIX_PROMPT" --auto 2>&1 || true
+          echo "--- Direct API test ---"
+          curl -s -w "\nHTTP_CODE: %{http_code}" \
+            -X POST "https://opencode.ai/zen/v1/chat/completions" \
+            -H "Authorization: Bearer $OPENCODE_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"model":"deepseek-v4-flash-free","messages":[{"role":"user","content":"say hi in 1 word"}]}' 2>&1 || true
+          echo ""
+          echo "--- End API test ---"
+          opencode run --model opencode/deepseek-v4-flash-free --log-level DEBUG "$FIX_PROMPT" --auto 2>&1 || true
 
           CHANGED=$( { git diff --name-only HEAD && git status --porcelain; } 2>/dev/null | sort -u | grep -v '^$' | wc -l || echo "0")
 
