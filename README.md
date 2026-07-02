@@ -6,6 +6,12 @@
 
 ## 📽️ Project Demo
 
+https://www.youtube.com/watch?v=yuS-0XcD7V8
+
+---
+
+## 🎬 Full Walkthrough Video
+
 https://github.com/user-attachments/assets/410296e2-23d3-401f-85bc-2aef7b2b1a85
 
 ---
