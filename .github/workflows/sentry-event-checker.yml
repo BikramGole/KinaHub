@@ -91,3 +91,19 @@ jobs:
 
             echo "Created issue for $SHORT_ID"
           done
+
+          # Close GitHub issues for Sentry issues that are now resolved
+          PROJECT_SLUG=$(echo "${{ github.repository }}" | cut -d/ -f2 | tr '[:upper:]' '[:lower:]' | sed 's/\./-/g')
+          OPEN_ISSUES=$(gh issue list --repo "${{ github.repository }}" --state open --json title,number --jq '.[] | {number, title}' 2>/dev/null || echo "")
+          if [ -n "$OPEN_ISSUES" ]; then
+            echo "$OPEN_ISSUES" | jq -c '.' | while IFS= read -r issue; do
+              NUM=$(echo "$issue" | jq -r '.number')
+              TITLE=$(echo "$issue" | jq -r '.title')
+              SHORT_ID=$(echo "$TITLE" | grep -oP 'Sentry: \K[A-Z]+-[A-Z0-9]+' || echo "")
+              if [ -z "$SHORT_ID" ]; then continue; fi
+              SENTRY_STATUS=$(gh api -H "Authorization: Bearer $SENTRY_AUTH_TOKEN" "https://de.sentry.io/api/0/organizations/bikramgole/issues/?query=$SHORT_ID&limit=1&statsPeriod=14d" --jq '.[0].status // "resolved"' 2>/dev/null || echo "resolved")
+              if [ "$SENTRY_STATUS" = "resolved" ]; then
+                gh issue close "$NUM" --repo "${{ github.repository }}" --comment "Auto-closed: Sentry issue $SHORT_ID is no longer unresolved." 2>/dev/null && echo "Closed #$NUM ($SHORT_ID)" || true
+              fi
+            done
+          fi
