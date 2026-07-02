@@ -6,7 +6,7 @@
 
 ## 📽️ Project Demo
 
-<video src="./demo/KinaHub_Demo.mp4" controls width="100%"></video>
+https://github.com/user-attachments/assets/ca7bd1c9-caa4-48f9-94cd-3f67d75cb37a
 
 ---
 
