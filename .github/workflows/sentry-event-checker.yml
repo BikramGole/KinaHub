@@ -23,7 +23,10 @@ jobs:
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
           GH_TOKEN: ${{ secrets.GH_PAT }}
+
+          set -e
         run: |
+          PROJECT_SLUG=$(echo "${{ github.repository }}" | cut -d/ -f2 | tr "[:upper:]" "[:lower:]" | sed "s/\./-/g")
           set -e
 
           NOISE_PATTERNS=(
@@ -36,7 +39,7 @@ jobs:
           ISSUES=$(gh api \
             -H "Authorization: Bearer $SENTRY_AUTH_TOKEN" \
             -H "Content-Type: application/json" \
-            "https://de.sentry.io/api/0/organizations/bikramgole/issues/?query=is:unresolved%20project:kinahub&limit=5&statsPeriod=14d" \
+            "https://de.sentry.io/api/0/organizations/bikramgole/issues/?query=is:unresolved%20project:${PROJECT_SLUG}&limit=5&statsPeriod=14d" \
             --jq '.[] // empty' 2>/dev/null || echo "")
 
           if [ -z "$ISSUES" ]; then
