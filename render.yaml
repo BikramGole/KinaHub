@@ -7,7 +7,7 @@ services:
     # Migrate, seed, and fix_images run at start (needs DB — Render build env may not have DB access).
     # warmup_cache pre-populates the locmem cache with homepage data
     # so the very first request after a cold start is served from cache.
-    startCommand: python manage.py migrate --no-input && python manage.py seed_all && python manage.py restore_images && python manage.py warmup_cache; gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --workers 2 --timeout 90 --preload --keep-alive 5
+    startCommand: python manage.py migrate --no-input && python manage.py seed_all && python manage.py restore_images && python manage.py warmup_cache; gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --workers 1 --timeout 90 --keep-alive 5
     envVars:
       - key: PYTHON_VERSION
         value: 3.11.0
