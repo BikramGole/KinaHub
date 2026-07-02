@@ -41,7 +41,7 @@ jobs:
           ISSUE_JSON=$(gh api \
             -H "Authorization: Bearer $SENTRY_AUTH_TOKEN" \
             -H "Content-Type: application/json" \
-            "https://de.sentry.io/api/0/organizations/bikramgole/issues/?query=is:unresolved&limit=1&statsPeriod=14d" \
+            "https://de.sentry.io/api/0/organizations/bikramgole/issues/?query=is:unresolved%20project:${PROJECT_SLUG}&limit=1&statsPeriod=14d" \
             --jq '.[0] // empty' 2>/dev/null || echo "")
 
           if [ -z "$ISSUE_JSON" ] || [ "$ISSUE_JSON" = "null" ]; then
@@ -126,9 +126,16 @@ jobs:
           GH_TOKEN: ${{ secrets.GH_PAT }}
         run: |
           SENTRY_NUMERIC_ID="${{ steps.sentry.outputs.sentry_numeric_id }}"
+          ISSUE_ID="${{ steps.sentry.outputs.issue_id }}"
           if [ -n "$SENTRY_NUMERIC_ID" ]; then
             gh api -X PUT \
               -H "Authorization: Bearer ${{ secrets.SENTRY_AUTH_TOKEN }}" \
               "https://de.sentry.io/api/0/issues/$SENTRY_NUMERIC_ID/" \
               -F "status=resolved" --silent 2>/dev/null && echo "Sentry issue resolved" || true
+          fi
+          if [ -n "$ISSUE_ID" ]; then
+            OPEN_ISSUE=$(gh issue list --repo "${{ github.repository }}" --state open --json number,title --jq ".[] | select(.title | contains(\"$ISSUE_ID\")) | .number" 2>/dev/null | head -1)
+            if [ -n "$OPEN_ISSUE" ]; then
+              gh issue close "$OPEN_ISSUE" --repo "${{ github.repository }}" --comment "Auto-closed: Sentry issue $ISSUE_ID was resolved." 2>/dev/null && echo "GitHub issue #$OPEN_ISSUE closed" || true
+            fi
           fi
