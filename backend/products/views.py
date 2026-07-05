@@ -1,4 +1,4 @@
-from django.db.models import Avg, Count, Case, DecimalField, F, OuterRef, Q, Subquery, Value, When
+from django.db.models import Avg, Count, Case, DecimalField, ExpressionWrapper, F, OuterRef, Q, Subquery, Value, When
 from django.db.models.functions import Coalesce, Abs
 from django.core.cache import cache
 from rest_framework import viewsets, permissions
@@ -36,92 +36,13 @@ class ProductViewSet(viewsets.ModelViewSet):
     queryset = product_queryset(list_mode=True)
     permission_classes = [ProductAccessPermission]
     lookup_field = 'slug'
+    pagination_class = None
 
     def get_serializer_class(self):
         if self.action == 'list' or self.action == 'similar_products':
             from .serializers import ProductListSerializer
             return ProductListSerializer
         return ProductSerializer
-
-    def get_queryset(self):
-        queryset = product_queryset()
-        category = self.request.query_params.get('category')
-        brand = self.request.query_params.get('brand')
-        store = self.request.query_params.get('store')
-        featured = self.request.query_params.get('featured')
-        query = self.request.query_params.get('q')
-        price_min = self.request.query_params.get('price_min')
-        price_max = self.request.query_params.get('price_max')
-        sort = self.request.query_params.get('sort', '').lower().strip()
-        mine = self.request.query_params.get('mine', 'false').lower() == 'true'
-
-        if self.action == 'list':
-            base = product_queryset(list_mode=True)
-        else:
-            base = product_queryset()
-
-        if mine:
-            if not self.request.user.is_authenticated:
-                return base.none()
-            if self.request.user.effective_role == "seller":
-                store = getattr(getattr(self.request.user, "seller_profile", None), "store", None)
-                return product_queryset(list_mode=self.action == 'list').filter(store=store)
-            if self.request.user.effective_role == "admin":
-                return product_queryset(include_inactive=True, list_mode=self.action == 'list')
-
-        if category:
-            base = base.filter(category__slug=category)
-        if brand:
-            base = base.filter(brand__slug=brand)
-        if store:
-            base = base.filter(store__slug=store)
-        if featured:
-            base = base.filter(is_featured=featured.lower() == 'true')
-        if query:
-            base = base.filter(
-                Q(name__icontains=query) |
-                Q(description__icontains=query) |
-                Q(category__name__icontains=query) |
-                Q(brand__name__icontains=query) |
-                Q(store__name__icontains=query)
-            )
-
-        if price_min or price_max:
-            base = base.annotate(
-                effective_price=Coalesce('discount_price', 'price', output_field=DecimalField(max_digits=10, decimal_places=2))
-            )
-            if price_min:
-                base = base.filter(effective_price__gte=price_min)
-            if price_max:
-                base = base.filter(effective_price__lte=price_max)
-
-        is_random = self.request.query_params.get('random', 'false').lower() == 'true'
-        if sort == 'price_low':
-            base = base.annotate(
-                effective_price=Coalesce('discount_price', 'price', output_field=DecimalField(max_digits=10, decimal_places=2))
-            ).order_by('effective_price', '-created_at')
-        elif sort == 'price_high':
-            base = base.annotate(
-                effective_price=Coalesce('discount_price', 'price', output_field=DecimalField(max_digits=10, decimal_places=2))
-            ).order_by('-effective_price', '-created_at')
-        elif sort == 'rating_high':
-            base = base.order_by('-rating', '-created_at')
-        elif sort == 'rating_low':
-            base = base.order_by('rating', '-created_at')
-        elif sort == 'newest':
-            base = base.order_by('-created_at')
-        elif sort == 'oldest':
-            base = base.order_by('created_at')
-        elif sort == 'name_az':
-            base = base.order_by('name', '-created_at')
-        elif sort == 'name_za':
-            base = base.order_by('-name', '-created_at')
-        elif sort == 'featured':
-            base = base.order_by('-is_featured', '-created_at')
-        elif is_random:
-            return base.order_by('?')
-
-        return base
 
     def list(self, request, *args, **kwargs):
         response = super().list(request, *args, **kwargs)
@@ -287,7 +208,7 @@ class ProductViewSet(viewsets.ModelViewSet):
             default=Value(0)
         )
         featured_score = Case(When(is_featured=True, then=Value(5)), default=Value(0))
-        rating_score = F('rating') * 2.5
+        rating_score = ExpressionWrapper(F('rating') * 2.5, output_field=DecimalField(max_digits=5, decimal_places=2))
 
         candidates = product_queryset(list_mode=True).exclude(pk=product.pk).annotate(
             _score=cat_score + brand_score + store_score + combo_score + featured_score + rating_score
@@ -303,6 +224,7 @@ class CategoryViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = [permissions.AllowAny]
+    pagination_class = None
 
     @method_decorator(cache_page(60 * 60))
     def dispatch(self, *args, **kwargs):
@@ -312,6 +234,7 @@ class BrandViewSet(viewsets.ReadOnlyModelViewSet):
     queryset = Brand.objects.all()
     serializer_class = BrandSerializer
     permission_classes = [permissions.AllowAny]
+    pagination_class = None
 
     @method_decorator(cache_page(60 * 60))
     def dispatch(self, *args, **kwargs):
@@ -322,6 +245,7 @@ class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.select_related('product', 'user')
     serializer_class = ReviewSerializer
     permission_classes = [permissions.AllowAny]
+    pagination_class = None
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -573,9 +497,15 @@ def homepage_data(request):
 
     base_qs = Product.objects.filter(is_active=True)
 
+    primary_image_sub = Subquery(
+        ProductImage.objects.filter(product=OuterRef('pk'))
+        .order_by('-is_primary', 'order')
+        .values('image_url')[:1]
+    )
     prefetch_qs = base_qs.select_related('store', 'category', 'brand').prefetch_related('images', 'inventory').annotate(
         review_count=Count('reviews', distinct=True),
         average_rating=Coalesce(Avg('reviews__rating'), 'rating', output_field=DecimalField(max_digits=3, decimal_places=2)),
+        primary_image_url_sub=primary_image_sub,
     )
 
     newer = prefetch_qs.order_by('-created_at')[:16]
