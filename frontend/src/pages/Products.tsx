@@ -66,7 +66,14 @@ export default function Products() {
     setVisibleCount(12);
     fetch(`${API}/items/?${params.toString()}`)
       .then((response) => response.json())
-      .then(setProducts)
+      .then((data) => {
+        const items = Array.isArray(data)
+          ? data
+          : data?.results && Array.isArray(data.results)
+            ? data.results
+            : [];
+        setProducts(items);
+      })
       .catch(() => setProducts([]))
       .finally(() => setLoading(false));
   }, [categoryFilter, query, priceMax, priceMin, sort, refresh]);

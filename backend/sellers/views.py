@@ -82,6 +82,7 @@ class StoreViewSet(viewsets.ModelViewSet):
     serializer_class = StoreSerializer
     permission_classes = [StorePermission]
     lookup_field = "slug"
+    pagination_class = None
 
     def get_queryset(self):
         queryset = Store.objects.filter(is_active=True).select_related("seller", "seller__user")
