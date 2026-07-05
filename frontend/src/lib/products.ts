@@ -54,6 +54,7 @@ export interface ProductType {
   is_featured: boolean;
   is_active: boolean;
   images: ProductImageType[];
+  image_url?: string;
   reviews?: ReviewType[];
   review_count?: number;
   average_rating?: number;
@@ -91,8 +92,12 @@ export interface StoreType {
 }
 
 export function productImage(product: ProductType) {
-  if (!product || !Array.isArray(product.images) || product.images.length === 0) return '';
-  return product.images.find((image) => image.is_primary)?.image_url || product.images[0]?.image_url || '';
+  if (!product) return '';
+  if (product.image_url) return product.image_url;
+  if (Array.isArray(product.images) && product.images.length > 0) {
+    return product.images.find((image) => image.is_primary)?.image_url || product.images[0]?.image_url || '';
+  }
+  return '';
 }
 
 export function price(product: ProductType) {

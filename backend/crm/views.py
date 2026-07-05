@@ -1,3 +1,4 @@
+from django.db.models import Count, Q
 from rest_framework import permissions, viewsets
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -95,9 +96,13 @@ class CRMOverviewView(APIView):
     permission_classes = [AdminOnly]
 
     def get(self, request):
+        user_counts = User.objects.aggregate(
+            users=Count("id"),
+            customers=Count("id", filter=Q(role="customer")),
+        )
         return Response({
-            "users": User.objects.count(),
-            "customers": User.objects.filter(role="customer").count(),
+            "users": user_counts["users"],
+            "customers": user_counts["customers"],
             "sellers": SellerProfile.objects.count(),
             "products": Product.objects.count(),
             "orders": Order.objects.count(),

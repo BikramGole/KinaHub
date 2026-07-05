@@ -1,28 +1,10 @@
-import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import type { Locale } from './localeStore';
 import { getStoredLocale, setCurrentLocale, getLocaleDirection, LOCALE_STORAGE_KEY } from './localeStore';
 
-// Eagerly load all translations
-const modules = import.meta.glob('./messages/**/*.json', { eager: true });
-
 type TranslationDict = Record<string, unknown>;
 
-// Transform Vite's glob object into a nested dictionary: translations['en']['auth']['loginTitle']
-const translations: Record<Locale, Record<string, TranslationDict>> = {
-  en: {},
-  np: {},
-};
-
-for (const path in modules) {
-  // path looks like: './messages/en/auth.json'
-  const match = path.match(/\.\/messages\/(en|np)\/([^/]+)\.json$/);
-  if (match) {
-    const locale = match[1] as Locale;
-    const namespace = match[2];
-    const moduleContent = (modules[path] as { default: TranslationDict }).default;
-    translations[locale][namespace] = moduleContent;
-  }
-}
+const lazyFiles = import.meta.glob<{ default: TranslationDict }>('./messages/**/*.json');
 
 interface LocaleContextType {
   locale: Locale;
@@ -32,16 +14,39 @@ interface LocaleContextType {
 
 const LocaleContext = createContext<LocaleContextType | undefined>(undefined);
 
+function pathToKey(path: string): string | null {
+  const match = path.match(/\.\/messages\/(en|np)\/([^/]+)\.json$/);
+  return match ? `${match[1]}/${match[2]}` : null;
+}
+
+function localeNamespacePaths(locale: Locale): string[] {
+  return Object.keys(lazyFiles).filter(p => p.startsWith(`./messages/${locale}/`));
+}
+
 export function LocaleProvider({ children }: { children: React.ReactNode }) {
   const [locale, setLocaleState] = useState<Locale>(getStoredLocale());
+  const [ready, setReady] = useState(false);
+  const cache = useRef<Record<string, TranslationDict>>({});
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      const paths = localeNamespacePaths(locale);
+      const enPaths = locale !== 'en' ? localeNamespacePaths('en') : [];
+      await Promise.all([
+        ...paths.map(p => lazyFiles[p]().then(m => { if (!cancelled) cache.current[pathToKey(p)!] = m.default; })),
+        ...enPaths.map(p => lazyFiles[p]().then(m => { if (!cancelled) cache.current[pathToKey(p)!] = m.default; })),
+      ]);
+      if (!cancelled) setReady(true);
+    }
+    load();
+    return () => { cancelled = true; };
+  }, [locale]);
 
   const setLocale = useCallback((newLocale: Locale) => {
     setLocaleState(newLocale);
-    setCurrentLocale(newLocale);
     if (typeof window !== 'undefined') {
       window.localStorage.setItem(LOCALE_STORAGE_KEY, newLocale);
-      document.documentElement.lang = newLocale;
-      document.documentElement.dir = getLocaleDirection(newLocale);
     }
   }, []);
 
@@ -53,13 +58,12 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
 
   const t = useCallback(
     (key: string, options?: Record<string, string | number> & { defaultValue?: string }): string => {
-      // Key format: namespace.key (e.g., auth.loginTitle)
       const parts = key.split('.');
       const namespace = parts[0];
       const translationKey = parts.slice(1).join('.');
 
       const lookup = (lang: Locale) => {
-        const module = translations[lang]?.[namespace];
+        const module = cache.current[`${lang}/${namespace}`];
         if (!module) return undefined;
 
         return translationKey.split('.').reduce<unknown>((current, segment) => {
@@ -75,14 +79,13 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
 
       let text: unknown = lookup(locale);
 
-      // Fallback to English if key is missing in Nepali
       if (!text && locale !== 'en') {
         text = lookup('en');
       }
 
       if (typeof text !== 'string') {
         if (typeof defaultValue === 'string') return defaultValue;
-        if (import.meta.env.DEV) {
+        if (import.meta.env.DEV && ready) {
           console.warn(`[i18n] Missing translation for key: ${key}`);
         }
         return key;
@@ -97,7 +100,7 @@ export function LocaleProvider({ children }: { children: React.ReactNode }) {
 
       return resolved;
     },
-    [locale]
+    [locale, ready]
   );
 
   const value = useMemo(() => ({ locale, setLocale, t }), [locale, setLocale, t]);
