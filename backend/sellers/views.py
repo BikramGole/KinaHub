@@ -1,4 +1,4 @@
-from django.db.models import Count, DecimalField, ExpressionWrapper, F, Sum
+from django.db.models import Count, DecimalField, ExpressionWrapper, F, Q, Sum
 from rest_framework.exceptions import PermissionDenied
 from rest_framework import permissions, viewsets
 from rest_framework.decorators import action
@@ -47,20 +47,31 @@ class SellerProfileViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Seller profile not found."}, status=404)
 
         store = getattr(seller_profile, "store", None)
-        products = Product.objects.filter(store=store) if store else Product.objects.none()
-        order_items = OrderItem.objects.filter(product__store=store) if store else OrderItem.objects.none()
+        if not store:
+            return Response({"store": None, "products": 0, "active_products": 0, "orders": 0, "units_sold": 0, "revenue": "0", "top_products": []})
+
+        product_stats = Product.objects.filter(store=store).aggregate(
+            total=Count("id"),
+            active=Count("id", filter=Q(is_active=True)),
+        )
+
         line_total = ExpressionWrapper(F("price") * F("quantity"), output_field=DecimalField(max_digits=12, decimal_places=2))
-        revenue = order_items.aggregate(total=Sum(line_total))["total"] or 0
+        order_stats = OrderItem.objects.filter(product__store=store).aggregate(
+            distinct_orders=Count("order", distinct=True),
+            units_sold=Sum("quantity"),
+            revenue=Sum(line_total),
+        )
 
         return Response({
-            "store": StoreSerializer(store).data if store else None,
-            "products": products.count(),
-            "active_products": products.filter(is_active=True).count(),
-            "orders": order_items.values("order").distinct().count(),
-            "units_sold": order_items.aggregate(total=Sum("quantity"))["total"] or 0,
-            "revenue": str(revenue),
+            "store": StoreSerializer(store).data,
+            "products": product_stats["total"],
+            "active_products": product_stats["active"],
+            "orders": order_stats["distinct_orders"] or 0,
+            "units_sold": order_stats["units_sold"] or 0,
+            "revenue": str(order_stats["revenue"] or 0),
             "top_products": list(
-                products.annotate(order_count=Count("order_items"))
+                Product.objects.filter(store=store)
+                .annotate(order_count=Count("order_items"))
                 .order_by("-order_count")
                 .values("id", "name", "stock", "order_count")[:5]
             ),

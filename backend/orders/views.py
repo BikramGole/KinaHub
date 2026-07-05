@@ -1,4 +1,4 @@
-from django.db.models import Sum
+from django.db.models import Sum, Count, Q
 from crm.models import ActivityLog, Notification
 from rest_framework import permissions, viewsets
 from rest_framework.decorators import action
@@ -24,12 +24,19 @@ class OrderViewSet(viewsets.ModelViewSet):
     @action(detail=False, methods=["get"])
     def summary(self, request):
         queryset = self.get_queryset()
+        agg = queryset.aggregate(
+            orders=Count("id"),
+            pending=Count("id", filter=Q(status="pending")),
+            processing=Count("id", filter=Q(status="processing")),
+            delivered=Count("id", filter=Q(status="delivered")),
+            revenue=Sum("total_price"),
+        )
         return Response({
-            "orders": queryset.count(),
-            "pending": queryset.filter(status="pending").count(),
-            "processing": queryset.filter(status="processing").count(),
-            "delivered": queryset.filter(status="delivered").count(),
-            "revenue": str(queryset.aggregate(total=Sum("total_price"))["total"] or 0),
+            "orders": agg["orders"],
+            "pending": agg["pending"],
+            "processing": agg["processing"],
+            "delivered": agg["delivered"],
+            "revenue": str(agg["revenue"] or 0),
         })
 
     @action(detail=True, methods=["patch"])

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useCallback, useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import { apiRequest } from '../lib/api';
 
@@ -52,7 +52,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(Boolean(token));
 
-  async function refreshMe() {
+  const logout = useCallback(() => {
+    localStorage.removeItem(ACCESS_KEY);
+    localStorage.removeItem(REFRESH_KEY);
+    setToken(null);
+    setUser(null);
+    setLoading(false);
+  }, []);
+
+  const refreshMe = useCallback(async () => {
     if (!token) {
       setUser(null);
       setLoading(false);
@@ -67,13 +75,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     } finally {
       setLoading(false);
     }
-  }
+  }, [token, logout]);
 
   useEffect(() => {
     void refreshMe();
-  }, [token]);
+  }, [refreshMe]);
 
-  async function login(email: string, password: string, sellerCode?: string) {
+  const login = useCallback(async (email: string, password: string, sellerCode?: string) => {
     const data = await apiRequest<any>('/token/', {
       method: 'POST',
       body: JSON.stringify({ email, password, seller_code: sellerCode }),
@@ -89,9 +97,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const currentUser = await apiRequest<User>('/auth/me/', { token: data.access });
     setUser(currentUser);
     return currentUser;
-  }
+  }, []);
 
-  async function verifyOTP(userId: number, otpCode: string) {
+  const verifyOTP = useCallback(async (userId: number, otpCode: string) => {
     const data = await apiRequest<{ access: string; refresh: string }>('/token/verify-2fa/', {
       method: 'POST',
       body: JSON.stringify({ user_id: userId, otp_code: otpCode }),
@@ -103,23 +111,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const currentUser = await apiRequest<User>('/auth/me/', { token: data.access });
     setUser(currentUser);
     return currentUser;
-  }
+  }, []);
 
-  async function requestPasswordReset(email: string) {
+  const requestPasswordReset = useCallback(async (email: string) => {
     await apiRequest('/auth/password-reset/request/', {
       method: 'POST',
       body: JSON.stringify({ email }),
     });
-  }
+  }, []);
 
-  async function confirmPasswordReset(email: string, otpCode: string, newPassword: string) {
+  const confirmPasswordReset = useCallback(async (email: string, otpCode: string, newPassword: string) => {
     await apiRequest('/auth/password-reset/confirm/', {
       method: 'POST',
       body: JSON.stringify({ email, otp_code: otpCode, new_password: newPassword }),
     });
-  }
+  }, []);
 
-  async function register(payload: RegisterPayload) {
+  const register = useCallback(async (payload: RegisterPayload) => {
     const data = await apiRequest<any>('/auth/register/', {
       method: 'POST',
       body: JSON.stringify(payload),
@@ -134,9 +142,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setToken(data.access);
     setUser(data.user);
     return data.user;
-  }
+  }, []);
 
-  async function loginWithGoogle(accessToken: string, role: 'customer' | 'seller' = 'customer', businessName?: string, sellerCode?: string) {
+  const loginWithGoogle = useCallback(async (accessToken: string, role: 'customer' | 'seller' = 'customer', businessName?: string, sellerCode?: string) => {
     const data = await apiRequest<{ access: string; refresh: string; user: User }>('/auth/google/', {
       method: 'POST',
       body: JSON.stringify({ access_token: accessToken, role, business_name: businessName, seller_code: sellerCode }),
@@ -148,31 +156,27 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(REFRESH_KEY, data.refresh);
     
     return data.user;
-  }
+  }, []);
 
-  async function requestDeleteAccount() {
+  const requestDeleteAccount = useCallback(async () => {
     await apiRequest('/auth/delete-account/request/', { method: 'POST', token });
-  }
+  }, [token]);
 
-  async function confirmDeleteAccount(otpCode: string) {
+  const confirmDeleteAccount = useCallback(async (otpCode: string) => {
     await apiRequest('/auth/delete-account/confirm/', {
       method: 'POST',
       token,
       body: JSON.stringify({ otp_code: otpCode }),
     });
     logout();
-  }
+  }, [token, logout]);
 
-  function logout() {
-    localStorage.removeItem(ACCESS_KEY);
-    localStorage.removeItem(REFRESH_KEY);
-    setToken(null);
-    setUser(null);
-    setLoading(false);
-  }
+  const ctx = useMemo(() => ({ user, token, loading, login, loginWithGoogle, verifyOTP, requestPasswordReset, confirmPasswordReset, register, requestDeleteAccount, confirmDeleteAccount, logout, refreshMe }), [
+    user, token, loading,
+  ]);
 
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, loginWithGoogle, verifyOTP, requestPasswordReset, confirmPasswordReset, register, requestDeleteAccount, confirmDeleteAccount, logout, refreshMe }}>
+    <AuthContext.Provider value={ctx}>
       {children}
     </AuthContext.Provider>
   );

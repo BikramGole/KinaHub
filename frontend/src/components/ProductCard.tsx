@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { Link } from 'react-router-dom';
 import { ShoppingBag, Star, Store } from 'lucide-react';
 import { formatPrice, price, productImage } from '../lib/products';
@@ -10,7 +11,7 @@ interface ProductCardProps {
   compact?: boolean;
 }
 
-export default function ProductCard({ product, compact = false }: ProductCardProps) {
+function ProductCardComponent({ product, compact = false }: ProductCardProps) {
   const { t } = useTranslation();
   const image = productImage(product);
   const hasDiscount = Boolean(product.discount_price);
@@ -80,3 +81,6 @@ export default function ProductCard({ product, compact = false }: ProductCardPro
     </Link>
   );
 }
+
+const ProductCard = memo(ProductCardComponent);
+export default ProductCard;

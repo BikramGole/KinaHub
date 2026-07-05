@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight, BadgePercent, Truck, ShieldCheck, RefreshCw, Flame, Star, Tag, Sparkles, ChevronLeft, ChevronRight, Store, Clock, TrendingUp, Zap } from 'lucide-react';
 
@@ -127,6 +127,28 @@ function DealCard({ product }: { product: ProductType }) {
         )}
       </div>
     </Link>
+  );
+}
+
+function LazySection({ children, className }: { children: React.ReactNode; className?: string }) {
+  const ref = useRef<HTMLElement>(null);
+  const [show, setShow] = useState(false);
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) { setShow(true); observer.disconnect(); } },
+      { rootMargin: '400px' }
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, []);
+
+  return (
+    <section ref={ref} className={className}>
+      {show ? children : <div className="h-32 animate-pulse rounded-lg bg-muted/30" />}
+    </section>
   );
 }
 
@@ -399,7 +421,7 @@ export default function Home() {
 
       {/* ── New Arrivals (horizontal scroll) ── */}
       {newestProducts.length > 0 && (
-        <section className="border-t border-border bg-muted/20">
+        <LazySection className="border-t border-border bg-muted/20">
           <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
             <SectionHeader
               icon={Clock}
@@ -411,12 +433,12 @@ export default function Home() {
             />
             <ProductRow products={newestProducts} />
           </div>
-        </section>
+        </LazySection>
       )}
 
       {/* ── Featured Picks ── */}
       {featuredProducts.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <LazySection className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
           <SectionHeader
             icon={Star}
             title="Featured Products"
@@ -429,12 +451,12 @@ export default function Home() {
               <ProductCard key={product.id} product={product} />
             ))}
           </div>
-        </section>
+        </LazySection>
       )}
 
       {/* ── Daily Picks (random) ── */}
       {dailyPicks.length > 0 && (
-        <section className="border-t border-border bg-muted/20">
+        <LazySection className="border-t border-border bg-muted/20">
           <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
             <SectionHeader
               icon={Sparkles}
@@ -448,12 +470,12 @@ export default function Home() {
               ))}
             </div>
           </div>
-        </section>
+        </LazySection>
       )}
 
       {/* ── Tech / Laptops Row ── */}
       {techProducts.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <LazySection className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
           <SectionHeader
             icon={getCategoryIcon('laptops')}
             title="Tech & Laptops"
@@ -462,12 +484,12 @@ export default function Home() {
             linkLabel="Shop tech"
           />
           <ProductRow products={techProducts} />
-        </section>
+        </LazySection>
       )}
 
       {/* ── Trending Now ── */}
       {trendingProducts.length > 0 && (
-        <section className="border-t border-border bg-muted/20">
+        <LazySection className="border-t border-border bg-muted/20">
           <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
             <SectionHeader
               icon={TrendingUp}
@@ -482,12 +504,12 @@ export default function Home() {
               ))}
             </div>
           </div>
-        </section>
+        </LazySection>
       )}
 
       {/* ── Fashion Row ── */}
       {fashionProducts.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <LazySection className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
           <SectionHeader
             icon={getCategoryIcon('fashion')}
             title="Fashion & Style"
@@ -496,12 +518,12 @@ export default function Home() {
             linkLabel="Shop fashion"
           />
           <ProductRow products={fashionProducts} />
-        </section>
+        </LazySection>
       )}
 
       {/* ── Grocery Row ── */}
       {groceryProducts.length > 0 && (
-        <section className="border-t border-border bg-muted/20">
+        <LazySection className="border-t border-border bg-muted/20">
           <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
             <SectionHeader
               icon={getCategoryIcon('groceries')}
@@ -512,12 +534,12 @@ export default function Home() {
             />
             <ProductRow products={groceryProducts} />
           </div>
-        </section>
+        </LazySection>
       )}
 
       {/* ── Books Row ── */}
       {booksProducts.length > 0 && (
-        <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+        <LazySection className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
           <SectionHeader
             icon={getCategoryIcon('books')}
             title="Books & Stationery"
@@ -526,12 +548,12 @@ export default function Home() {
             linkLabel="Browse books"
           />
           <ProductRow products={booksProducts} />
-        </section>
+        </LazySection>
       )}
 
       {/* ── Recommended for You ── */}
       {recommendedProducts.length > 0 && (
-        <section className="border-t border-border bg-muted/20">
+        <LazySection className="border-t border-border bg-muted/20">
           <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
             <SectionHeader
               icon={Sparkles}
@@ -545,11 +567,11 @@ export default function Home() {
               ))}
             </div>
           </div>
-        </section>
+        </LazySection>
       )}
 
       {/* ── Store Directory Banner ── */}
-      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <LazySection className="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
         <div className="rounded-xl border border-border bg-gradient-to-br from-accent/10 via-surface to-muted/60 p-8 text-center">
           <Store className="mx-auto mb-3 h-10 w-10 text-accent" />
           <h2 className="text-2xl font-black tracking-tight">Browse by Store</h2>
@@ -563,7 +585,7 @@ export default function Home() {
             Explore all stores <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
-      </section>
+      </LazySection>
 
 
     </div>

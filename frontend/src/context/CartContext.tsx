@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, useCallback, useRef, Component } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, useMemo, useRef, Component } from 'react';
 import type { ReactNode } from 'react';
 
 import { Check, RotateCcw, X, AlertTriangle } from 'lucide-react';
@@ -148,12 +148,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   }, [items]);
 
-  const totalCount = items.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = items.reduce((sum, item) => {
+  const totalCount = useMemo(() => items.reduce((sum, item) => sum + item.quantity, 0), [items]);
+  const totalPrice = useMemo(() => items.reduce((sum, item) => {
     const itemPrice = price(item.product);
     const validPrice = Number.isFinite(itemPrice) ? itemPrice : 0;
     return sum + validPrice * item.quantity;
-  }, 0);
+  }, 0), [items]);
 
   const [toast, setToast] = useState<{ id: number; product: ProductType } | null>(null);
   const toastTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -218,10 +218,12 @@ export function CartProvider({ children }: { children: ReactNode }) {
 
   const clearCart = useCallback(() => setItems([]), []);
 
+  const ctx = useMemo(() => ({ items, totalCount, totalPrice, addToCart, removeFromCart, updateQuantity, clearCart }), [
+    items, totalCount, totalPrice, addToCart, removeFromCart, updateQuantity, clearCart
+  ]);
+
   return (
-    <CartContext.Provider
-      value={{ items, totalCount, totalPrice, addToCart, removeFromCart, updateQuantity, clearCart }}
-    >
+    <CartContext.Provider value={ctx}>
       {children}
       <div className="fixed bottom-4 right-4 z-50 flex flex-col gap-2 sm:bottom-6 sm:right-6">
         {toast && toast.product && (
