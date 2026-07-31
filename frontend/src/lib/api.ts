@@ -1,5 +1,5 @@
 const rawApiBase = import.meta.env.VITE_API_URL || '';
-export const API_BASE = rawApiBase || (import.meta.env.DEV ? '/api' : 'https://kinahub.onrender.com/api');
+export const API_BASE = rawApiBase || (import.meta.env.DEV ? '/api' : 'https://kinahub-ot0t.onrender.com/api');
 
 export interface ApiOptions extends RequestInit {
   token?: string | null;

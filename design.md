@@ -20,7 +20,7 @@
 ┌────────────────────────────────────────────────────────┐
 │                    Backend (Render)                     │
 │  Django 6.0 · DRF 3.17 · Gunicorn · Whitenoise         │
-│  kinahub.onrender.com                                  │
+│  kinahub-ot0t.onrender.com                              │
 └───────┬──────────┬──────────┬──────────┬───────────────┘
         │          │          │          │
         ▼          ▼          ▼          ▼

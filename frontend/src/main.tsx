@@ -8,7 +8,7 @@ import App from "./App.tsx";
 
 // ─── Backend Pre-warmer ─────────────────────────────────────────────────────
 (function prewarmBackend() {
-  const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '' : 'https://kinahub.onrender.com');
+  const API_BASE = import.meta.env.VITE_API_URL || (import.meta.env.DEV ? '' : 'https://kinahub-ot0t.onrender.com');
   const PING_URL = `${API_BASE}/ping/`;
   const start = Date.now();
 
