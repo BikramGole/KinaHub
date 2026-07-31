@@ -117,6 +117,12 @@ class ProductSerializer(ProductListSerializer):
     brand_id = serializers.PrimaryKeyRelatedField(source="brand", queryset=Brand.objects.all(), write_only=True, required=False, allow_null=True)
     images = ProductImageSerializer(many=True, read_only=True)
     primary_image_url = serializers.URLField(write_only=True, required=False, allow_blank=True)
+    remove_image_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        write_only=True,
+        required=False,
+        allow_empty=True,
+    )
     inventory = InventorySerializer(read_only=True)
     category = CategorySerializer(read_only=True)
     brand = BrandSerializer(read_only=True)
@@ -128,7 +134,7 @@ class ProductSerializer(ProductListSerializer):
             'id', 'name', 'slug', 'store', 'category', 'category_id', 'brand', 'brand_id',
             'description', 'specifications', 'specs',
             'price', 'discount_price', 'stock', 'rating',
-            'tag', 'images', 'primary_image_url', 'inventory', 'review_count', 'average_rating', 'is_featured', 'is_active',
+            'tag', 'images', 'primary_image_url', 'remove_image_ids', 'inventory', 'review_count', 'average_rating', 'is_featured', 'is_active',
             'created_at', 'updated_at'
         ]
         read_only_fields = ["id", "slug", "store", "images", "inventory", "created_at", "updated_at"]
@@ -143,8 +149,11 @@ class ProductSerializer(ProductListSerializer):
 
     def update(self, instance, validated_data):
         image_url = validated_data.pop("primary_image_url", "")
+        remove_ids = validated_data.pop("remove_image_ids", None)
         product = super().update(instance, validated_data)
         Inventory.objects.update_or_create(product=product, defaults={"quantity": product.stock})
+        if remove_ids:
+            product.images.filter(id__in=remove_ids).delete()
         if image_url:
             ProductImage.objects.update_or_create(
                 product=product,
