@@ -24,6 +24,11 @@
     "ready": "तयार",
     "newChat": "नयाँ च्याट",
     "placeholder": "KinaHub AI लाई सोध्नुहोस्",
-    "error": "माफ गर्नुहोस्, केहि गलत भयो। कृपया फेरि प्रयास गर्नुहोस्।"
+    "error": "माफ गर्नुहोस्, केहि गलत भयो। कृपया फेरि प्रयास गर्नुहोस्।",
+    "addToCart": "कार्टमा थप्नुहोस्",
+    "addedToCart": "कार्टमा थपियो",
+    "confirmAdd": "पक्का, के थपौं",
+    "confirmAddToCart": "तपाईंको कार्टमा?",
+    "founderReply": "KinaHub को संस्थापक **Bikram Gole** हुनुहुन्छ — Class 10 को OJT school project को रूपमा Django बाट बनाइएको। उहाँ नेपालका minimalist builder हुनुहुन्छ, Linux from Scratch चलाउनुहुन्छ र C++, Python, Bash मा लेख्नुहुन्छ। अन्य projects: Ytdaily, BinodLivestock, Snapcode, RVX-UltraLock।"
   }
 }

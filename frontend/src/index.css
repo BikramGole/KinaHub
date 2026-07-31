@@ -142,6 +142,34 @@ textarea {
   to { opacity: 0; transform: translateX(100%); }
 }
 
+@keyframes demo-card-in {
+  0% { opacity: 0; transform: translateY(24px) scale(0.9); }
+  8% { opacity: 1; transform: translateY(0) scale(1); }
+  80% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-14px) scale(0.96); }
+}
+
+@keyframes demo-toast {
+  0%, 18% { opacity: 0; transform: translateY(12px) scale(0.95); }
+  26% { opacity: 1; transform: translateY(0) scale(1); }
+  62% { opacity: 1; transform: translateY(0) scale(1); }
+  72% { opacity: 0; transform: translateY(-10px) scale(0.97); }
+  100% { opacity: 0; transform: translateY(-10px) scale(0.97); }
+}
+
+@keyframes demo-cursor {
+  0%, 12% { transform: translate(0, 0); }
+  30% { transform: translate(34px, 8px); }
+  55% { transform: translate(12px, 48px); }
+  80% { transform: translate(-6px, 24px); }
+  100% { transform: translate(0, 0); }
+}
+
+@keyframes demo-progress {
+  from { width: 0%; }
+  to { width: 100%; }
+}
+
 .anim-fade-in { animation: fade-in 0.3s ease-out; }
 .anim-fade-in-up { animation: fade-in-up 0.35s ease-out; }
 .anim-slide-up { animation: slide-up 0.3s ease-out; }
@@ -149,3 +177,8 @@ textarea {
 .anim-scale-in { animation: scale-in 0.2s ease-out; }
 .anim-toast-in { animation: toast-in 0.3s ease-out; }
 .anim-toast-out { animation: toast-out 0.25s ease-in forwards; }
+
+.demo-card { animation: demo-card-in 9s ease-in-out infinite; }
+.demo-toast { animation: demo-toast 9s ease-in-out infinite; }
+.demo-cursor { animation: demo-cursor 9s ease-in-out infinite; }
+.demo-progress { animation: demo-progress 4s linear infinite; }

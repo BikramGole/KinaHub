@@ -7,6 +7,11 @@ export interface ApiOptions extends RequestInit {
 
 export async function apiRequest<T>(path: string, options: ApiOptions = {}): Promise<T> {
   const { token, headers, ...requestOptions } = options;
+
+  if (token && token.startsWith('__demo_')) {
+    throw new Error('Demo accounts are simulated locally — this action needs a real account.');
+  }
+
   const controller = new AbortController();
   const timeout = window.setTimeout(() => controller.abort(), 15000);
   const response = await fetch(`${API_BASE}${path}`, {

@@ -24,6 +24,11 @@
     "ready": "Ready",
     "newChat": "New chat",
     "placeholder": "Ask KinaHub AI",
-    "error": "Sorry, something went wrong. Please try again."
+    "error": "Sorry, something went wrong. Please try again.",
+    "addToCart": "Add to cart",
+    "addedToCart": "Added to cart",
+    "confirmAdd": "Sure! Shall I add",
+    "confirmAddToCart": "to your cart?",
+    "founderReply": "KinaHub was founded by **Bikram Gole** as his Class 10 OJT school project, built with Django. He is a minimalist builder from Nepal who runs Linux from Scratch and writes C++, Python, and Bash. His other projects include Ytdaily, BinodLivestock, Snapcode, and RVX-UltraLock."
   }
 }

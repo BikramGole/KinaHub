@@ -3,6 +3,7 @@ import type { ReactNode } from 'react';
 
 import { Check, RotateCcw, X, AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useAuth } from './AuthContext';
 import type { ProductType } from '../lib/products';
 import { price } from '../lib/products';
 
@@ -118,6 +119,7 @@ function normalizeCartItem(item: unknown): CartItem | null {
 }
 
 export function CartProvider({ children }: { children: ReactNode }) {
+  const { isDemo } = useAuth();
   const [items, setItems] = useState<CartItem[]>(() => {
     try {
       const stored = localStorage.getItem(CART_KEY);
@@ -129,8 +131,15 @@ export function CartProvider({ children }: { children: ReactNode }) {
     }
   });
 
-  // Persist to localStorage on every change
+  // Demo sessions are memory-only: entering demo clears the cart,
+  // and demo cart changes are never persisted (gone after refresh).
   useEffect(() => {
+    if (isDemo) setItems([]);
+  }, [isDemo]);
+
+  // Persist to localStorage on every change (never for demo sessions)
+  useEffect(() => {
+    if (isDemo) return;
     try {
       localStorage.setItem(CART_KEY, JSON.stringify(items));
     } catch (e) {
@@ -146,7 +155,7 @@ export function CartProvider({ children }: { children: ReactNode }) {
         }
       }
     }
-  }, [items]);
+  }, [items, isDemo]);
 
   const totalCount = useMemo(() => items.reduce((sum, item) => sum + item.quantity, 0), [items]);
   const totalPrice = useMemo(() => items.reduce((sum, item) => {

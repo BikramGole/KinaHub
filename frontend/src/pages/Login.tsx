@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import type { FormEvent } from 'react';
 
-import { Store, Mail, Lock, ArrowRight, Loader2 } from 'lucide-react';
+import { Store, Mail, Lock, ArrowRight, Loader2, ShoppingCart, Sparkles } from 'lucide-react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import GoogleAuthButton from '../components/GoogleAuthButton';
@@ -10,7 +10,7 @@ import { useTranslation } from '../i18n/LocaleContext';
 export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
-  const { login, loginWithGoogle, verifyOTP } = useAuth();
+  const { login, loginWithGoogle, verifyOTP, demoLogin } = useAuth();
   const { t } = useTranslation();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -274,6 +274,40 @@ export default function Login() {
               onDemoClick={handleDemoGoogleLogin}
               className="w-full mt-4 flex items-center justify-center gap-3 bg-background border border-border rounded-xl py-3.5 hover:bg-card transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
             />
+          </>
+        )}
+
+        {!requires2FA && (
+          <>
+            <div className="mt-6 rounded-xl border border-accent/30 bg-accent/5 p-4">
+              <div className="flex items-center gap-2">
+                <Sparkles className="h-4 w-4 text-accent" />
+                <p className="text-sm font-bold text-primary">{t('auth.demoTitle', { defaultValue: 'Try the demo' })}</p>
+              </div>
+              <p className="mt-1 text-xs text-secondary">{t('auth.demoSubtitle', { defaultValue: 'No signup needed — everything resets on refresh.' })}</p>
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <button
+                  type="button"
+                  onClick={() => { demoLogin('customer'); navigate('/dashboard'); }}
+                  disabled={isSubmitting}
+                  className="flex flex-col items-center gap-1 rounded-lg border border-border bg-background px-3 py-3 text-center transition-colors hover:border-accent disabled:opacity-70"
+                >
+                  <ShoppingCart className="h-5 w-5 text-accent" />
+                  <span className="text-xs font-bold text-primary">{t('auth.demoCustomer', { defaultValue: 'Demo customer' })}</span>
+                  <span className="text-[10px] text-secondary">{t('auth.demoCustomerHint', { defaultValue: 'Browse, cart, checkout' })}</span>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => { demoLogin('seller'); navigate('/seller'); }}
+                  disabled={isSubmitting}
+                  className="flex flex-col items-center gap-1 rounded-lg border border-border bg-background px-3 py-3 text-center transition-colors hover:border-accent disabled:opacity-70"
+                >
+                  <Store className="h-5 w-5 text-accent" />
+                  <span className="text-xs font-bold text-primary">{t('auth.demoSeller', { defaultValue: 'Demo seller' })}</span>
+                  <span className="text-[10px] text-secondary">{t('auth.demoSellerHint', { defaultValue: 'Seller dashboard preview' })}</span>
+                </button>
+              </div>
+            </div>
           </>
         )}
 
