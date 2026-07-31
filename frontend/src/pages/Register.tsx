@@ -143,29 +143,20 @@ export default function Register() {
       <div className="pointer-events-none absolute -bottom-40 -right-40 h-[480px] w-[480px] rounded-full bg-orange-400/10 blur-3xl" />
 
       <div className="anim-fade-in-up relative z-10 w-full max-w-7xl grid gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,440px)] lg:gap-14 lg:items-stretch">
-        {/* ── Left: full-bleed video rectangle ── */}
-        <div className="hidden lg:block relative min-h-[600px] overflow-hidden rounded-2xl border border-border shadow-xl">
-          <video
-            src="/demo/KinaHub_Demo.mp4"
-            className="absolute inset-0 h-full w-full object-cover"
-            autoPlay
-            muted
-            loop
-            playsInline
-            aria-label="KinaHub demo video"
-          />
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/70 via-black/10 to-black/30" />
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-accent/20 via-transparent to-transparent" />
+        {/* ── Left: video panel ── */}
+        <div className="hidden lg:block relative min-h-[600px] overflow-hidden rounded-2xl border border-border shadow-xl bg-gradient-to-br from-muted via-background to-muted">
+          <div className="pointer-events-none absolute -top-24 -right-24 h-72 w-72 rounded-full bg-accent/15 blur-3xl" />
+          <div className="pointer-events-none absolute -bottom-24 -left-24 h-72 w-72 rounded-full bg-orange-400/15 blur-3xl" />
 
           <div className="relative flex h-full flex-col justify-between p-8">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2.5">
-                <span className="inline-flex items-center justify-center rounded-xl bg-white/15 p-2 backdrop-blur-md">
-                  <Store className="h-5 w-5 text-white" />
+                <span className="inline-flex items-center justify-center rounded-xl bg-accent/10 p-2">
+                  <Store className="h-5 w-5 text-accent" />
                 </span>
-                <span className="text-lg font-extrabold tracking-tight text-white">KinaHub</span>
+                <span className="text-lg font-extrabold tracking-tight text-primary">KinaHub</span>
               </div>
-              <span className="flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold text-white backdrop-blur-md">
+              <span className="flex items-center gap-1.5 rounded-full border border-border bg-card/70 px-3 py-1 text-xs font-semibold text-primary backdrop-blur-md">
                 <span className="relative flex h-2 w-2">
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-green-400" />
@@ -174,23 +165,38 @@ export default function Register() {
               </span>
             </div>
 
+            {/* 16:9 video frame — video fits perfectly */}
+            <div className="flex flex-1 items-center py-6">
+              <div className="relative w-full aspect-video overflow-hidden rounded-xl border border-border bg-black shadow-2xl">
+                <video
+                  src="/demo/KinaHub_Demo.mp4"
+                  className="absolute inset-0 h-full w-full object-cover"
+                  autoPlay
+                  muted
+                  loop
+                  playsInline
+                  aria-label="KinaHub demo video"
+                />
+              </div>
+            </div>
+
             <div>
-              <h2 className="text-3xl font-black tracking-tight text-white sm:text-4xl">
+              <h2 className="text-3xl font-black tracking-tight text-primary sm:text-4xl">
                 {t('auth.demoTagline', { defaultValue: 'Buy local. Sell smart.' })}
               </h2>
-              <p className="mt-2 max-w-md text-sm leading-relaxed text-white/80">
+              <p className="mt-2 max-w-md text-sm leading-relaxed text-secondary">
                 {t('auth.registerVideoCopy', { defaultValue: 'Groceries, electronics, and local stores — delivered to your door in minutes.' })}
               </p>
               <div className="mt-6 flex items-center gap-4">
                 <div className="flex -space-x-2">
                   {['from-amber-400 to-orange-500', 'from-sky-400 to-blue-500', 'from-emerald-400 to-teal-500'].map((grad, i) => (
-                    <span key={i} className={`inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-black/40 bg-gradient-to-br ${grad} text-[10px] font-bold text-white`}>
+                    <span key={i} className={`inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-background bg-gradient-to-br ${grad} text-[10px] font-bold text-white`}>
                       {['RS', 'SM', 'AP'][i]}
                     </span>
                   ))}
                 </div>
-                <div className="flex items-center gap-1.5 text-xs font-semibold text-white/85">
-                  <ShieldCheck className="h-4 w-4 text-green-400" />
+                <div className="flex items-center gap-1.5 text-xs font-semibold text-secondary">
+                  <ShieldCheck className="h-4 w-4 text-green-500" />
                   {t('auth.demoTrusted', { defaultValue: 'Trusted by 500+ Nepali shoppers' })}
                 </div>
               </div>
@@ -200,9 +206,9 @@ export default function Register() {
                   { value: '50+', label: t('auth.statSellers', { defaultValue: 'Local stores' }) },
                   { value: '10k+', label: t('auth.statOrders', { defaultValue: 'Orders delivered' }) },
                 ].map((stat) => (
-                  <div key={stat.label} className="rounded-xl border border-white/15 bg-white/10 px-3 py-2.5 text-center backdrop-blur-md">
-                    <p className="text-lg font-bold tracking-tight text-white">{stat.value}</p>
-                    <p className="mt-0.5 text-[10px] text-white/70">{stat.label}</p>
+                  <div key={stat.label} className="rounded-xl border border-border bg-surface px-3 py-2.5 text-center shadow-sm">
+                    <p className="text-lg font-bold tracking-tight text-primary">{stat.value}</p>
+                    <p className="mt-0.5 text-[10px] text-secondary">{stat.label}</p>
                   </div>
                 ))}
               </div>
