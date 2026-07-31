@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Send, X } from 'lucide-react';
+import { Send, X, ShoppingCart, Check } from 'lucide-react';
 
 import { useCart } from '../context/CartContext';
 import { useTranslation } from '../i18n/LocaleContext';
@@ -34,8 +34,26 @@ export function aiChatReply(message: string, items: CartItem[]) {
   return "";
 }
 
+const ORDINAL_MAP: Record<string, number> = {
+  first: 0, '1st': 0, '1': 0,
+  second: 1, '2nd': 1, '2': 1,
+  third: 2, '3rd': 2, '3': 2,
+  fourth: 3, '4th': 3, '4': 3,
+  fifth: 4, '5th': 4, '5': 4,
+};
+
+function resolveOrdinalPick(text: string, count: number): number | null {
+  if (!/(add|put|include|order|buy|cart)/i.test(text)) return null;
+  const lower = text.toLowerCase();
+  if (/\blast\b/.test(lower) && count > 0) return count - 1;
+  for (const [word, index] of Object.entries(ORDINAL_MAP)) {
+    if (new RegExp(`\\b${word}\\b`).test(lower) && index < count) return index;
+  }
+  return null;
+}
+
 export default function AiAssistantWidget() {
-  const { items } = useCart();
+  const { items, addToCart } = useCart();
   const { t, locale } = useTranslation();
   const [open, setOpen] = useState(false);
   const [message, setMessage] = useState('');
@@ -167,6 +185,19 @@ export default function AiAssistantWidget() {
     setMessages(newMessages);
     setMessage('');
 
+    // Fast-path for founder questions (guaranteed answer + photo)
+    const founderIntent = /(who|about|tell).*(bikram|founder|creator)|founder of|who (made|created|built|started) (this|kinahub|you|kina)|who founded/i.test(trimmed);
+    if (founderIntent) {
+      setMessages(current => [
+        ...current,
+        {
+          role: 'assistant',
+          text: `${t('ai.widget.founderReply', { defaultValue: 'KinaHub was founded by **Bikram Gole** as his Class 10 OJT school project, built with Django. He is a minimalist builder from Nepal who runs Linux from Scratch and writes C++, Python, and Bash. His other projects include Ytdaily, BinodLivestock, Snapcode, and RVX-UltraLock.' })}\n\n[IMAGE:founder]`,
+        },
+      ]);
+      return;
+    }
+
     // Fast-path for common offline queries
     const fastReply = aiChatReply(trimmed, items);
     if (fastReply) {
@@ -175,6 +206,45 @@ export default function AiAssistantWidget() {
         { role: 'assistant', text: fastReply },
       ]);
       return;
+    }
+
+    // Offline fast-path: "add the second one" style references against the last AI suggestions
+    const lastAssistant = messages[messages.length - 1];
+    if (lastAssistant?.role === 'assistant') {
+      const tagSlugs = [...lastAssistant.text.matchAll(/\[PRODUCT:([a-zA-Z0-9_-]+)\]/g)].map((match) => match[1]);
+      if (tagSlugs.length > 0) {
+        const pick = resolveOrdinalPick(trimmed, tagSlugs.length);
+        if (pick !== null) {
+          const product = allProducts.get(tagSlugs[pick]);
+          if (product) {
+            setMessages(current => [
+              ...current,
+              {
+                role: 'assistant',
+                text: `${t('ai.widget.confirmAdd', { defaultValue: 'Sure! Shall I add' })} **${product.name}** ${t('ai.widget.confirmAddToCart', { defaultValue: 'to your cart?' })}\n\n[ADD_TO_CART:${product.slug}]`,
+              },
+            ]);
+            return;
+          }
+        }
+      }
+    }
+
+    // Offline fast-path: add-to-cart intent against the loaded catalog
+    const addIntent = /(add|put|include|throw).*(cart|bag)|(cart|bag).*(add|put|include)|buy|purchase|order/i.test(trimmed);
+    if (addIntent && catalog.length > 0) {
+      const lower = trimmed.toLowerCase();
+      const found = catalog.find((product) => product.name && lower.includes(product.name.toLowerCase()));
+      if (found) {
+        setMessages(current => [
+          ...current,
+          {
+            role: 'assistant',
+            text: `${t('ai.widget.confirmAdd', { defaultValue: 'Sure! Shall I add' })} **${found.name}** ${t('ai.widget.confirmAddToCart', { defaultValue: 'to your cart?' })}\n\n[ADD_TO_CART:${found.slug}]`,
+          },
+        ]);
+        return;
+      }
     }
 
     setLoading(true);
@@ -283,12 +353,75 @@ export default function AiAssistantWidget() {
   ];
 
   const renderMessage = (text: string) => {
-    // Basic markdown for **bold** and [PRODUCT:slug]
-    const parts = text.split(/(\*\*.*?\*\*|\[PRODUCT:[a-zA-Z0-9_-]+\])/g);
+    // Basic markdown for **bold**, [PRODUCT:slug], [ADD_TO_CART:slug] and [IMAGE:key]
+    const parts = text.split(/(\*\*.*?\*\*|\[PRODUCT:[a-zA-Z0-9_-]+\]|\[ADD_TO_CART:[a-zA-Z0-9_-]+\]|\[IMAGE:[a-z]+\])/g);
 
     return parts.map((part, index) => {
       if (part.startsWith('**') && part.endsWith('**')) {
         return <strong key={index} className="font-bold">{part.slice(2, -2)}</strong>;
+      }
+      if (part.startsWith('[IMAGE:') && part.endsWith(']')) {
+        const key = part.slice(7, -1);
+        if (key === 'founder') {
+          return (
+            <div key={index} className="my-2 overflow-hidden rounded-lg border border-border">
+              <img
+                src="/founder/Bikram.jpeg"
+                alt="Bikram Gole"
+                className="h-40 w-full object-cover"
+              />
+            </div>
+          );
+        }
+        return null;
+      }
+      if (part.startsWith('[ADD_TO_CART:') && part.endsWith(']')) {
+        const slug = part.slice(14, -1);
+        const product = allProducts.get(slug);
+        if (!product) return null;
+
+        // Check if this item is in the cart to show quantity
+        const cartItem = items.find(ci => ci.product.slug === slug);
+
+        return (
+          <div
+            key={index}
+            className="my-2 flex items-center gap-3 rounded-lg border border-border bg-background p-2"
+          >
+            <img 
+              src={productImage(product)} 
+              alt={product.name}
+              className="h-12 w-12 rounded-md object-cover" 
+            />
+            <div className="flex-1 min-w-0">
+              <p className="truncate text-sm font-semibold text-primary">{product.name}</p>
+              <p className="text-xs font-bold text-accent">{formatPrice(price(product))}</p>
+            </div>
+            <button
+              type="button"
+              onClick={() => addToCart(product, 1)}
+              className={`flex shrink-0 items-center gap-1 rounded-full px-3 py-1.5 text-xs font-bold transition-colors ${
+                cartItem
+                  ? 'bg-green-100 text-green-700 hover:bg-green-200'
+                  : 'bg-accent text-background hover:bg-orange-600'
+              }`}
+              aria-label={`${t('ai.widget.addToCart', { defaultValue: 'Add to cart' })} ${product.name}`}
+            >
+              {cartItem ? (
+                <>
+                  <Check className="h-3.5 w-3.5" />
+                  {t('ai.widget.addedToCart', { defaultValue: 'Added' })}
+                  {cartItem.quantity > 1 ? ` × ${cartItem.quantity}` : ''}
+                </>
+              ) : (
+                <>
+                  <ShoppingCart className="h-3.5 w-3.5" />
+                  {t('ai.widget.addToCart', { defaultValue: 'Add to cart' })}
+                </>
+              )}
+            </button>
+          </div>
+        );
       }
       if (part.startsWith('[PRODUCT:') && part.endsWith(']')) {
         const slug = part.slice(9, -1);

@@ -21,6 +21,7 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   loading: boolean;
+  isDemo: boolean;
   login: (email: string, password: string, sellerCode?: string) => Promise<User | { require_2fa: true; user_id: number }>;
   verifyOTP: (userId: number, otpCode: string) => Promise<User>;
   requestPasswordReset: (email: string) => Promise<void>;
@@ -31,6 +32,7 @@ interface AuthContextType {
   confirmDeleteAccount: (otpCode: string) => Promise<void>;
   logout: () => void;
   refreshMe: () => Promise<void>;
+  demoLogin: (role: 'customer' | 'seller') => void;
 }
 
 interface RegisterPayload {
@@ -44,6 +46,7 @@ interface RegisterPayload {
 
 const ACCESS_KEY = 'kinahub_access_token';
 const REFRESH_KEY = 'kinahub_refresh_token';
+const DEMO_TOKEN_PREFIX = '__demo_';
 
 const AuthContext = createContext<AuthContextType | null>(null);
 
@@ -51,18 +54,47 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [token, setToken] = useState<string | null>(() => localStorage.getItem(ACCESS_KEY));
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(Boolean(token));
+  const [isDemo, setIsDemo] = useState(false);
 
   const logout = useCallback(() => {
     localStorage.removeItem(ACCESS_KEY);
     localStorage.removeItem(REFRESH_KEY);
     setToken(null);
     setUser(null);
+    setIsDemo(false);
+    setLoading(false);
+  }, []);
+
+  const demoLogin = useCallback((role: 'customer' | 'seller') => {
+    const demoUser: User = {
+      id: role === 'seller' ? -2 : -1,
+      username: role === 'seller' ? 'demo.seller' : 'demo.customer',
+      email: role === 'seller' ? 'demo.seller@kinahub.local' : 'demo.customer@kinahub.local',
+      first_name: 'Demo',
+      last_name: role === 'seller' ? 'Seller' : 'Customer',
+      phone: null,
+      address: 'Kathmandu, Nepal',
+      role,
+      effective_role: role,
+      is_active: true,
+    };
+    setToken(role === 'seller' ? `${DEMO_TOKEN_PREFIX}seller` : `${DEMO_TOKEN_PREFIX}customer`);
+    setUser(demoUser);
+    setIsDemo(true);
     setLoading(false);
   }, []);
 
   const refreshMe = useCallback(async () => {
     if (!token) {
       setUser(null);
+      setLoading(false);
+      return;
+    }
+
+    if (token.startsWith(DEMO_TOKEN_PREFIX)) {
+      setUser(null);
+      setToken(null);
+      setIsDemo(false);
       setLoading(false);
       return;
     }
@@ -171,8 +203,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     logout();
   }, [token, logout]);
 
-  const ctx = useMemo(() => ({ user, token, loading, login, loginWithGoogle, verifyOTP, requestPasswordReset, confirmPasswordReset, register, requestDeleteAccount, confirmDeleteAccount, logout, refreshMe }), [
-    user, token, loading,
+  const ctx = useMemo(() => ({ user, token, loading, isDemo, login, loginWithGoogle, verifyOTP, requestPasswordReset, confirmPasswordReset, register, requestDeleteAccount, confirmDeleteAccount, logout, refreshMe, demoLogin }), [
+    user, token, loading, isDemo,
   ]);
 
   return (

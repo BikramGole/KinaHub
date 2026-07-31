@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import type { FormEvent } from 'react';
 
-import { Store, Mail, Lock, User, ArrowRight, Loader2, X } from 'lucide-react';
+import { Store, Mail, Lock, User, ArrowRight, Loader2, X, Play, Pause, Star, ShoppingCart, CheckCircle2 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
@@ -17,6 +17,184 @@ function GoogleIcon() {
       <path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z" />
       <path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z" />
     </svg>
+  );
+}
+
+const DEMO_PRODUCTS = [
+  { emoji: '🍚', name: 'Basmati Rice 5kg', price: 'Rs. 850', grad: 'from-amber-200 to-amber-400', delay: '0s' },
+  { emoji: '🥛', name: 'Fresh Milk 1L', price: 'Rs. 90', grad: 'from-sky-200 to-sky-400', delay: '2.5s' },
+  { emoji: '🧣', name: 'Pashmina Scarf', price: 'Rs. 1,450', grad: 'from-violet-200 to-violet-400', delay: '5s' },
+  { emoji: '🍯', name: 'Mustang Honey', price: 'Rs. 600', grad: 'from-rose-200 to-rose-400', delay: '7.5s' },
+];
+
+const AVATARS = [
+  { initials: 'RS', grad: 'from-amber-400 to-orange-500' },
+  { initials: 'SM', grad: 'from-sky-400 to-blue-500' },
+  { initials: 'AP', grad: 'from-emerald-400 to-teal-500' },
+  { initials: 'NK', grad: 'from-fuchsia-400 to-pink-500' },
+];
+
+function DemoPanel() {
+  const { t } = useTranslation();
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [playing, setPlaying] = useState(true);
+
+  function togglePlay() {
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.paused) {
+      video.play();
+      setPlaying(true);
+    } else {
+      video.pause();
+      setPlaying(false);
+    }
+  }
+
+  return (
+    <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-to-br from-accent via-orange-700 to-gray-900 p-6 text-background shadow-2xl sm:p-8">
+      <div className="pointer-events-none absolute -top-24 -right-20 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-28 -left-16 h-80 w-80 rounded-full bg-orange-400/20 blur-3xl" />
+
+      <div className="relative flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <span className="inline-flex items-center justify-center rounded-lg bg-background/15 p-2 backdrop-blur">
+            <Store className="h-5 w-5" />
+          </span>
+          <span className="font-bold tracking-tight text-lg">KinaHub</span>
+        </div>
+        <span className="flex items-center gap-1.5 rounded-full bg-background/15 px-3 py-1 text-xs font-semibold backdrop-blur">
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-green-400 opacity-75" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-green-400" />
+          </span>
+          {t('auth.demoLive', { defaultValue: 'Live demo' })}
+        </span>
+      </div>
+
+      <h2 className="relative mt-7 text-3xl font-bold tracking-tight leading-tight sm:text-4xl">
+        {t('auth.demoTagline', { defaultValue: 'Buy local. Sell smart.' })}
+      </h2>
+      <p className="relative mt-2 max-w-sm text-sm text-background/80">
+        {t('auth.demoSubtitle', { defaultValue: 'Shop from nearby stores or open your own shop in minutes — all in one app.' })}
+      </p>
+
+      <div className="relative mt-7 overflow-hidden rounded-xl border border-background/15 bg-background/10 shadow-xl backdrop-blur">
+        <div className="flex items-center gap-1.5 border-b border-background/10 px-3 py-2">
+          <span className="h-2.5 w-2.5 rounded-full bg-red-400/80" />
+          <span className="h-2.5 w-2.5 rounded-full bg-yellow-400/80" />
+          <span className="h-2.5 w-2.5 rounded-full bg-green-400/80" />
+          <span className="ml-2 flex-1 truncate rounded bg-background/10 px-2 py-0.5 text-[10px] text-background/70">kinahub.com.np/shop</span>
+          <button
+            type="button"
+            onClick={togglePlay}
+            aria-label={playing ? t('auth.demoPause', { defaultValue: 'Pause demo' }) : t('auth.demoPlay', { defaultValue: 'Play demo' })}
+            className="inline-flex h-6 w-6 items-center justify-center rounded-full bg-background/20 text-background hover:bg-background/30 transition-colors"
+          >
+            {playing ? <Pause className="h-3 w-3" /> : <Play className="h-3 w-3 ml-0.5" />}
+          </button>
+        </div>
+
+        <div className="relative">
+          <video
+            ref={videoRef}
+            src="/demo/KinaHub_Demo.mp4"
+            className="aspect-video w-full object-cover"
+            autoPlay
+            muted
+            loop
+            playsInline
+            onClick={togglePlay}
+          />
+          {!playing && (
+            <button
+              type="button"
+              onClick={togglePlay}
+              className="absolute inset-0 flex items-center justify-center bg-black/40 transition-opacity"
+              aria-label={t('auth.demoPlay', { defaultValue: 'Play demo' })}
+            >
+              <span className="flex h-14 w-14 items-center justify-center rounded-full bg-accent text-background shadow-2xl hover:scale-105 transition-transform">
+                <Play className="h-6 w-6 ml-1" />
+              </span>
+            </button>
+          )}
+        </div>
+
+        <div className="relative h-20 overflow-hidden p-3">
+          <div className="demo-cursor pointer-events-none absolute left-2 top-2 z-20">
+            <span className="block h-4 w-4 rounded-full bg-background/90 shadow-lg" />
+          </div>
+          {DEMO_PRODUCTS.map((product) => (
+            <div
+              key={product.name}
+              className="demo-card absolute inset-x-3 top-3 flex items-center gap-3 rounded-lg bg-background/90 p-2 shadow-lg"
+              style={{ animationDelay: product.delay }}
+            >
+              <span className={`inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-md bg-gradient-to-br ${product.grad} text-lg`}>
+                {product.emoji}
+              </span>
+              <div className="min-w-0 flex-1">
+                <p className="truncate text-[11px] font-semibold text-gray-800">{product.name}</p>
+                <p className="text-[10px] text-gray-500">{product.price}</p>
+              </div>
+              <span className="flex items-center gap-1 rounded-full bg-green-100 px-2 py-1 text-[9px] font-bold text-green-700">
+                <CheckCircle2 className="h-3 w-3" />
+                {t('auth.demoAdded', { defaultValue: 'Added' })}
+              </span>
+            </div>
+          ))}
+          <div className="demo-toast absolute bottom-2 right-3 z-20 flex items-center gap-2 rounded-lg bg-background/95 px-3 py-2 shadow-xl">
+            <span className="flex h-7 w-7 items-center justify-center rounded-full bg-accent text-background">
+              <ShoppingCart className="h-3.5 w-3.5" />
+            </span>
+            <div>
+              <p className="text-[10px] font-bold text-gray-800">{t('auth.demoCheckout', { defaultValue: 'Checkout' })}</p>
+              <p className="text-[9px] text-gray-500">Rs. 2,990</p>
+            </div>
+          </div>
+          <div className="absolute bottom-2 left-3 z-20 w-24 rounded-full bg-background/30 h-1 overflow-hidden">
+            <div className="demo-progress h-full rounded-full bg-accent" />
+          </div>
+        </div>
+      </div>
+
+      <div className="relative mt-6 flex items-center gap-3">
+        <div className="flex -space-x-2">
+          {AVATARS.map((avatar) => (
+            <span
+              key={avatar.initials}
+              className={`inline-flex h-8 w-8 items-center justify-center rounded-full border-2 border-orange-900/60 bg-gradient-to-br ${avatar.grad} text-[10px] font-bold text-white`}
+            >
+              {avatar.initials}
+            </span>
+          ))}
+        </div>
+        <div className="min-w-0">
+          <div className="flex items-center gap-0.5 text-yellow-300">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <Star key={star} className="h-3.5 w-3.5 fill-current" />
+            ))}
+            <span className="ml-1 text-xs font-bold">4.9</span>
+          </div>
+          <p className="truncate text-xs text-background/80">
+            {t('auth.socialProof', { defaultValue: 'Trusted by shoppers across Nepal' })}
+          </p>
+        </div>
+      </div>
+
+      <div className="relative mt-6 grid grid-cols-3 gap-3">
+        {[
+          { value: '500+', label: t('auth.statShoppers', { defaultValue: 'Shoppers' }) },
+          { value: '50+', label: t('auth.statSellers', { defaultValue: 'Local stores' }) },
+          { value: '10k+', label: t('auth.statOrders', { defaultValue: 'Orders delivered' }) },
+        ].map((stat) => (
+          <div key={stat.label} className="rounded-xl border border-background/15 bg-background/10 px-3 py-3 text-center backdrop-blur">
+            <p className="text-xl font-bold tracking-tight">{stat.value}</p>
+            <p className="mt-0.5 text-[10px] text-background/70">{stat.label}</p>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }
 
@@ -139,153 +317,159 @@ export default function Register() {
 
   return (
     <div className="min-h-screen flex items-start justify-center px-4 py-6 relative overflow-hidden bg-background sm:items-center sm:py-10">
-      <div className="anim-fade-in-up relative z-10 w-full max-w-md p-6 bg-surface border border-border rounded-lg shadow-xl sm:p-8">
-        <div className="text-center mb-8">
-          <Link to="/" className="inline-flex items-center justify-center p-3 rounded-lg bg-accent text-background mb-6">
-             <Store className="w-7 h-7" />
-          </Link>
-          <h1 className="text-2xl font-bold tracking-tight mb-2 sm:text-3xl">{t('auth.registerTitle', { defaultValue: 'Create account' })}</h1>
-          <p className="text-secondary text-sm">{t('auth.registerCopy', { defaultValue: 'Save addresses and track orders.' })}</p>
+      <div className="anim-fade-in-up relative z-10 w-full max-w-5xl grid gap-10 lg:grid-cols-[1fr_minmax(0,400px)] lg:items-center">
+        <div className="hidden lg:block">
+          <DemoPanel />
         </div>
 
-        <form className="space-y-5" onSubmit={submit}>
-          {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
-          {!requires2FA ? (
-            <>
-              <div className="grid grid-cols-2 gap-2 rounded-lg bg-background p-1">
-                {(['customer', 'seller'] as const).map((item) => (
-                  <button
-                    key={item}
-                    type="button"
-                    onClick={() => setRole(item)}
-                    className={`rounded-md px-3 py-2 text-sm font-semibold capitalize ${role === item ? 'bg-accent text-background' : 'text-secondary'}`}
-                  >
-                    {t(`auth.role${item === 'customer' ? 'Customer' : 'Seller'}`, { defaultValue: item })}
-                  </button>
-                ))}
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-secondary uppercase tracking-wider pl-1">{t('auth.name', { defaultValue: 'Name' })}</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <User className="h-5 w-5 text-secondary" />
-                  </div>
-                  <input 
-                    type="text" 
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    className="w-full bg-background border border-border rounded-xl pl-11 pr-4 py-3.5 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-300 text-base"
-                    placeholder={t('auth.namePlaceholder', { defaultValue: 'Ram Shah' })}
-                    required
-                  />
-                </div>
-              </div>
+        <div className="w-full max-w-md mx-auto p-6 bg-surface border border-border rounded-lg shadow-xl sm:p-8">
+          <div className="text-center mb-8">
+            <Link to="/" className="inline-flex items-center justify-center p-3 rounded-lg bg-accent text-background mb-6">
+               <Store className="w-7 h-7" />
+            </Link>
+            <h1 className="text-2xl font-bold tracking-tight mb-2 sm:text-3xl">{t('auth.registerTitle', { defaultValue: 'Create account' })}</h1>
+            <p className="text-secondary text-sm">{t('auth.registerCopy', { defaultValue: 'Save addresses and track orders.' })}</p>
+          </div>
 
-              <div className="space-y-1">
-                <label className="text-xs font-semibold text-secondary uppercase tracking-wider pl-1">{t('auth.email', { defaultValue: 'Email' })}</label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <Mail className="h-5 w-5 text-secondary" />
-                  </div>
-                  <input 
-                    type="email" 
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    className="w-full bg-background border border-border rounded-xl pl-11 pr-4 py-3.5 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-300 text-base"
-                    placeholder={t('auth.emailPlaceholder', { defaultValue: 'ram.shah@example.com' })}
-                    required
-                  />
+          <form className="space-y-5" onSubmit={submit}>
+            {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}
+            {!requires2FA ? (
+              <>
+                <div className="grid grid-cols-2 gap-2 rounded-lg bg-background p-1">
+                  {(['customer', 'seller'] as const).map((item) => (
+                    <button
+                      key={item}
+                      type="button"
+                      onClick={() => setRole(item)}
+                      className={`rounded-md px-3 py-2 text-sm font-semibold capitalize ${role === item ? 'bg-accent text-background' : 'text-secondary'}`}
+                    >
+                      {t(`auth.role${item === 'customer' ? 'Customer' : 'Seller'}`, { defaultValue: item })}
+                    </button>
+                  ))}
                 </div>
-              </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-secondary uppercase tracking-wider pl-1">{t('auth.name', { defaultValue: 'Name' })}</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <User className="h-5 w-5 text-secondary" />
+                    </div>
+                    <input 
+                      type="text" 
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      className="w-full bg-background border border-border rounded-xl pl-11 pr-4 py-3.5 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-300 text-base"
+                      placeholder={t('auth.namePlaceholder', { defaultValue: 'Ram Shah' })}
+                      required
+                    />
+                  </div>
+                </div>
 
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-secondary uppercase tracking-wider pl-1">{t('auth.email', { defaultValue: 'Email' })}</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <Mail className="h-5 w-5 text-secondary" />
+                    </div>
+                    <input 
+                      type="email" 
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      className="w-full bg-background border border-border rounded-xl pl-11 pr-4 py-3.5 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-300 text-base"
+                      placeholder={t('auth.emailPlaceholder', { defaultValue: 'ram.shah@example.com' })}
+                      required
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-secondary uppercase tracking-wider pl-1">{t('auth.password', { defaultValue: 'Password' })}</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                      <Lock className="h-5 w-5 text-secondary" />
+                    </div>
+                    <input 
+                      type="password" 
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      className="w-full bg-background border border-border rounded-xl pl-11 pr-4 py-3.5 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-300 text-base"
+                      placeholder={t('auth.passwordPlaceholder', { defaultValue: '••••••••' })}
+                      required
+                    />
+                  </div>
+                </div>
+
+
+              </>
+            ) : (
               <div className="space-y-1">
-                <label className="text-xs font-semibold text-secondary uppercase tracking-wider pl-1">{t('auth.password', { defaultValue: 'Password' })}</label>
+                <label className="text-xs font-semibold text-secondary uppercase tracking-wider pl-1">{t('auth.verificationCode', { defaultValue: 'Verification Code' })}</label>
+                <p className="text-xs text-secondary mb-3 pl-1">A 6-digit code has been sent to {email}.</p>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
                     <Lock className="h-5 w-5 text-secondary" />
                   </div>
                   <input 
-                    type="password" 
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    className="w-full bg-background border border-border rounded-xl pl-11 pr-4 py-3.5 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-300 text-base"
-                    placeholder={t('auth.passwordPlaceholder', { defaultValue: '••••••••' })}
+                    type="text" 
+                    value={otpCode}
+                    onChange={(e) => setOtpCode(e.target.value.replace(/\s+/g, ''))}
+                    className="w-full bg-background border border-border rounded-xl pl-11 pr-4 py-3.5 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-300 text-base tracking-[0.5em] font-mono"
+                    placeholder="••••••"
+                    maxLength={6}
                     required
                   />
                 </div>
               </div>
+            )}
 
+            <button 
+              type="submit" 
+              disabled={isSubmitting}
+              className="w-full bg-primary text-background font-semibold py-4 rounded-xl hover:bg-gray-200 disabled:opacity-70 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 group mt-8 relative overflow-hidden"
+            >
+              <span className="relative z-10 flex items-center gap-2">
+                {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
+                {requires2FA ? t('auth.verify', { defaultValue: 'Verify Code' }) : t('auth.signup', { defaultValue: 'Create account' })} 
+                {!isSubmitting && <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
+              </span>
+            </button>
+          </form>
 
-            </>
-          ) : (
-            <div className="space-y-1">
-              <label className="text-xs font-semibold text-secondary uppercase tracking-wider pl-1">{t('auth.verificationCode', { defaultValue: 'Verification Code' })}</label>
-              <p className="text-xs text-secondary mb-3 pl-1">A 6-digit code has been sent to {email}.</p>
-              <div className="relative">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Lock className="h-5 w-5 text-secondary" />
-                </div>
-                <input 
-                  type="text" 
-                  value={otpCode}
-                  onChange={(e) => setOtpCode(e.target.value.replace(/\s+/g, ''))}
-                  className="w-full bg-background border border-border rounded-xl pl-11 pr-4 py-3.5 focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all duration-300 text-base tracking-[0.5em] font-mono"
-                  placeholder="••••••"
-                  maxLength={6}
-                  required
-                />
+          {!requires2FA && (
+            <>
+              <div className="flex items-center gap-4 mt-8">
+                <div className="flex-1 h-px bg-border"></div>
+                <span className="text-xs text-secondary uppercase tracking-wider">or</span>
+                <div className="flex-1 h-px bg-border"></div>
               </div>
-            </div>
+
+              {role === 'seller' && HAS_GOOGLE_OAUTH ? (
+                <button
+                  type="button"
+                  onClick={() => setGoogleSellerModalOpen(true)}
+                  disabled={isSubmitting}
+                  className="w-full mt-4 flex items-center justify-center gap-3 bg-background border border-border rounded-xl py-3.5 hover:bg-card transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+                >
+                  <GoogleIcon />
+                  <span className="font-medium text-secondary">Continue with Google</span>
+                </button>
+              ) : (
+                <GoogleAuthButton
+                  label="Continue with Google"
+                  demoLabel="Continue with demo account"
+                  disabled={isSubmitting}
+                  onGoogleToken={handleGoogleClick}
+                  onDemoClick={handleDemoClick}
+                  className="w-full mt-4 flex items-center justify-center gap-3 bg-background border border-border rounded-xl py-3.5 hover:bg-card transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
+                />
+              )}
+            </>
           )}
 
-          <button 
-            type="submit" 
-            disabled={isSubmitting}
-            className="w-full bg-primary text-background font-semibold py-4 rounded-xl hover:bg-gray-200 disabled:opacity-70 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2 group mt-8 relative overflow-hidden"
-          >
-            <span className="relative z-10 flex items-center gap-2">
-              {isSubmitting ? <Loader2 className="w-5 h-5 animate-spin" /> : null}
-              {requires2FA ? t('auth.verify', { defaultValue: 'Verify Code' }) : t('auth.signup', { defaultValue: 'Create account' })} 
-              {!isSubmitting && <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />}
-            </span>
-          </button>
-        </form>
-
-        {!requires2FA && (
-          <>
-            <div className="flex items-center gap-4 mt-8">
-              <div className="flex-1 h-px bg-border"></div>
-              <span className="text-xs text-secondary uppercase tracking-wider">or</span>
-              <div className="flex-1 h-px bg-border"></div>
-            </div>
-
-            {role === 'seller' && HAS_GOOGLE_OAUTH ? (
-              <button
-                type="button"
-                onClick={() => setGoogleSellerModalOpen(true)}
-                disabled={isSubmitting}
-                className="w-full mt-4 flex items-center justify-center gap-3 bg-background border border-border rounded-xl py-3.5 hover:bg-card transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
-              >
-                <GoogleIcon />
-                <span className="font-medium text-secondary">Continue with Google</span>
-              </button>
-            ) : (
-              <GoogleAuthButton
-                label="Continue with Google"
-                demoLabel="Continue with demo account"
-                disabled={isSubmitting}
-                onGoogleToken={handleGoogleClick}
-                onDemoClick={handleDemoClick}
-                className="w-full mt-4 flex items-center justify-center gap-3 bg-background border border-border rounded-xl py-3.5 hover:bg-card transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
-              />
-            )}
-          </>
-        )}
-
-        <div className="mt-8 text-center">
-          <p className="text-sm text-secondary">
-            {t('auth.haveAccount', { defaultValue: 'Already have an account?' })} <Link to="/login" className="text-accent hover:underline ml-1">{t('auth.switchToLogin', { defaultValue: 'Login' })}</Link>
-          </p>
+          <div className="mt-8 text-center">
+            <p className="text-sm text-secondary">
+              {t('auth.haveAccount', { defaultValue: 'Already have an account?' })} <Link to="/login" className="text-accent hover:underline ml-1">{t('auth.switchToLogin', { defaultValue: 'Login' })}</Link>
+            </p>
+          </div>
         </div>
       </div>
 

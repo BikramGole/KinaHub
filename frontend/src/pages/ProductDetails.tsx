@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, Camera, Check, Film, Mail, MessageCircle, Minus, Plus, ShieldCheck, ShoppingBag, Star, Store, Truck, X } from 'lucide-react';
+import { ArrowLeft, Camera, Check, Film, MessageCircle, Minus, Plus, ShieldCheck, ShoppingBag, Star, Store, Truck, X } from 'lucide-react';
 
 import { API, formatDate, formatPrice, price, productImage } from '../lib/products';
 import type { ProductType, ReviewType } from '../lib/products';
@@ -304,21 +304,6 @@ export default function ProductDetails() {
                     <p className="text-xs text-secondary">{t('products.platformDelivery', { defaultValue: 'Ordered through KinaHub, fulfilled by this local shop.' })}</p>
                   </div>
                 </Link>
-                {(product.store.support_email || product.store.support_phone) && (
-                  <div className="mt-2 flex flex-wrap gap-2 border-t border-border pt-3">
-                    <span className="text-xs font-semibold text-secondary w-full">Contact Seller:</span>
-                    {product.store.support_phone && (
-                      <a href={`tel:${product.store.support_phone}`} className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:border-accent hover:text-accent">
-                        <MessageCircle className="h-3 w-3" /> Call
-                      </a>
-                    )}
-                    {product.store.support_email && (
-                      <a href={`mailto:${product.store.support_email}`} className="flex flex-1 items-center justify-center gap-1.5 rounded-md border border-border bg-surface px-3 py-1.5 text-xs font-semibold text-primary transition-colors hover:border-accent hover:text-accent">
-                        <Mail className="h-3 w-3" /> Email
-                      </a>
-                    )}
-                  </div>
-                )}
               </div>
             )}
             <p className="mt-4 leading-7 text-secondary">{product.description}</p>
