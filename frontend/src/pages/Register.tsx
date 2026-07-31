@@ -144,7 +144,7 @@ export default function Register() {
 
       <div className="anim-fade-in-up relative z-10 w-full max-w-6xl grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,440px)] lg:gap-14 lg:items-stretch">
         {/* ── Left: full-bleed video rectangle ── */}
-        <div className="hidden lg:block relative min-h-[600px] overflow-hidden rounded-3xl border border-border shadow-2xl">
+        <div className="hidden lg:block relative min-h-[600px] overflow-hidden rounded-2xl border border-border shadow-xl">
           <video
             src="/demo/KinaHub_Demo.mp4"
             className="absolute inset-0 h-full w-full object-cover"
@@ -212,9 +212,9 @@ export default function Register() {
 
         {/* ── Right: phone-style form card ── */}
         <div className="flex items-center justify-center py-2">
-          <div className="w-full max-w-[400px] rounded-[2rem] border border-border bg-surface p-7 shadow-2xl sm:p-8">
+          <div className="w-full max-w-[400px] rounded-2xl border border-border bg-surface p-6 shadow-xl sm:p-8">
             <div className="text-center mb-8">
-              <Link to="/" className="inline-flex items-center justify-center p-3 rounded-2xl bg-accent text-background mb-6 shadow-lg shadow-accent/30">
+              <Link to="/" className="inline-flex items-center justify-center p-3 rounded-lg bg-accent text-background mb-6">
                 <Store className="w-7 h-7" />
               </Link>
               <h1 className="text-2xl font-bold tracking-tight mb-2 sm:text-3xl">{t('auth.registerTitle', { defaultValue: 'Create account' })}</h1>
