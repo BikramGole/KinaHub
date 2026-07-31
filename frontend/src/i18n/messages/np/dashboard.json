@@ -75,5 +75,6 @@
   "navCrm": "CRM",
   "navSettings": "सेटिङ",
   "couldNotLoadAdminData": "एडमिन डाटा लोड हुन सकेन",
-  "couldNotUpdateSeller": "बिक्रेता अपडेट हुन सकेन"
+  "couldNotUpdateSeller": "बिक्रेता अपडेट हुन सकेन",
+  "demoNotice": "डेमो मोड: नमूना डाटा देखाइएको छ, केही सेभ हुँदैन। रिफ्रेसपछि सबै रिसेट हुन्छ।"
 }

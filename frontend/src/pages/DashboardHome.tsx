@@ -14,7 +14,7 @@ export default function DashboardHome() {
 }
 
 function CustomerDashboard() {
-  const { user, requestDeleteAccount, confirmDeleteAccount } = useAuth();
+  const { user, isDemo, requestDeleteAccount, confirmDeleteAccount } = useAuth();
   const { t } = useTranslation();
   const roleKey = ((user?.effective_role || 'customer').charAt(0).toUpperCase() + (user?.effective_role || 'customer').slice(1)) as Capitalize<Role>;
 
@@ -66,6 +66,11 @@ function CustomerDashboard() {
       <section className="rounded-lg border border-border bg-surface p-4 sm:p-6">
         <h1 className="text-2xl font-black tracking-tight">{t('dashboard.customerAccount', { defaultValue: 'Customer account' })}</h1>
         <p className="mt-2 text-secondary">{t('dashboard.customerDescription', { defaultValue: 'Profile, orders, saved addresses, wishlist, and support live here.' })}</p>
+        {isDemo && (
+          <p className="mt-3 rounded-md bg-accent/10 px-3 py-2 text-xs font-semibold text-accent">
+            {t('dashboard.demoNotice', { defaultValue: 'Demo mode: sample data shown, nothing is saved. Everything resets on refresh.' })}
+          </p>
+        )}
       </section>
 
       <div className="grid gap-4 md:grid-cols-3">
@@ -84,16 +89,18 @@ function CustomerDashboard() {
       </div>
 
       {/* Danger Zone */}
-      <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-4 sm:p-6 mt-8">
-        <h2 className="text-lg font-bold text-red-600 mb-2">Danger Zone</h2>
-        <p className="text-sm text-secondary mb-4">Once you delete your account, there is no going back. All data, orders, and reviews will be permanently removed.</p>
-        <button
-          onClick={() => setShowDeleteModal(true)}
-          className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-sm"
-        >
-          Delete Account
-        </button>
-      </div>
+      {!isDemo && (
+        <div className="rounded-lg border border-red-500/20 bg-red-500/5 p-4 sm:p-6 mt-8">
+          <h2 className="text-lg font-bold text-red-600 mb-2">Danger Zone</h2>
+          <p className="text-sm text-secondary mb-4">Once you delete your account, there is no going back. All data, orders, and reviews will be permanently removed.</p>
+          <button
+            onClick={() => setShowDeleteModal(true)}
+            className="bg-red-600 hover:bg-red-700 text-white font-semibold py-2 px-4 rounded-lg transition-colors text-sm"
+          >
+            Delete Account
+          </button>
+        </div>
+      )}
 
       {/* Delete Account Modal */}
       {showDeleteModal && (
