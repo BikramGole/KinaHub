@@ -21,7 +21,7 @@ https://github.com/user-attachments/assets/410296e2-23d3-401f-85bc-2aef7b2b1a85
 **Bikram Gole**
 Project Developer & Maintainer
 
-* GitHub: https://github.com/DevXtechnic
+* GitHub: https://github.com/BikramGole
 
 ---
 
