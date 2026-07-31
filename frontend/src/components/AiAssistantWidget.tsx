@@ -364,11 +364,11 @@ export default function AiAssistantWidget() {
         const key = part.slice(7, -1);
         if (key === 'founder') {
           return (
-            <div key={index} className="my-2 overflow-hidden rounded-lg border border-border">
+            <div key={index} className="my-2 overflow-hidden rounded-lg border border-border mx-auto max-w-[180px]">
               <img
                 src="/founder/Bikram.jpeg"
                 alt="Bikram Gole"
-                className="h-40 w-full object-cover"
+                className="aspect-[2/3] w-full object-cover"
               />
             </div>
           );

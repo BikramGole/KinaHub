@@ -16,5 +16,18 @@
   "active": "Active",
   "inactive": "Inactive",
   "couldNotCreate": "Could not create product",
-  "couldNotLoad": "Could not load seller data"
+  "couldNotLoad": "Could not load seller data",
+  "actions": "Actions",
+  "editProduct": "Edit product",
+  "deleteProduct": "Delete product",
+  "editProductTitle": "Edit product",
+  "editProductCopy": "Update details and add new images.",
+  "close": "Close",
+  "cancel": "Cancel",
+  "saveChanges": "Save changes",
+  "addImages": "Add images",
+  "removeImage": "Remove image",
+  "couldNotUpdate": "Could not update product",
+  "couldNotDelete": "Could not delete product",
+  "confirmDelete": "Delete this product? This cannot be undone."
 }
