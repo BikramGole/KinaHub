@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import type { FormEvent } from 'react';
-import { Plus, Save, Upload, X, ImagePlus } from 'lucide-react';
+import { Plus, Save, Upload, X, ImagePlus, Pencil, Trash2, Loader2 } from 'lucide-react';
 import { apiRequest } from '../lib/api';
 import { useAuth } from '../context/AuthContext';
 import { API, formatPrice } from '../lib/products';
@@ -42,6 +42,14 @@ export default function SellerProducts() {
   const [error, setError] = useState('');
   const [saving, setSaving] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [editing, setEditing] = useState<ProductType | null>(null);
+  const [editForm, setEditForm] = useState<ProductFormState>(initialForm);
+  const [editImages, setEditImages] = useState<ImagePreview[]>([]);
+  const [editSaving, setEditSaving] = useState(false);
+  const [editError, setEditError] = useState('');
+  const editFileInputRef = useRef<HTMLInputElement>(null);
+  const [deleting, setDeleting] = useState<number | null>(null);
 
   function loadProducts() {
     apiRequest<ProductType[]>('/products/items/?mine=true', { token })
@@ -108,6 +116,85 @@ export default function SellerProducts() {
       setError(t('seller.couldNotCreate', { defaultValue: 'Could not create product' }));
     } finally {
       setSaving(false);
+    }
+  }
+
+  function openEdit(product: ProductType) {
+    setEditing(product);
+    setEditForm({
+      name: product.name,
+      category_id: String(product.category.id),
+      description: product.description || '',
+      price: String(product.price),
+      discount_price: product.discount_price ? String(product.discount_price) : '',
+      stock: String(product.stock),
+    });
+    setEditImages([]);
+    setEditError('');
+  }
+
+  function closeEdit() {
+    setEditing(null);
+    setEditImages((prev) => {
+      prev.forEach((img) => URL.revokeObjectURL(img.url));
+      return [];
+    });
+  }
+
+  function addEditFiles(files: FileList | null) {
+    if (!files) return;
+    const newPreviews: ImagePreview[] = [];
+    Array.from(files).forEach((file) => {
+      if (!file.type.startsWith('image/')) return;
+      newPreviews.push({ file, url: URL.createObjectURL(file) });
+    });
+    setEditImages((prev) => [...prev, ...newPreviews]);
+  }
+
+  function removeEditImage(index: number) {
+    setEditImages((prev) => {
+      URL.revokeObjectURL(prev[index].url);
+      return prev.filter((_, i) => i !== index);
+    });
+  }
+
+  async function updateProduct(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!editing) return;
+    setEditError('');
+    setEditSaving(true);
+    try {
+      const formData = new FormData();
+      formData.append('name', editForm.name);
+      formData.append('category_id', editForm.category_id);
+      formData.append('description', editForm.description);
+      formData.append('price', editForm.price);
+      if (editForm.discount_price) formData.append('discount_price', editForm.discount_price);
+      formData.append('stock', editForm.stock);
+      editImages.forEach(({ file }) => formData.append('images', file));
+
+      await apiRequest<ProductType>(`/products/items/${editing.id}/`, { token, method: 'PATCH', body: formData });
+
+      closeEdit();
+      loadProducts();
+    } catch {
+      setEditError(t('seller.couldNotUpdate', { defaultValue: 'Could not update product' }));
+    } finally {
+      setEditSaving(false);
+    }
+  }
+
+  async function deleteProduct(product: ProductType) {
+    if (!window.confirm(t('seller.confirmDelete', { defaultValue: `Delete "${product.name}"? This cannot be undone.` }))) return;
+    setDeleting(product.id);
+    setError('');
+    try {
+      await apiRequest<{ detail?: string }>(`/products/items/${product.id}/`, { token, method: 'DELETE' });
+      loadProducts();
+    } catch {
+      setError(t('seller.couldNotDelete', { defaultValue: 'Could not delete product' }));
+    } finally {
+      setDeleting(null);
     }
   }
 
@@ -270,7 +357,8 @@ export default function SellerProducts() {
                 <th className="py-2 pr-4">{t('seller.category', { defaultValue: 'Category' })}</th>
                 <th className="py-2 pr-4">{t('seller.price', { defaultValue: 'Price' })}</th>
                 <th className="py-2 pr-4">{t('seller.stock', { defaultValue: 'Stock' })}</th>
-                <th className="py-2">{t('seller.status', { defaultValue: 'Status' })}</th>
+                <th className="py-2 pr-4">{t('seller.status', { defaultValue: 'Status' })}</th>
+                <th className="py-2 text-right">{t('seller.actions', { defaultValue: 'Actions' })}</th>
               </tr>
             </thead>
             <tbody>
@@ -305,17 +393,183 @@ export default function SellerProducts() {
                       {product.is_active ? t('seller.active', { defaultValue: 'Active' }) : t('seller.inactive', { defaultValue: 'Inactive' })}
                     </span>
                   </td>
+                  <td className="py-3">
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => openEdit(product)}
+                        aria-label={t('seller.editProduct', { defaultValue: `Edit ${product.name}` })}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-secondary transition-colors hover:border-accent hover:text-accent"
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => deleteProduct(product)}
+                        disabled={deleting === product.id}
+                        aria-label={t('seller.deleteProduct', { defaultValue: `Delete ${product.name}` })}
+                        className="inline-flex h-8 w-8 items-center justify-center rounded-md border border-border text-secondary transition-colors hover:border-red-500 hover:text-red-600 disabled:opacity-50"
+                      >
+                        {deleting === product.id ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))}
               {products.length === 0 && (
                 <tr>
-                  <td colSpan={6} className="py-8 text-center text-sm text-secondary italic">No products yet. Add your first product above.</td>
+                  <td colSpan={7} className="py-8 text-center text-sm text-secondary italic">No products yet. Add your first product above.</td>
                 </tr>
               )}
             </tbody>
           </table>
         </div>
       </section>
+
+      {editing && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 px-4 py-6 backdrop-blur-sm"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="edit-product-title"
+        >
+          <div className="anim-scale-in w-full max-w-lg rounded-lg border border-border bg-surface p-5 shadow-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2 id="edit-product-title" className="text-lg font-bold">
+                  {t('seller.editProductTitle', { defaultValue: 'Edit product' })}
+                </h2>
+                <p className="mt-1 text-sm text-secondary">{t('seller.editProductCopy', { defaultValue: 'Update details and add new images.' })}</p>
+              </div>
+              <button
+                type="button"
+                onClick={closeEdit}
+                className="inline-flex h-9 w-9 items-center justify-center rounded-md border border-border text-secondary hover:text-primary"
+                aria-label={t('seller.close', { defaultValue: 'Close' })}
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            {editError && <p className="mt-4 rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{editError}</p>}
+
+            <form onSubmit={updateProduct} className="mt-5 grid gap-4 md:grid-cols-2">
+              <input
+                className="rounded-md border border-border bg-background px-3 py-3 text-base outline-none focus:border-accent"
+                placeholder={t('seller.productName', { defaultValue: 'Product name' })}
+                value={editForm.name}
+                onChange={(e) => setEditForm({ ...editForm, name: e.target.value })}
+                required
+              />
+              <select
+                className="rounded-md border border-border bg-background px-3 py-3 text-base outline-none focus:border-accent"
+                value={editForm.category_id}
+                onChange={(e) => setEditForm({ ...editForm, category_id: e.target.value })}
+                required
+              >
+                <option value="">{t('seller.category', { defaultValue: 'Category' })}</option>
+                {categories.map((cat) => (
+                  <option key={cat.id} value={cat.id}>{t(`categories.${cat.slug}.name`, { defaultValue: cat.name })}</option>
+                ))}
+              </select>
+              <input
+                className="rounded-md border border-border bg-background px-3 py-3 text-base outline-none focus:border-accent"
+                placeholder={t('seller.price', { defaultValue: 'Price (NPR)' })}
+                type="number" min="0"
+                value={editForm.price}
+                onChange={(e) => setEditForm({ ...editForm, price: e.target.value })}
+                required
+              />
+              <input
+                className="rounded-md border border-border bg-background px-3 py-3 text-base outline-none focus:border-accent"
+                placeholder={t('seller.discountPrice', { defaultValue: 'Discount price (optional)' })}
+                type="number" min="0"
+                value={editForm.discount_price}
+                onChange={(e) => setEditForm({ ...editForm, discount_price: e.target.value })}
+              />
+              <input
+                className="rounded-md border border-border bg-background px-3 py-3 text-base outline-none focus:border-accent"
+                placeholder={t('seller.stock', { defaultValue: 'Stock quantity' })}
+                type="number" min="0"
+                value={editForm.stock}
+                onChange={(e) => setEditForm({ ...editForm, stock: e.target.value })}
+                required
+              />
+
+              <div className="md:col-span-2 space-y-3">
+                <p className="text-sm font-semibold text-secondary uppercase tracking-wider">
+                  {t('seller.imageUrl', { defaultValue: 'Product images' })} <span className="normal-case font-normal text-secondary/70">(existing + new)</span>
+                </p>
+                <div className="flex flex-wrap gap-3">
+                  {editing.images?.map((img) => (
+                    <div key={img.id} className="h-20 w-20 overflow-hidden rounded-lg border-2 border-border">
+                      <img src={img.image_url} alt="" className="h-full w-full object-cover" />
+                    </div>
+                  ))}
+                  {editImages.map((img, idx) => (
+                    <div key={img.url} className="relative group">
+                      <div className="h-20 w-20 overflow-hidden rounded-lg border-2 border-accent">
+                        <img src={img.url} alt="" className="h-full w-full object-cover" />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeEditImage(idx)}
+                        className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-white shadow-sm hover:bg-red-600"
+                        aria-label={t('seller.removeImage', { defaultValue: 'Remove image' })}
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                  <button
+                    type="button"
+                    onClick={() => editFileInputRef.current?.click()}
+                    className="h-20 w-20 flex flex-col items-center justify-center gap-1 rounded-lg border-2 border-dashed border-border bg-background text-secondary hover:border-accent hover:text-accent transition-colors"
+                  >
+                    <ImagePlus className="h-5 w-5" />
+                    <span className="text-[10px] font-semibold">{t('seller.addImages', { defaultValue: 'Add images' })}</span>
+                  </button>
+                  <input
+                    ref={editFileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    className="hidden"
+                    onChange={(e) => addEditFiles(e.target.files)}
+                  />
+                </div>
+              </div>
+
+              <textarea
+                className="md:col-span-2 rounded-md border border-border bg-background px-3 py-3 text-base outline-none focus:border-accent resize-none"
+                rows={3}
+                placeholder={t('seller.description', { defaultValue: 'Product description' })}
+                value={editForm.description}
+                onChange={(e) => setEditForm({ ...editForm, description: e.target.value })}
+                required
+              />
+
+              <div className="md:col-span-2 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <button
+                  type="button"
+                  onClick={closeEdit}
+                  className="rounded-md border border-border px-4 py-3 text-sm font-semibold text-secondary hover:text-primary"
+                >
+                  {t('seller.cancel', { defaultValue: 'Cancel' })}
+                </button>
+                <button
+                  type="submit"
+                  disabled={editSaving}
+                  className="inline-flex items-center justify-center gap-2 rounded-md bg-accent px-5 py-3 font-bold text-background transition-colors hover:bg-orange-600 disabled:opacity-60 disabled:cursor-not-allowed"
+                >
+                  {editSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  {editSaving ? 'Saving…' : t('seller.saveChanges', { defaultValue: 'Save changes' })}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
