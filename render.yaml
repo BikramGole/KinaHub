@@ -24,7 +24,7 @@ services:
     startCommand: python -c "
 import requests, sys;
 try:
-  r = requests.get('https://kinahub.onrender.com/ping/', timeout=30);
+  r = requests.get('https://kinahub-ot0t.onrender.com/ping/', timeout=30);
   print(f'Ping OK: {r.status_code}');
   sys.exit(0)
 except Exception as e:
