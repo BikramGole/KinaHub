@@ -52,6 +52,53 @@ function resolveOrdinalPick(text: string, count: number): number | null {
   return null;
 }
 
+const ADD_STOP_WORDS = new Set([
+  'add', 'put', 'include', 'throw', 'my', 'cart', 'bag', 'to', 'the', 'a', 'an',
+  'buy', 'bought', 'purchase', 'order', 'please', 'for', 'and', 'of', 'in', 'me',
+  'want', 'need', 'get', 'i', 'it', 'one', 'that', 'this', 'product', 'item',
+]);
+
+function tokenize(query: string): string[] {
+  return query
+    .toLowerCase()
+    .replace(/[^a-z0-9\s-]/g, ' ')
+    .split(/\s+/)
+    .filter((w) => w.length > 1 && !ADD_STOP_WORDS.has(w));
+}
+
+function findProductInCatalog(query: string, catalog: ProductType[]): ProductType | undefined {
+  const q = query.toLowerCase();
+
+  // 1. Exact product name present in the query (e.g. "add MacBook Air M3 to my cart")
+  const exact = catalog.find((p) => p.name && q.includes(p.name.toLowerCase()));
+  if (exact) return exact;
+
+  // 2. Word-overlap scoring (e.g. "macbook" → "MacBook Air M3", "iphone" → "iPhone 16 Pro Max")
+  const tokens = tokenize(q);
+  if (tokens.length === 0) return undefined;
+
+  let best: ProductType | undefined;
+  let bestScore = 0;
+  for (const product of catalog) {
+    if (!product.name) continue;
+    const name = product.name.toLowerCase();
+    const nameWords = new Set(name.split(/[^a-z0-9]+/).filter((w) => w.length > 1));
+    const description = (product.description || '').toLowerCase();
+    let score = 0;
+    for (const token of tokens) {
+      if (nameWords.has(token)) score += 3;
+      else if (name.startsWith(token) || name.includes(` ${token}`)) score += 2;
+      else if (name.includes(token)) score += 1;
+      else if (description.includes(token)) score += 0.5;
+    }
+    if (score > bestScore) {
+      bestScore = score;
+      best = product;
+    }
+  }
+  return bestScore >= 3 ? best : undefined;
+}
+
 export default function AiAssistantWidget() {
   const { items, addToCart } = useCart();
   const { t, locale } = useTranslation();
@@ -233,8 +280,7 @@ export default function AiAssistantWidget() {
     // Offline fast-path: add-to-cart intent against the loaded catalog
     const addIntent = /(add|put|include|throw).*(cart|bag)|(cart|bag).*(add|put|include)|buy|purchase|order/i.test(trimmed);
     if (addIntent && catalog.length > 0) {
-      const lower = trimmed.toLowerCase();
-      const found = catalog.find((product) => product.name && lower.includes(product.name.toLowerCase()));
+      const found = findProductInCatalog(trimmed, catalog);
       if (found) {
         setMessages(current => [
           ...current,

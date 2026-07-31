@@ -46,6 +46,7 @@ export default function SellerProducts() {
   const [editing, setEditing] = useState<ProductType | null>(null);
   const [editForm, setEditForm] = useState<ProductFormState>(initialForm);
   const [editImages, setEditImages] = useState<ImagePreview[]>([]);
+  const [removeImageIds, setRemoveImageIds] = useState<number[]>([]);
   const [editSaving, setEditSaving] = useState(false);
   const [editError, setEditError] = useState('');
   const editFileInputRef = useRef<HTMLInputElement>(null);
@@ -130,6 +131,7 @@ export default function SellerProducts() {
       stock: String(product.stock),
     });
     setEditImages([]);
+    setRemoveImageIds([]);
     setEditError('');
   }
 
@@ -139,6 +141,7 @@ export default function SellerProducts() {
       prev.forEach((img) => URL.revokeObjectURL(img.url));
       return [];
     });
+    setRemoveImageIds([]);
   }
 
   function addEditFiles(files: FileList | null) {
@@ -172,6 +175,7 @@ export default function SellerProducts() {
       if (editForm.discount_price) formData.append('discount_price', editForm.discount_price);
       formData.append('stock', editForm.stock);
       editImages.forEach(({ file }) => formData.append('images', file));
+      removeImageIds.forEach((id) => formData.append('remove_image_ids', String(id)));
 
       await apiRequest<ProductType>(`/products/items/${editing.id}/`, { token, method: 'PATCH', body: formData });
 
@@ -501,11 +505,35 @@ export default function SellerProducts() {
                   {t('seller.imageUrl', { defaultValue: 'Product images' })} <span className="normal-case font-normal text-secondary/70">(existing + new)</span>
                 </p>
                 <div className="flex flex-wrap gap-3">
-                  {editing.images?.map((img) => (
-                    <div key={img.id} className="h-20 w-20 overflow-hidden rounded-lg border-2 border-border">
-                      <img src={img.image_url} alt="" className="h-full w-full object-cover" />
-                    </div>
-                  ))}
+                  {editing.images?.map((img) => {
+                    const marked = removeImageIds.includes(img.id);
+                    return (
+                      <div key={img.id} className={`relative group ${marked ? 'opacity-40 grayscale' : ''}`}>
+                        <div className="h-20 w-20 overflow-hidden rounded-lg border-2 border-border">
+                          <img src={img.image_url} alt="" className="h-full w-full object-cover" />
+                        </div>
+                        {marked && (
+                          <span className="absolute inset-0 flex items-center justify-center rounded-lg bg-red-500/20 text-[9px] font-bold text-red-600">
+                            {t('seller.willRemove', { defaultValue: 'Will remove' })}
+                          </span>
+                        )}
+                        <button
+                          type="button"
+                          onClick={() =>
+                            marked
+                              ? setRemoveImageIds((prev) => prev.filter((id) => id !== img.id))
+                              : setRemoveImageIds((prev) => [...prev, img.id])
+                          }
+                          className={`absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full text-white shadow-sm transition-colors ${
+                            marked ? 'bg-green-500 hover:bg-green-600' : 'bg-red-500 hover:bg-red-600'
+                          }`}
+                          aria-label={marked ? t('seller.keepImage', { defaultValue: 'Keep image' }) : t('seller.removeImage', { defaultValue: 'Remove image' })}
+                        >
+                          {marked ? <Plus className="h-3 w-3" /> : <X className="h-3 w-3" />}
+                        </button>
+                      </div>
+                    );
+                  })}
                   {editImages.map((img, idx) => (
                     <div key={img.url} className="relative group">
                       <div className="h-20 w-20 overflow-hidden rounded-lg border-2 border-accent">

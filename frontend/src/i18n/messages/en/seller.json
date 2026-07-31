@@ -29,5 +29,7 @@
   "removeImage": "Remove image",
   "couldNotUpdate": "Could not update product",
   "couldNotDelete": "Could not delete product",
-  "confirmDelete": "Delete this product? This cannot be undone."
+  "confirmDelete": "Delete this product? This cannot be undone.",
+  "willRemove": "Will remove",
+  "keepImage": "Keep image"
 }
