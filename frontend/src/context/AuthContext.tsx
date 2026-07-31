@@ -1,4 +1,4 @@
-import { createContext, useContext, useCallback, useEffect, useMemo, useState } from 'react';
+import { createContext, useContext, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { ReactNode } from 'react';
 import { apiRequest } from '../lib/api';
 
@@ -55,6 +55,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(Boolean(token));
   const [isDemo, setIsDemo] = useState(false);
+  const tokenRef = useRef(token);
+  tokenRef.current = token;
 
   const logout = useCallback(() => {
     localStorage.removeItem(ACCESS_KEY);
@@ -100,12 +102,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     try {
-      const currentUser = await apiRequest<User>('/auth/me/', { token });
+      const requestToken = token;
+      const currentUser = await apiRequest<User>('/auth/me/', { token: requestToken });
+      // Session may have changed (demo login / logout) while this request was in flight.
+      if (tokenRef.current !== requestToken) return;
       setUser(currentUser);
     } catch {
-      logout();
+      if (tokenRef.current === token) logout();
     } finally {
-      setLoading(false);
+      if (tokenRef.current === token) setLoading(false);
     }
   }, [token, logout]);
 
