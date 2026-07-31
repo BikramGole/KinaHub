@@ -143,26 +143,27 @@ textarea {
 }
 
 @keyframes demo-card-in {
-  0% { opacity: 0; transform: translateY(24px) scale(0.9); }
-  8% { opacity: 1; transform: translateY(0) scale(1); }
-  80% { opacity: 1; transform: translateY(0) scale(1); }
+  0% { opacity: 0; transform: translateY(26px) scale(0.9); }
+  6.5% { opacity: 1; transform: translateY(0) scale(1); }
+  24% { opacity: 1; transform: translateY(0) scale(1); }
+  28% { opacity: 0; transform: translateY(-14px) scale(0.96); }
   100% { opacity: 0; transform: translateY(-14px) scale(0.96); }
 }
 
 @keyframes demo-toast {
-  0%, 18% { opacity: 0; transform: translateY(12px) scale(0.95); }
-  26% { opacity: 1; transform: translateY(0) scale(1); }
-  62% { opacity: 1; transform: translateY(0) scale(1); }
-  72% { opacity: 0; transform: translateY(-10px) scale(0.97); }
-  100% { opacity: 0; transform: translateY(-10px) scale(0.97); }
+  0%, 82% { opacity: 0; transform: translateY(14px) scale(0.96); }
+  88% { opacity: 1; transform: translateY(0) scale(1); }
+  96% { opacity: 1; transform: translateY(0) scale(1); }
+  100% { opacity: 0; transform: translateY(-10px) scale(0.98); }
 }
 
 @keyframes demo-cursor {
-  0%, 12% { transform: translate(0, 0); }
-  30% { transform: translate(34px, 8px); }
-  55% { transform: translate(12px, 48px); }
-  80% { transform: translate(-6px, 24px); }
-  100% { transform: translate(0, 0); }
+  0%, 7% { transform: translate(0, 0); }
+  20% { transform: translate(58px, 6px); }
+  42% { transform: translate(44px, 44px); }
+  64% { transform: translate(14px, 26px); }
+  86% { transform: translate(6px, 34px); }
+  100% { transform: translate(6px, 34px); }
 }
 
 @keyframes demo-progress {
@@ -178,7 +179,93 @@ textarea {
 .anim-toast-in { animation: toast-in 0.3s ease-out; }
 .anim-toast-out { animation: toast-out 0.25s ease-in forwards; }
 
-.demo-card { animation: demo-card-in 9s ease-in-out infinite; }
-.demo-toast { animation: demo-toast 9s ease-in-out infinite; }
-.demo-cursor { animation: demo-cursor 9s ease-in-out infinite; }
-.demo-progress { animation: demo-progress 4s linear infinite; }
+/* ===================== Premium demo hero ===================== */
+
+.demo-noise {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160' viewBox='0 0 160 160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.5'/%3E%3C/svg%3E");
+  background-size: 160px 160px;
+}
+
+.demo-grid {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.055) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.055) 1px, transparent 1px);
+  background-size: 52px 52px;
+  mask-image: radial-gradient(ellipse 85% 65% at 50% 35%, black 25%, transparent 78%);
+  -webkit-mask-image: radial-gradient(ellipse 85% 65% at 50% 35%, black 25%, transparent 78%);
+}
+
+.demo-vignette {
+  background: radial-gradient(ellipse 120% 90% at 50% 45%, transparent 55%, rgba(0, 0, 0, 0.35) 100%);
+}
+
+@keyframes demo-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-7px); }
+}
+
+@keyframes demo-drift {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(26px, -18px) scale(1.07); }
+  66% { transform: translate(-20px, 14px) scale(0.96); }
+}
+
+@keyframes demo-particle {
+  0%, 100% { opacity: 0; transform: translate(0, 0); }
+  15% { opacity: 0.8; }
+  50% { transform: translate(18px, -42px); opacity: 0.35; }
+  85% { opacity: 0.6; }
+}
+
+@keyframes demo-shine {
+  from { transform: translateX(-140%) skewX(-18deg); }
+  to { transform: translateX(320%) skewX(-18deg); }
+}
+
+.demo-float { animation: demo-float 11s cubic-bezier(0.45, 0, 0.55, 1) infinite; }
+.demo-blob { animation: demo-drift 22s ease-in-out infinite; }
+.demo-particle {
+  animation: demo-particle 16s ease-in-out infinite;
+  will-change: transform, opacity;
+}
+.btn-shine { position: relative; overflow: hidden; }
+.btn-shine::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  width: 40%;
+  background: linear-gradient(105deg, transparent 20%, rgba(255, 255, 255, 0.35) 50%, transparent 80%);
+  animation: demo-shine 4.5s cubic-bezier(0.45, 0, 0.55, 1) infinite;
+  pointer-events: none;
+}
+
+/* Demo window loop — one shared 9s timeline, pausable */
+.demo-card { animation: demo-card-in 9s cubic-bezier(0.33, 1, 0.68, 1) infinite; }
+.demo-toast { animation: demo-toast 9s cubic-bezier(0.33, 1, 0.68, 1) infinite; }
+.demo-cursor { animation: demo-cursor 9s cubic-bezier(0.45, 0.15, 0.55, 1) infinite; }
+.demo-progress { animation: demo-progress 9s linear infinite; }
+
+.demo-paused .demo-card,
+.demo-paused .demo-toast,
+.demo-paused .demo-cursor,
+.demo-paused .demo-progress,
+.demo-paused .demo-float {
+  animation-play-state: paused;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .demo-card,
+  .demo-toast,
+  .demo-cursor,
+  .demo-progress,
+  .demo-float,
+  .demo-blob,
+  .demo-particle,
+  .btn-shine::after {
+    animation: none;
+  }
+  .demo-card { opacity: 1; transform: none; }
+  .demo-toast,
+  .demo-cursor,
+  .demo-progress { opacity: 0; }
+}
