@@ -92,9 +92,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     if (token.startsWith(DEMO_TOKEN_PREFIX)) {
-      setUser(null);
-      setToken(null);
-      setIsDemo(false);
+      // Demo sessions live in memory only; never persist, never clear mid-session.
+      // On a real page reload the demo token is gone from storage, so `token` is
+      // null here and the session correctly resets.
       setLoading(false);
       return;
     }
