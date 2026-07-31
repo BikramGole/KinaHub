@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import type { FormEvent } from 'react';
 
-import { Store, Mail, Lock, User, ArrowRight, Loader2, X, ShieldCheck } from 'lucide-react';
+import { Store, Mail, Lock, User, ArrowRight, Loader2, X, ShieldCheck, Sparkles, ShoppingCart } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useGoogleLogin } from '@react-oauth/google';
 import { useAuth } from '../context/AuthContext';
@@ -22,7 +22,7 @@ function GoogleIcon() {
 
 export default function Register() {
   const navigate = useNavigate();
-  const { register, verifyOTP, loginWithGoogle } = useAuth();
+  const { register, verifyOTP, loginWithGoogle, demoLogin } = useAuth();
   const { t } = useTranslation();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -142,7 +142,7 @@ export default function Register() {
       <div className="pointer-events-none absolute -top-40 -left-40 h-[480px] w-[480px] rounded-full bg-accent/10 blur-3xl" />
       <div className="pointer-events-none absolute -bottom-40 -right-40 h-[480px] w-[480px] rounded-full bg-orange-400/10 blur-3xl" />
 
-      <div className="anim-fade-in-up relative z-10 w-full max-w-6xl grid gap-8 lg:grid-cols-[minmax(0,1.1fr)_minmax(0,440px)] lg:gap-14 lg:items-stretch">
+      <div className="anim-fade-in-up relative z-10 w-full max-w-7xl grid gap-8 lg:grid-cols-[minmax(0,1.5fr)_minmax(0,440px)] lg:gap-14 lg:items-stretch">
         {/* ── Left: full-bleed video rectangle ── */}
         <div className="hidden lg:block relative min-h-[600px] overflow-hidden rounded-2xl border border-border shadow-xl">
           <video
@@ -352,6 +352,36 @@ export default function Register() {
                   className="w-full mt-4 flex items-center justify-center gap-3 bg-background border border-border rounded-xl py-3.5 hover:bg-card transition-colors disabled:opacity-70 disabled:cursor-not-allowed"
                 />
               )}
+
+              <div className="mt-6 rounded-xl border border-accent/30 bg-accent/5 p-4">
+                <div className="flex items-center gap-2">
+                  <Sparkles className="h-4 w-4 text-accent" />
+                  <p className="text-sm font-bold text-primary">{t('auth.demoTitle', { defaultValue: 'Try the demo' })}</p>
+                </div>
+                <p className="mt-1 text-xs text-secondary">{t('auth.demoSubtitle', { defaultValue: 'No signup needed — everything resets on refresh.' })}</p>
+                <div className="mt-3 grid grid-cols-2 gap-2">
+                  <button
+                    type="button"
+                    onClick={() => { demoLogin('customer'); navigate('/dashboard'); }}
+                    disabled={isSubmitting}
+                    className="flex flex-col items-center gap-1 rounded-lg border border-border bg-background px-3 py-3 text-center transition-colors hover:border-accent disabled:opacity-70"
+                  >
+                    <ShoppingCart className="h-5 w-5 text-accent" />
+                    <span className="text-xs font-bold text-primary">{t('auth.demoCustomer', { defaultValue: 'Demo customer' })}</span>
+                    <span className="text-[10px] text-secondary">{t('auth.demoCustomerHint', { defaultValue: 'Browse, cart, checkout' })}</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { demoLogin('seller'); navigate('/seller'); }}
+                    disabled={isSubmitting}
+                    className="flex flex-col items-center gap-1 rounded-lg border border-border bg-background px-3 py-3 text-center transition-colors hover:border-accent disabled:opacity-70"
+                  >
+                    <Store className="h-5 w-5 text-accent" />
+                    <span className="text-xs font-bold text-primary">{t('auth.demoSeller', { defaultValue: 'Demo seller' })}</span>
+                    <span className="text-[10px] text-secondary">{t('auth.demoSellerHint', { defaultValue: 'Seller dashboard preview' })}</span>
+                  </button>
+                </div>
+              </div>
             </>
           )}
 
