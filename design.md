@@ -427,7 +427,7 @@ On each deploy (via `start.sh` / `render.yaml`):
 
 ```bash
 # Local setup
-git clone https://github.com/DevXtechnic/KinaHub.git
+git clone https://github.com/BikramGole/KinaHub.git
 cd KinaHub
 cp backend/.env.example backend/.env    # Set DB, secrets, API keys
 ./start.sh                               # Starts Django (8000) + Vite (5173)
