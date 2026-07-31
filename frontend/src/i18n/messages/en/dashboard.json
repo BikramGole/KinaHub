@@ -75,5 +75,6 @@
   "navCrm": "CRM",
   "navSettings": "Settings",
   "couldNotLoadAdminData": "Could not load admin data",
-  "couldNotUpdateSeller": "Could not update seller"
+  "couldNotUpdateSeller": "Could not update seller",
+  "demoNotice": "Demo mode: sample data shown, nothing is saved. Everything resets on refresh."
 }
