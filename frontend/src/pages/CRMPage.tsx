@@ -32,22 +32,37 @@ function getTicketPriorityLabel(priority: string, t: (key: string, options?: Rec
   return labels[priority] || priority;
 }
 
+const DEMO_TICKETS: Ticket[] = [
+  { id: 501, customer_email: 'ram.shah@gmail.com', subject: 'Delivery delay on order #1001', status: 'open', priority: 'high', created_at: new Date().toISOString() },
+  { id: 502, customer_email: 'sita.rai@outlook.com', subject: 'Refund request for cancelled order', status: 'pending', priority: 'medium', created_at: new Date().toISOString() },
+  { id: 503, customer_email: 'anjali.pokharel@gmail.com', subject: 'How do I sell on KinaHub?', status: 'resolved', priority: 'low', created_at: new Date().toISOString() },
+];
+
 export default function CRMPage() {
-  const { token } = useAuth();
+  const { token, isDemo } = useAuth();
   const { t } = useTranslation();
   const [tickets, setTickets] = useState<Ticket[]>([]);
 
   useEffect(() => {
+    if (isDemo) {
+      setTickets(DEMO_TICKETS);
+      return;
+    }
     apiRequest<Ticket[]>('/crm/tickets/', { token })
       .then(setTickets)
       .catch(() => setTickets([]));
-  }, [token]);
+  }, [token, isDemo]);
 
   return (
     <div className="space-y-6">
       <section className="rounded-lg border border-border bg-surface p-4 sm:p-6">
         <h1 className="text-2xl font-black tracking-tight">{t('dashboard.crmWorkspace', { defaultValue: 'CRM workspace' })}</h1>
         <p className="mt-2 text-secondary">{t('dashboard.trackCrm', { defaultValue: 'Track customer records, seller records, leads, tickets, messages, notifications, and activity logs in one place.' })}</p>
+        {isDemo && (
+          <p className="mt-3 rounded-md bg-accent/10 px-3 py-2 text-xs font-semibold text-accent">
+            {t('dashboard.demoNotice', { defaultValue: 'Demo mode: sample data shown, nothing is saved. Everything resets on refresh.' })}
+          </p>
+        )}
       </section>
 
       <section className="rounded-lg border border-border bg-surface p-4 sm:p-6">
