@@ -109,6 +109,7 @@ export default function AiAssistantWidget() {
   const [isMobile, setIsMobile] = useState(false);
   const [showBadge, setShowBadge] = useState(false);
   const prevItemsRef = useRef(items.length);
+  const pendingAddRef = useRef<string | null>(null);
   const [launcherPosition, setLauncherPosition] = useState({ x: 0, y: 0 });
   const dragState = useRef({
     dragging: false,
@@ -233,7 +234,7 @@ export default function AiAssistantWidget() {
     setMessage('');
 
     // Fast-path for founder questions (guaranteed answer + photo)
-    const founderIntent = /(who|about|tell).*(bikram|founder|creator)|founder of|who (made|created|built|started) (this|kinahub|you|kina)|who founded/i.test(trimmed);
+    const founderIntent = /(who|about|tell).*(bikram|founder|creator)|founder of|who (made|created|built|started) (this|kinahub|you|kina)|who founded|who are you/i.test(trimmed);
     if (founderIntent) {
       setMessages(current => [
         ...current,
@@ -243,6 +244,36 @@ export default function AiAssistantWidget() {
         },
       ]);
       return;
+    }
+
+    // Spoken confirmation of a pending "add to cart" offer
+    const confirmIntent = /^(yes|yeah|yep|yup|sure|ok|okay|k|alright|fine|go ahead|do it|add it|confirm|confirmed|correct|right|yes please|ok add|okay add)/i.test(trimmed);
+    const denyIntent = /^(no|nope|nah|cancel|never ?mind|not now|stop|dont|don't|quit|skip)/i.test(trimmed);
+    if (confirmIntent && pendingAddRef.current) {
+      const product = allProducts.get(pendingAddRef.current);
+      pendingAddRef.current = null;
+      if (product) {
+        addToCart(product, 1);
+        setMessages(current => [
+          ...current,
+          {
+            role: 'assistant',
+            text: `${t('ai.widget.addedReply', { defaultValue: 'Done!' })} **${product.name}** ${t('ai.widget.addedToCart', { defaultValue: 'is in your cart.' })}\n\n[PRODUCT:${product.slug}]`,
+          },
+        ]);
+        return;
+      }
+    }
+    if (denyIntent && pendingAddRef.current) {
+      pendingAddRef.current = null;
+      setMessages(current => [
+        ...current,
+        { role: 'assistant', text: t('ai.widget.deniedReply', { defaultValue: 'No problem — nothing added.' }) },
+      ]);
+      return;
+    }
+    if (!confirmIntent && !denyIntent) {
+      pendingAddRef.current = null;
     }
 
     // Offline fast-path: "add the second one" style references against the last AI suggestions
