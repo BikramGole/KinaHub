@@ -245,16 +245,6 @@ export default function AiAssistantWidget() {
       return;
     }
 
-    // Fast-path for common offline queries
-    const fastReply = aiChatReply(trimmed, items);
-    if (fastReply) {
-      setMessages(current => [
-        ...current,
-        { role: 'assistant', text: fastReply },
-      ]);
-      return;
-    }
-
     // Offline fast-path: "add the second one" style references against the last AI suggestions
     const lastAssistant = messages[messages.length - 1];
     if (lastAssistant?.role === 'assistant') {
@@ -291,6 +281,16 @@ export default function AiAssistantWidget() {
         ]);
         return;
       }
+    }
+
+    // Fast-path for common offline queries
+    const fastReply = aiChatReply(trimmed, items);
+    if (fastReply) {
+      setMessages(current => [
+        ...current,
+        { role: 'assistant', text: fastReply },
+      ]);
+      return;
     }
 
     setLoading(true);
