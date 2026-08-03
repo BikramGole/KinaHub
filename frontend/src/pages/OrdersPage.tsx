@@ -10,8 +10,63 @@ interface OrdersPageProps {
   mode: 'customer' | 'seller' | 'admin';
 }
 
+function mockOrder(id: number, customerEmail: string, status: OrderType['status'], items: Array<[string, number]>, total: number, payment = 'cod', delivery = 'delivery'): OrderType {
+  return {
+    id,
+    customer_email: customerEmail,
+    status,
+    payment_method: payment,
+    delivery_method: delivery,
+    delivery_fee: '60',
+    promo_code: '',
+    discount_amount: '0',
+    total_price: String(total),
+    shipping_address: 'Kathmandu, Nepal',
+    customer_note: '',
+    items: items.map(([name, quantity], i) => ({
+      id: i + 1,
+      product: {
+        id: i + 1,
+        name,
+        slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-'),
+        category: { id: 1, name: 'Demo', slug: 'demo' },
+        brand: null,
+        description: '',
+        specifications: '',
+        specs: [],
+        price: '0',
+        discount_price: null,
+        stock: 10,
+        rating: '0',
+        tag: null,
+        is_featured: false,
+        is_active: true,
+        images: [],
+      },
+      quantity,
+      price: String(total),
+    })),
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+}
+
+const DEMO_SELLER_ORDERS: OrderType[] = [
+  mockOrder(1001, 'ram.shah@gmail.com', 'pending', [['Set Thakali', 2], ['Fresh Milk 1L', 1]], 1790),
+  mockOrder(1002, 'sita.rai@outlook.com', 'processing', [['Basmati Rice 5kg', 1], ['Mustang Honey', 1]], 1450),
+  mockOrder(1003, 'anjali.pokharel@gmail.com', 'shipped', [['Pashmina Scarf', 1]], 1450, 'esewa'),
+  mockOrder(1004, 'nischal.kc@gmail.com', 'delivered', [['Dal Bhat Power Set', 3]], 990, 'cod', 'pickup'),
+];
+
+const DEMO_CUSTOMER_ORDERS: OrderType[] = [
+  mockOrder(1001, 'demo.customer@kinahub.local', 'delivered', [['Set Thakali', 2]], 1790),
+  mockOrder(1002, 'demo.customer@kinahub.local', 'shipped', [['Mustang Honey', 1]], 660),
+];
+
+const DEMO_ADMIN_ORDERS: OrderType[] = DEMO_SELLER_ORDERS;
+
 export default function OrdersPage({ mode }: OrdersPageProps) {
-  const { token } = useAuth();
+  const { token, isDemo } = useAuth();
   const { t } = useTranslation();
   const [orders, setOrders] = useState<OrderType[]>([]);
   const [error, setError] = useState('');
@@ -23,11 +78,20 @@ export default function OrdersPage({ mode }: OrdersPageProps) {
   }
 
   useEffect(() => {
+    if (isDemo) {
+      setOrders(mode === 'customer' ? DEMO_CUSTOMER_ORDERS : mode === 'seller' ? DEMO_SELLER_ORDERS : DEMO_ADMIN_ORDERS);
+      setError('');
+      return;
+    }
     loadOrders();
-  }, [token]);
+  }, [token, isDemo, mode]);
 
   async function updateStatus(orderId: number, status: string) {
     setError('');
+    if (isDemo) {
+      setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: status as OrderType['status'] } : o)));
+      return;
+    }
     try {
       await apiRequest<OrderType>(`/orders/${orderId}/status/`, {
         token,
@@ -51,6 +115,11 @@ export default function OrdersPage({ mode }: OrdersPageProps) {
             ? t('dashboard.orderHistoryDescription', { defaultValue: 'Track purchases and payment status.' })
             : t('dashboard.orderFulfillmentDescription', { defaultValue: 'Review orders, payment method, fulfillment status, and customer contact.' })}
         </p>
+        {isDemo && (
+          <p className="mt-3 rounded-md bg-accent/10 px-3 py-2 text-xs font-semibold text-accent">
+            {t('dashboard.demoNotice', { defaultValue: 'Demo mode: sample data shown, nothing is saved. Everything resets on refresh.' })}
+          </p>
+        )}
       </section>
 
       {error && <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-700">{error}</p>}

@@ -31,10 +31,39 @@ const initialForm: ProductFormState = {
   stock: '1',
 };
 
+function mockProduct(id: number, name: string, category: string, categorySlug: string, price: number, stock: number, discount?: number): ProductType {
+  return {
+    id,
+    name,
+    slug: `${categorySlug}-${id}`,
+    category: { id, name: category, slug: categorySlug },
+    brand: null,
+    description: 'Demo product description.',
+    specifications: '',
+    specs: [],
+    price: String(price),
+    discount_price: discount ? String(discount) : null,
+    stock,
+    rating: '4.5',
+    tag: null,
+    is_featured: false,
+    is_active: true,
+    images: [],
+  };
+}
+
+const DEMO_PRODUCTS: ProductType[] = [
+  mockProduct(901, 'Basmati Rice 5kg', 'Groceries', 'groceries', 850, 42, 780),
+  mockProduct(902, 'Set Thakali', 'Food & Dining', 'food-dining', 899, 27),
+  mockProduct(903, 'Pashmina Scarf', 'Fashion', 'fashion', 1450, 15, 1299),
+  mockProduct(904, 'Mustang Honey 500g', 'Groceries', 'groceries', 600, 33),
+];
+
 export default function SellerProducts() {
-  const { token } = useAuth();
+  const { token, isDemo } = useAuth();
   const { t } = useTranslation();
   const [products, setProducts] = useState<ProductType[]>([]);
+  const [demoProducts, setDemoProducts] = useState<ProductType[]>(DEMO_PRODUCTS);
   const [categories, setCategories] = useState<CategoryType[]>([]);
   const [form, setForm] = useState<ProductFormState>(initialForm);
   const [images, setImages] = useState<ImagePreview[]>([]);
@@ -59,12 +88,17 @@ export default function SellerProducts() {
   }
 
   useEffect(() => {
+    if (isDemo) {
+      setError('');
+      setDemoProducts(DEMO_PRODUCTS);
+      return;
+    }
     loadProducts();
     fetch(`${API}/categories/`)
       .then((r) => r.json())
       .then(setCategories)
       .catch(() => {});
-  }, [token]);
+  }, [token, isDemo]);
 
   // Clean up object URLs when component unmounts
   useEffect(() => {
@@ -95,6 +129,16 @@ export default function SellerProducts() {
     setError('');
     setSaving(true);
     try {
+      if (isDemo) {
+        const nextId = Math.max(0, ...demoProducts.map((p) => p.id)) + 1;
+        setDemoProducts((prev) => [
+          ...prev,
+          mockProduct(nextId, form.name, 'Demo category', 'demo', Number(form.price) || 0, Number(form.stock) || 0, form.discount_price ? Number(form.discount_price) : undefined),
+        ]);
+        setForm(initialForm);
+        setSaving(false);
+        return;
+      }
       const formData = new FormData();
       formData.append('name', form.name);
       formData.append('category_id', form.category_id);
@@ -167,6 +211,18 @@ export default function SellerProducts() {
     setEditError('');
     setEditSaving(true);
     try {
+      if (isDemo) {
+        setDemoProducts((prev) =>
+          prev.map((p) =>
+            p.id === editing.id
+              ? { ...p, name: editForm.name, description: editForm.description, price: editForm.price || '0', discount_price: editForm.discount_price || null, stock: Number(editForm.stock) || 0 }
+              : p
+          )
+        );
+        closeEdit();
+        setEditSaving(false);
+        return;
+      }
       const formData = new FormData();
       formData.append('name', editForm.name);
       formData.append('category_id', editForm.category_id);
@@ -193,6 +249,11 @@ export default function SellerProducts() {
     setDeleting(product.id);
     setError('');
     try {
+      if (isDemo) {
+        setDemoProducts((prev) => prev.filter((p) => p.id !== product.id));
+        setDeleting(null);
+        return;
+      }
       await apiRequest<{ detail?: string }>(`/products/items/${product.id}/`, { token, method: 'DELETE' });
       loadProducts();
     } catch {
@@ -207,6 +268,11 @@ export default function SellerProducts() {
       <section className="rounded-lg border border-border bg-surface p-4 sm:p-6">
         <h1 className="text-2xl font-black tracking-tight">{t('seller.title', { defaultValue: 'Product management' })}</h1>
         <p className="mt-2 text-secondary">{t('seller.copy', { defaultValue: 'Create products, track stock, and keep your catalog ready for checkout.' })}</p>
+        {isDemo && (
+          <p className="mt-3 rounded-md bg-accent/10 px-3 py-2 text-xs font-semibold text-accent">
+            {t('dashboard.demoNotice', { defaultValue: 'Demo mode: sample data shown, nothing is saved. Everything resets on refresh.' })}
+          </p>
+        )}
       </section>
 
       <section className="rounded-lg border border-border bg-surface p-4 sm:p-6">
@@ -366,7 +432,7 @@ export default function SellerProducts() {
               </tr>
             </thead>
             <tbody>
-              {products.map((product) => (
+              {(isDemo ? demoProducts : products).map((product) => (
                 <tr key={product.id} className="border-t border-border">
                   <td className="py-3 pr-4 font-semibold">{product.name}</td>
                   <td className="py-3 pr-4">
@@ -420,7 +486,7 @@ export default function SellerProducts() {
                   </td>
                 </tr>
               ))}
-              {products.length === 0 && (
+              {(isDemo ? demoProducts : products).length === 0 && (
                 <tr>
                   <td colSpan={7} className="py-8 text-center text-sm text-secondary italic">No products yet. Add your first product above.</td>
                 </tr>
