@@ -423,6 +423,7 @@ export default function AiAssistantWidget() {
   }, [catalog, items]);
 
   const starterPrompts = [
+    t('ai.widget.promptFounder', { defaultValue: 'Who made you?' }),
     t('ai.widget.promptSummarize', { defaultValue: 'Summarize my cart' }),
     t('ai.widget.promptDeals', { defaultValue: 'Find best deals' }),
     t('ai.widget.promptDelivery', { defaultValue: 'Explain delivery' }),
