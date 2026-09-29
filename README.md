@@ -144,4 +144,16 @@ start.bat
 
 KinaHub aims to become a **localized commerce ecosystem**, empowering small businesses with tools typically available only to large-scale platforms—enhanced by AI-driven decision support.
 
+--- 
+
+## Star History
+
+<a href="https://star-history.com/#BikramGole/KinaHub&Date">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=BikramGole/KinaHub&type=Date&theme=dark" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=BikramGole/KinaHub&type=Date" />
+   <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=BikramGole/KinaHub&type=Date" />
+ </picture>
+</a>
+
 ---
