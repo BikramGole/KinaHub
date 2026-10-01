@@ -2,6 +2,7 @@ from django.db.models import Sum, Count, Q
 from crm.models import ActivityLog, Notification
 from rest_framework import permissions, viewsets
 from rest_framework.decorators import action
+from rest_framework.exceptions import MethodNotAllowed
 from rest_framework.response import Response
 from .models import Order
 from .serializers import OrderSerializer, OrderStatusSerializer
@@ -21,6 +22,12 @@ class OrderViewSet(viewsets.ModelViewSet):
             store = getattr(getattr(user, "seller_profile", None), "store", None)
             return queryset.filter(items__product__store=store).distinct()
         return queryset.filter(user=user)
+
+    def update(self, request, *args, **kwargs):
+        raise MethodNotAllowed(request.method, detail="Orders cannot be edited after placement.")
+
+    def destroy(self, request, *args, **kwargs):
+        raise MethodNotAllowed(request.method, detail="Orders cannot be deleted after placement.")
 
     @action(detail=False, methods=["get"])
     def summary(self, request):
