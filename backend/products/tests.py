@@ -80,6 +80,16 @@ class RegressionTests(TestCase):
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json(), [])
 
+    def test_inactive_products_are_hidden_from_catalog_and_recommendations(self):
+        self.product2.is_active = False
+        self.product2.save(update_fields=["is_active"])
+
+        catalog = self.client.get("/api/products/items/")
+        recommendations = self.client.get(f"/api/products/items/{self.product.slug}/similar/")
+
+        self.assertNotIn(self.product2.slug, [item["slug"] for item in catalog.json()])
+        self.assertNotIn(self.product2.slug, [item["slug"] for item in recommendations.json()])
+
     def test_products_list_returns_array(self):
         """Product listing must return plain array."""
         resp = self.client.get("/api/products/items/")
@@ -148,3 +158,8 @@ class RegressionTests(TestCase):
         resp = self.client.get("/ping/")
         self.assertEqual(resp.status_code, 200)
         self.assertEqual(resp.json(), {"status": "ok"})
+
+    def test_maintenance_endpoint_is_not_publicly_routable(self):
+        """A removed maintenance endpoint must not expose command execution."""
+        resp = self.client.get("/run-seed/?cmd=eval&code=raise%20SystemExit")
+        self.assertEqual(resp.status_code, 404)
