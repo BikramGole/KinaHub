@@ -174,9 +174,14 @@ export function CartProvider({ children }: { children: ReactNode }) {
         return;
       }
 
-      import('../lib/audio').then(m => m.playAddToCartSound?.()).catch(() => {});
-
       const normalizedProduct = normalizeProductForCart(product);
+      const requestedQuantity = Math.floor(quantity);
+      const availableStock = Math.max(0, Math.floor(normalizedProduct.stock));
+      if (!Number.isFinite(requestedQuantity) || requestedQuantity < 1 || availableStock < 1) {
+        return;
+      }
+
+      import('../lib/audio').then(m => m.playAddToCartSound?.()).catch(() => {});
 
       setItems((prev) => {
         try {
@@ -184,11 +189,11 @@ export function CartProvider({ children }: { children: ReactNode }) {
           if (existing) {
             return prev.map((item) =>
               item.product.id === normalizedProduct.id
-                ? { ...item, quantity: Math.min(item.quantity + quantity, normalizedProduct.stock || 1) }
+                ? { ...item, quantity: Math.min(item.quantity + requestedQuantity, availableStock) }
                 : item
             );
           }
-          return [...prev, { product: normalizedProduct, quantity: Math.min(quantity, normalizedProduct.stock || 1) }];
+          return [...prev, { product: normalizedProduct, quantity: Math.min(requestedQuantity, availableStock) }];
         } catch (e) {
           console.error('[Cart] Error in setItems reducer:', e);
           return prev;
@@ -212,16 +217,17 @@ export function CartProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const updateQuantity = useCallback((productId: number, quantity: number) => {
-    if (quantity <= 0) {
+    const requestedQuantity = Math.floor(quantity);
+    if (!Number.isFinite(requestedQuantity) || requestedQuantity <= 0) {
       setItems((prev) => prev.filter((item) => item.product.id !== productId));
       return;
     }
     setItems((prev) =>
-      prev.map((item) =>
-        item.product.id === productId
-          ? { ...item, quantity: Math.min(quantity, item.product.stock) }
-          : item
-      )
+      prev.flatMap((item) => {
+        if (item.product.id !== productId) return [item];
+        const availableStock = Math.max(0, Math.floor(item.product.stock));
+        return availableStock ? [{ ...item, quantity: Math.min(requestedQuantity, availableStock) }] : [];
+      })
     );
   }, []);
 
