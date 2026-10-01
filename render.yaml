@@ -10,7 +10,7 @@ services:
     startCommand: python manage.py migrate --no-input && python manage.py seed_all && python manage.py restore_images && python manage.py warmup_cache; gunicorn core.wsgi:application --bind 0.0.0.0:$PORT --workers 1 --timeout 90 --keep-alive 5
     envVars:
       - key: PYTHON_VERSION
-        value: 3.11.0
+        value: 3.12.0
       - key: PORT
         value: 8000
       - key: DEBUG
