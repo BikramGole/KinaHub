@@ -520,8 +520,8 @@ class AiChatView(APIView):
             except Exception:
                 error_data = {"error": str(e)}
             return Response(error_data, status=response.status_code)
-        except Exception as e:
-            return Response({"error": str(e)}, status=500)
+        except requests.RequestException:
+            return Response({"error": "AI service is temporarily unavailable."}, status=503)
 
 @api_view(['GET'])
 @permission_classes([permissions.AllowAny])
