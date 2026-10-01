@@ -1,5 +1,6 @@
 from django.test import TestCase, Client
 from django.urls import reverse
+from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import status
 from users.models import User
 from products.models import Product, Category, Brand, Review
@@ -153,6 +154,24 @@ class RegressionTests(TestCase):
         resp = self.client.get("/api/products/reviews/")
         self.assertEqual(resp.status_code, 200)
         self.assertGreaterEqual(len(resp.json()), 1)
+
+    def test_user_cannot_edit_another_users_review(self):
+        review = Review.objects.get(product=self.product, user=self.user)
+        other_user = User.objects.create_user(
+            username="other-customer", email="other@test.com", password="test123",
+        )
+        token = RefreshToken.for_user(other_user).access_token
+
+        response = self.client.patch(
+            f"/api/products/reviews/{review.id}/",
+            data={"comment": "Changed by another user"},
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {token}",
+        )
+
+        self.assertEqual(response.status_code, 403)
+        review.refresh_from_db()
+        self.assertEqual(review.comment, "Great!")
 
     def test_ping(self):
         resp = self.client.get("/ping/")
