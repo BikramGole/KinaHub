@@ -80,12 +80,15 @@ class OrderSerializer(serializers.ModelSerializer):
     def validate_items(self, items):
         if not items:
             raise serializers.ValidationError("Order must contain at least one item.")
+
+        requested_quantities = {}
         for item in items:
             product = item["product"]
             quantity = item["quantity"]
             if quantity < 1:
                 raise serializers.ValidationError("Quantity must be at least 1.")
-            if product.stock < quantity:
+            requested_quantities[product.pk] = requested_quantities.get(product.pk, 0) + quantity
+            if product.stock < requested_quantities[product.pk]:
                 raise serializers.ValidationError(f"{product.name} only has {product.stock} units available.")
         return items
 
@@ -96,6 +99,26 @@ class OrderSerializer(serializers.ModelSerializer):
         user = self.context["request"].user
         promo_code = validated_data.get("promo_code", "").strip().lower()
         shipping_address = validated_data.get("shipping_address", "")
+
+        requested_quantities = {}
+        for item in items_data:
+            product_id = item["product"].pk
+            requested_quantities[product_id] = requested_quantities.get(product_id, 0) + item["quantity"]
+
+        locked_products = Product.objects.select_for_update().select_related(
+            "category", "store__seller__user", "inventory"
+        ).in_bulk(requested_quantities)
+        if len(locked_products) != len(requested_quantities):
+            raise serializers.ValidationError({"items": "One or more products are no longer available."})
+        for product_id, quantity in requested_quantities.items():
+            product = locked_products[product_id]
+            if not product.is_active or product.stock < quantity:
+                raise serializers.ValidationError(
+                    {"items": f"{product.name} only has {product.stock} units available."}
+                )
+
+        for item in items_data:
+            item["product"] = locked_products[item["product"].pk]
         
         products = [item["product"] for item in items_data]
         quantity_map = {item["product"].id: item["quantity"] for item in items_data}
@@ -128,7 +151,7 @@ class OrderSerializer(serializers.ModelSerializer):
             product = item["product"]
             quantity = item["quantity"]
             order_items.append(OrderItem(order=order, product=product, quantity=quantity, price=product.current_price))
-            product.stock = max(product.stock - quantity, 0)
+            product.stock -= quantity
             product.save(update_fields=["stock"])
             if hasattr(product, "inventory"):
                 product.inventory.quantity = product.stock
