@@ -85,21 +85,38 @@ class OrderViewSet(viewsets.ModelViewSet):
     def calculate_delivery(self, request):
         from .utils import calculate_delivery_info
         from products.models import Product
-        
+
         shipping_address = request.data.get("shipping_address", "")
         items = request.data.get("items", [])
-        product_ids = [item.get("product_id") for item in items if item.get("product_id")]
-        
-        # Build a {product_id: quantity} map so the algorithm can calculate real subtotals
+        if not isinstance(shipping_address, str) or not shipping_address.strip():
+            return Response({"detail": "A shipping address is required."}, status=400)
+        if not isinstance(items, list) or not items:
+            return Response({"detail": "At least one item is required."}, status=400)
+
         quantity_map = {}
         for item in items:
-            pid = item.get("product_id")
-            if pid:
-                quantity_map[pid] = item.get("quantity", 1)
-        
-        products = Product.objects.select_related("category", "store").filter(id__in=product_ids, is_active=True)
+            if not isinstance(item, dict):
+                return Response({"detail": "Each item must be an object."}, status=400)
+            product_id = item.get("product_id")
+            quantity = item.get("quantity")
+            if isinstance(product_id, bool) or not isinstance(product_id, int):
+                return Response({"detail": "Each item needs a valid product ID."}, status=400)
+            if isinstance(quantity, bool) or not isinstance(quantity, int) or quantity < 1:
+                return Response({"detail": "Item quantity must be at least 1."}, status=400)
+            quantity_map[product_id] = quantity_map.get(product_id, 0) + quantity
+
+        products_by_id = Product.objects.select_related("category", "store").filter(
+            id__in=quantity_map,
+            is_active=True,
+        ).in_bulk()
+        if len(products_by_id) != len(quantity_map):
+            return Response({"detail": "One or more products are unavailable."}, status=400)
+        if any(products_by_id[product_id].stock < quantity for product_id, quantity in quantity_map.items()):
+            return Response({"detail": "One or more products do not have enough stock."}, status=400)
+
+        products = list(products_by_id.values())
         total_fee, item_deliveries = calculate_delivery_info(shipping_address, products, quantity_map)
-        
+
         return Response({
             "total_fee": str(total_fee),
             "item_deliveries": item_deliveries
