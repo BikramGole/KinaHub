@@ -175,8 +175,8 @@ class GoogleLoginView(APIView):
             first_name = info.get("given_name", "")
             last_name = info.get("family_name", "")
 
-            if not email:
-                return Response({"error": "Google account missing email"}, status=400)
+            if not email or info.get("email_verified") is not True:
+                return Response({"error": "Google account must have a verified email."}, status=400)
 
             user = User.objects.filter(email=email).first()
             if not user:
@@ -211,8 +211,8 @@ class GoogleLoginView(APIView):
                 "user": UserSerializer(user).data,
             })
 
-        except Exception as e:
-            return Response({"error": f"Google login failed: {str(e)}"}, status=400)
+        except Exception:
+            return Response({"error": "Google login is temporarily unavailable."}, status=503)
 
 
 from rest_framework_simplejwt.views import TokenObtainPairView
