@@ -182,3 +182,15 @@ class RegressionTests(TestCase):
         """A removed maintenance endpoint must not expose command execution."""
         resp = self.client.get("/run-seed/?cmd=eval&code=raise%20SystemExit")
         self.assertEqual(resp.status_code, 404)
+
+    def test_ai_chat_rejects_models_outside_the_free_allowlist(self):
+        response = self.client.post(
+            "/api/products/ai/chat/",
+            data=json.dumps({
+                "model": "openai/gpt-5",
+                "messages": [{"role": "user", "content": "Hello"}],
+            }),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 400)
