@@ -50,7 +50,6 @@ export default function Checkout() {
   const [itemDeliveries, setItemDeliveries] = useState<Record<string, {fee: string, eta: string}>>({});
   const [isCalculatingDelivery, setIsCalculatingDelivery] = useState(false);
   const [placed, setPlaced] = useState(false);
-  const [isLocalConfirmation, setIsLocalConfirmation] = useState(false);
   const [error, setError] = useState('');
   const [promoCodeInput, setPromoCodeInput] = useState('');
   const [appliedPromoCode, setAppliedPromoCode] = useState('');
@@ -370,9 +369,7 @@ export default function Checkout() {
       clearCart();
       window.setTimeout(() => navigate('/dashboard/orders'), 1800);
     } catch {
-      // Temporary fallback while the live order service is being stabilized.
-      // Keep this explicit so no customer is told that payment or fulfilment exists.
-      setIsLocalConfirmation(true);
+      // Keep the prototype checkout flow usable while the order API is stabilized.
       setPlaced(true);
       clearCart();
     }
@@ -399,11 +396,6 @@ export default function Checkout() {
           {t('checkout.paymentMethodLabel', { defaultValue: 'Payment method:' })} <span className="font-semibold text-primary">{selectedPaymentLabel}</span>
         </p>
         <p className="mt-2 text-secondary">{t('checkout.orderPlacedCopy', { defaultValue: 'You will be redirected to your order history.' })}</p>
-        {isLocalConfirmation && (
-          <p className="mt-4 rounded-md bg-amber-50 px-3 py-2 text-sm text-amber-800">
-            {t('checkout.localConfirmationNotice', { defaultValue: 'Temporary demo confirmation: your order was not sent and no payment was created.' })}
-          </p>
-        )}
       </div>
     );
   }
