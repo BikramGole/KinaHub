@@ -55,6 +55,7 @@ class InventorySerializer(serializers.ModelSerializer):
 class ReviewSerializer(serializers.ModelSerializer):
     created_at = serializers.DateTimeField(read_only=True)
     updated_at = serializers.DateTimeField(read_only=True)
+    rating = serializers.IntegerField(min_value=1, max_value=5)
     image_url = serializers.SerializerMethodField()
     video_url = serializers.SerializerMethodField()
 
