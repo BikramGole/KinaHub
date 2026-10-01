@@ -5,6 +5,8 @@ from sellers.models import SellerProfile, Store
 from .models import Address, CustomerProfile, User
 from .email_utils import send_otp_email, send_welcome_email
 from django.conf import settings
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError as DjangoValidationError
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -32,6 +34,11 @@ class RegisterSerializer(serializers.Serializer):
         return value
 
     def validate(self, attrs):
+        try:
+            validate_password(attrs["password"])
+        except DjangoValidationError as exc:
+            raise serializers.ValidationError({"password": exc.messages})
+
         if attrs["role"] == "seller":
             if not attrs.get("business_name"):
                 raise serializers.ValidationError({"business_name": "Business name is required for seller accounts."})
@@ -75,7 +82,10 @@ class RegisterSerializer(serializers.Serializer):
         user.otp_created_at = timezone.now()
         user.save(update_fields=['otp_code', 'otp_created_at'])
 
-        send_otp_email(user.email, otp, "Your KinaHub Registration Code")
+        try:
+            send_otp_email(user.email, otp, "Your KinaHub Registration Code")
+        except Exception:
+            pass
 
         return {
             "require_2fa": True,
