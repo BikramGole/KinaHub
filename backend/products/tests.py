@@ -1,5 +1,7 @@
 from django.test import TestCase, Client
 from django.urls import reverse
+from unittest.mock import patch
+import requests
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import status
 from users.models import User
@@ -194,3 +196,18 @@ class RegressionTests(TestCase):
         )
 
         self.assertEqual(response.status_code, 400)
+
+    @patch("products.views.requests.post", side_effect=requests.ConnectionError("unreachable"))
+    @patch.dict("os.environ", {"OPENROUTER_API_KEY": "test-key"})
+    def test_ai_chat_hides_upstream_connection_errors(self, _requests_post):
+        response = self.client.post(
+            "/api/products/ai/chat/",
+            data=json.dumps({
+                "model": "openrouter/free",
+                "messages": [{"role": "user", "content": "Hello"}],
+            }),
+            content_type="application/json",
+        )
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(response.json()["error"], "AI service is temporarily unavailable.")
