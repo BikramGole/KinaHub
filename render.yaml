@@ -13,6 +13,16 @@ services:
         value: 3.11.0
       - key: PORT
         value: 8000
+      - key: DEBUG
+        value: "False"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: SELLER_REGISTRATION_CODE
+        generateValue: true
+      - key: ALLOWED_HOSTS
+        value: kinahub-ot0t.onrender.com
+      - key: FRONTEND_URL
+        value: https://kinahub.vercel.app
 
   # Free cron job — pings /ping/ every 10 minutes to prevent cold starts.
   # Render's free cron jobs do NOT spin down your web service.
@@ -31,4 +41,3 @@ except Exception as e:
   print(f'Ping failed: {e}');
   sys.exit(1)
 "
-
