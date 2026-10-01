@@ -144,6 +144,26 @@ class OrderRegressionTests(TestCase):
         )
         self.assertEqual(resp.status_code, 400)
 
+    def test_orders_create_rejects_duplicate_items_exceeding_stock(self):
+        headers = self._auth_header()
+        resp = self.client.post(
+            "/api/orders/",
+            data=json.dumps({
+                "items": [
+                    {"product_id": self.product.id, "quantity": 6},
+                    {"product_id": self.product.id, "quantity": 6},
+                ],
+                "payment_method": "cod",
+                "shipping_address": "Test",
+            }),
+            content_type="application/json",
+            **headers,
+        )
+
+        self.assertEqual(resp.status_code, 400)
+        self.product.refresh_from_db()
+        self.assertEqual(self.product.stock, 10)
+
     def test_orders_summary_authenticated_only(self):
         resp = self.client.get("/api/orders/summary/")
         self.assertEqual(resp.status_code, 401)
