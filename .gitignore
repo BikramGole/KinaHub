@@ -14,6 +14,12 @@ render-backup/
 # opencode config
 .opencode/
 
+# Local agent instructions, planning notes, and CI workflows
+AGENTS.md
+TEST_INVENTORY.md
+design.md
+.github/workflows/
+
 # ── Python / Django ────────────────────────
 __pycache__/
 *.py[cod]
