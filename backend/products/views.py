@@ -2,6 +2,7 @@ from django.db.models import Avg, Count, Case, DecimalField, ExpressionWrapper, 
 from django.db.models.functions import Coalesce, Abs
 from django.core.cache import cache
 from rest_framework import viewsets, permissions
+from rest_framework.throttling import ScopedRateThrottle
 from rest_framework.decorators import action, api_view, permission_classes
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -466,6 +467,8 @@ import requests
 
 class AiChatView(APIView):
     permission_classes = [permissions.AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "ai_chat"
 
     def post(self, request):
         messages = request.data.get("messages", [])
