@@ -196,6 +196,13 @@ class ProductViewSet(viewsets.ModelViewSet):
         if files:
             self._save_uploaded_images(updated, files)
 
+    def perform_destroy(self, instance):
+        if self.request.user.effective_role != "admin":
+            store = getattr(getattr(self.request.user, "seller_profile", None), "store", None)
+            if instance.store_id != getattr(store, "id", None):
+                raise PermissionDenied("You can only manage your own store products.")
+        instance.delete()
+
     @action(detail=True, methods=["get"], url_path="similar")
     def similar_products(self, request, slug=None):
         product = self.get_object()
