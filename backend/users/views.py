@@ -138,6 +138,9 @@ class GoogleLoginView(APIView):
         if not access_token:
             return Response({"error": "No access token provided"}, status=400)
 
+        if role not in (User.ROLE_CUSTOMER, User.ROLE_SELLER):
+            return Response({"error": "Invalid account role."}, status=400)
+
         if role == "seller":
             if not business_name:
                 return Response({"error": "Business name is required for seller accounts."}, status=400)
