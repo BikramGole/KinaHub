@@ -197,6 +197,26 @@ class RegressionTests(TestCase):
 
         self.assertEqual(response.status_code, 400)
 
+    @patch("products.views.requests.post")
+    def test_ai_chat_rejects_malformed_or_oversized_messages_before_proxying(self, requests_post):
+        invalid_payloads = [
+            {"messages": [{"role": "tool", "content": "Hello"}]},
+            {"messages": [{"role": "user", "content": ""}]},
+            {"messages": [{"role": "user", "content": "x" * 8_001}]},
+            {"messages": ["Hello"]},
+        ]
+
+        for payload in invalid_payloads:
+            with self.subTest(payload=payload):
+                response = self.client.post(
+                    "/api/products/ai/chat/",
+                    data=json.dumps(payload),
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 400)
+
+        requests_post.assert_not_called()
+
     @patch("products.views.requests.post", side_effect=requests.ConnectionError("unreachable"))
     @patch.dict("os.environ", {"OPENROUTER_API_KEY": "test-key"})
     def test_ai_chat_hides_upstream_connection_errors(self, _requests_post):
