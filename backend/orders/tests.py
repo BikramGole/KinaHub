@@ -145,6 +145,28 @@ class OrderRegressionTests(TestCase):
         )
         self.assertEqual(resp.status_code, 400)
 
+    def test_delivery_calculation_validates_items_and_aggregates_duplicate_quantities(self):
+        invalid_payloads = [
+            {"shipping_address": "Thamel", "items": ["not an item"]},
+            {"shipping_address": "Thamel", "items": [{"product_id": self.product.id, "quantity": 0}]},
+            {
+                "shipping_address": "Thamel",
+                "items": [
+                    {"product_id": self.product.id, "quantity": 6},
+                    {"product_id": self.product.id, "quantity": 5},
+                ],
+            },
+        ]
+
+        for payload in invalid_payloads:
+            with self.subTest(payload=payload):
+                response = self.client.post(
+                    "/api/orders/calculate_delivery/",
+                    data=json.dumps(payload),
+                    content_type="application/json",
+                )
+                self.assertEqual(response.status_code, 400)
+
     def test_orders_create_rejects_duplicate_items_exceeding_stock(self):
         headers = self._auth_header()
         resp = self.client.post(
