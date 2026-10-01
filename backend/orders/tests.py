@@ -1,9 +1,10 @@
 from django.test import TestCase, Client
+from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework import status
 from users.models import User
 from products.models import Product, Category, Brand
 from sellers.models import Store, SellerProfile
-from orders.models import Order
+from orders.models import Order, OrderItem
 import json
 
 
@@ -184,3 +185,32 @@ class OrderRegressionTests(TestCase):
         headers = self._auth_header()
         resp = self.client.get("/api/orders/99999/", **headers)
         self.assertEqual(resp.status_code, 404)
+
+    def test_seller_cannot_update_status_for_multi_store_order(self):
+        other_seller_user = User.objects.create_user(
+            username="other-seller", email="other-seller@test.com", password="test123", role="seller",
+        )
+        other_profile = SellerProfile.objects.create(
+            user=other_seller_user, business_name="Other Store", status="verified",
+        )
+        other_store = Store.objects.create(
+            name="Other Store", slug="other-store", description="Test", seller=other_profile,
+        )
+        other_product = Product.objects.create(
+            name="Other Product", slug="other-product", category=self.cat, brand=self.brand,
+            store=other_store, price=500, stock=10,
+        )
+        OrderItem.objects.create(order=self.order, product=self.product, quantity=1, price=1000)
+        OrderItem.objects.create(order=self.order, product=other_product, quantity=1, price=500)
+        seller_token = RefreshToken.for_user(self.seller_user).access_token
+
+        response = self.client.patch(
+            f"/api/orders/{self.order.id}/status/",
+            data={"status": "processing"},
+            content_type="application/json",
+            HTTP_AUTHORIZATION=f"Bearer {seller_token}",
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.order.refresh_from_db()
+        self.assertEqual(self.order.status, "pending")
