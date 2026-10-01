@@ -87,6 +87,8 @@ class OrderSerializer(serializers.ModelSerializer):
             quantity = item["quantity"]
             if quantity < 1:
                 raise serializers.ValidationError("Quantity must be at least 1.")
+            if product.pk in requested_quantities:
+                raise serializers.ValidationError("Each product may only appear once in an order.")
             requested_quantities[product.pk] = requested_quantities.get(product.pk, 0) + quantity
             if product.stock < requested_quantities[product.pk]:
                 raise serializers.ValidationError(f"{product.name} only has {product.stock} units available.")
