@@ -58,10 +58,8 @@ export default function Checkout() {
   const [addressDetail, setAddressDetail] = useState('');
   const [customerNote, setCustomerNote] = useState('');
   const [showAddressSuggestions, setShowAddressSuggestions] = useState(false);
-  const [_isLocating, setIsLocating] = useState(false);
+  const [isLocating, setIsLocating] = useState(false);
   const [focusedSuggestionIndex, setFocusedSuggestionIndex] = useState(-1);
-  const hasAutoLocated = useRef(false);
-  const addressInputRef = useRef<HTMLInputElement>(null);
   const houseDetailRef = useRef<HTMLTextAreaElement>(null);
   const instructionsRef = useRef<HTMLTextAreaElement>(null);
   const promoCodeRef = useRef<HTMLInputElement>(null);
@@ -202,14 +200,6 @@ export default function Checkout() {
       document.getElementById(`suggestion-${focusedSuggestionIndex}`)?.scrollIntoView({ block: 'nearest' });
     }
   }, [focusedSuggestionIndex]);
-
-  useEffect(() => {
-    if (!hasAutoLocated.current && !addressQuery.trim()) {
-      hasAutoLocated.current = true;
-      handleGetCurrentLocation();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
 
   useEffect(() => {
     if (!addressQuery.trim()) {
@@ -429,7 +419,20 @@ export default function Checkout() {
             </div>
 
             <div className="relative">
-              <label className="mb-2 block text-sm font-semibold">{t('checkout.searchArea', { defaultValue: 'Search area' })}</label>
+              <div className="mb-2 flex items-center justify-between gap-3">
+                <label className="block text-sm font-semibold">{t('checkout.searchArea', { defaultValue: 'Search area' })}</label>
+                <button
+                  type="button"
+                  onClick={handleGetCurrentLocation}
+                  disabled={isLocating}
+                  className="inline-flex items-center gap-1 text-xs font-semibold text-accent hover:underline disabled:cursor-wait disabled:opacity-60"
+                >
+                  <MapPin className="h-3.5 w-3.5" />
+                  {isLocating
+                    ? t('checkout.locating', { defaultValue: 'Locating...' })
+                    : t('checkout.useMyLocation', { defaultValue: 'Use my location' })}
+                </button>
+              </div>
               <div className="relative">
                 <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary" />
                 <input
@@ -469,7 +472,6 @@ export default function Checkout() {
                     }
                   }}
                   placeholder={t('checkout.searchHint', { defaultValue: 'Type Gongabu, Thamel, Gyaneshwor...' })}
-                  ref={addressInputRef}
                   className="h-11 w-full rounded-md border border-border bg-background pl-10 pr-3 text-base outline-none transition-colors focus:border-accent"
                 />
               </div>
