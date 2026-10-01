@@ -47,6 +47,13 @@ class OrderViewSet(viewsets.ModelViewSet):
             return Response({"detail": "Only sellers and admins can update order status."}, status=403)
 
         order = self.get_object()
+        if user.effective_role == "seller":
+            store = getattr(getattr(user, "seller_profile", None), "store", None)
+            if not store or order.items.exclude(product__store=store).exists():
+                return Response(
+                    {"detail": "Sellers can only update orders fulfilled entirely by their store."},
+                    status=403,
+                )
         serializer = OrderStatusSerializer(order, data=request.data, partial=True)
         serializer.is_valid(raise_exception=True)
         old_status = order.status
