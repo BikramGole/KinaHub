@@ -465,6 +465,14 @@ def curation_view(request):
 import os
 import requests
 
+ALLOWED_AI_MODELS = frozenset({
+    "google/gemini-2.5-flash:free",
+    "deepseek/deepseek-chat-v3-0324:free",
+    "meta-llama/llama-3.3-70b-instruct:free",
+    "openrouter/free",
+})
+
+
 class AiChatView(APIView):
     permission_classes = [permissions.AllowAny]
     throttle_classes = [ScopedRateThrottle]
@@ -472,14 +480,18 @@ class AiChatView(APIView):
 
     def post(self, request):
         messages = request.data.get("messages", [])
-        if not messages:
+        if not isinstance(messages, list) or not messages:
             return Response({"error": "No messages provided"}, status=400)
+        if len(messages) > 24:
+            return Response({"error": "Too many messages provided"}, status=400)
             
+        model = request.data.get("model", "openrouter/free")
+        if model not in ALLOWED_AI_MODELS:
+            return Response({"error": "Requested AI model is not available."}, status=400)
+
         api_key = os.environ.get("OPENROUTER_API_KEY")
         if not api_key:
             return Response({"error": "OPENROUTER_API_KEY not configured on server"}, status=501)
-
-        model = request.data.get("model", "openrouter/free")
         
 
 
