@@ -187,6 +187,25 @@ class OrderRegressionTests(TestCase):
         self.product.refresh_from_db()
         self.assertEqual(self.product.stock, 10)
 
+    def test_orders_create_rejects_duplicate_product_lines(self):
+        headers = self._auth_header()
+        response = self.client.post(
+            "/api/orders/",
+            data=json.dumps({
+                "items": [
+                    {"product_id": self.product.id, "quantity": 1},
+                    {"product_id": self.product.id, "quantity": 1},
+                ],
+                "payment_method": "cod",
+                "shipping_address": "Thamel",
+            }),
+            content_type="application/json",
+            **headers,
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertFalse(OrderItem.objects.filter(order__user=self.user).exists())
+
     def test_orders_summary_authenticated_only(self):
         resp = self.client.get("/api/orders/summary/")
         self.assertEqual(resp.status_code, 401)
