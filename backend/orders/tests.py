@@ -186,6 +186,21 @@ class OrderRegressionTests(TestCase):
         resp = self.client.get("/api/orders/99999/", **headers)
         self.assertEqual(resp.status_code, 404)
 
+    def test_customer_cannot_edit_or_delete_placed_order(self):
+        headers = self._auth_header()
+
+        edit_response = self.client.patch(
+            f"/api/orders/{self.order.id}/",
+            data={"shipping_address": "Changed address"},
+            content_type="application/json",
+            **headers,
+        )
+        delete_response = self.client.delete(f"/api/orders/{self.order.id}/", **headers)
+
+        self.assertEqual(edit_response.status_code, 405)
+        self.assertEqual(delete_response.status_code, 405)
+        self.assertTrue(Order.objects.filter(pk=self.order.pk).exists())
+
     def test_seller_cannot_update_status_for_multi_store_order(self):
         other_seller_user = User.objects.create_user(
             username="other-seller", email="other-seller@test.com", password="test123", role="seller",
