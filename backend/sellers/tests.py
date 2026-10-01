@@ -1,4 +1,5 @@
 from django.test import TestCase, Client
+from django.conf import settings
 from users.models import User
 from products.models import Product, Category, Brand
 from sellers.models import Store, SellerProfile
@@ -32,7 +33,7 @@ class SellerRegressionTests(TestCase):
     def _auth_seller(self):
         resp = self.client.post("/api/token/", {
             "email": "seller@test.com", "password": "seller123",
-            "seller_code": "mafia",
+            "seller_code": settings.SELLER_REGISTRATION_CODE,
         }, content_type="application/json")
         self.assertEqual(resp.status_code, 200)
         uid = resp.json()["user_id"]
@@ -119,3 +120,27 @@ class SellerRegressionTests(TestCase):
             HTTP_AUTHORIZATION=f"Bearer {token}",
         )
         self.assertEqual(resp3.status_code, 403)
+
+    def test_seller_cannot_delete_another_sellers_product(self):
+        other_user = User.objects.create_user(
+            username="other-seller", email="other-seller@test.com", password="seller123",
+            role="seller",
+        )
+        other_profile = SellerProfile.objects.create(
+            user=other_user, business_name="Other Test Biz", status="verified",
+        )
+        other_store = Store.objects.create(
+            name="Other Test Store", slug="other-test-store",
+            description="Test", is_active=True, seller=other_profile,
+        )
+        other_product = Product.objects.create(
+            name="Other Product", slug="other-product", category=self.cat, brand=self.brand,
+            store=other_store, price=1000, stock=10,
+        )
+
+        response = self.client.delete(
+            f"/api/products/items/{other_product.slug}/", **self._auth_seller()
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(Product.objects.filter(pk=other_product.pk).exists())
