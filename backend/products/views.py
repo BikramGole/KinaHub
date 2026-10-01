@@ -471,6 +471,24 @@ ALLOWED_AI_MODELS = frozenset({
     "meta-llama/llama-3.3-70b-instruct:free",
     "openrouter/free",
 })
+MAX_AI_MESSAGE_CHARACTERS = 8_000
+ALLOWED_AI_MESSAGE_ROLES = frozenset({"system", "user", "assistant"})
+
+
+def _valid_ai_messages(messages):
+    """Validate the small OpenAI-compatible message subset supported by the proxy."""
+    if not isinstance(messages, list) or not messages or len(messages) > 24:
+        return False
+
+    for message in messages:
+        if not isinstance(message, dict):
+            return False
+        if message.get("role") not in ALLOWED_AI_MESSAGE_ROLES:
+            return False
+        content = message.get("content")
+        if not isinstance(content, str) or not content.strip() or len(content) > MAX_AI_MESSAGE_CHARACTERS:
+            return False
+    return True
 
 
 class AiChatView(APIView):
@@ -480,10 +498,8 @@ class AiChatView(APIView):
 
     def post(self, request):
         messages = request.data.get("messages", [])
-        if not isinstance(messages, list) or not messages:
-            return Response({"error": "No messages provided"}, status=400)
-        if len(messages) > 24:
-            return Response({"error": "Too many messages provided"}, status=400)
+        if not _valid_ai_messages(messages):
+            return Response({"error": "Messages must be 1-24 non-empty text messages with valid roles."}, status=400)
             
         model = request.data.get("model", "openrouter/free")
         if model not in ALLOWED_AI_MODELS:
