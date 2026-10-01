@@ -16,6 +16,19 @@ class ProductAccessPermission(permissions.BasePermission):
             return True
         return bool(request.user and request.user.is_authenticated and request.user.effective_role in ["seller", "admin"])
 
+
+class ReviewPermission(permissions.BasePermission):
+    def has_permission(self, request, view):
+        if request.method in permissions.SAFE_METHODS or request.method == "POST":
+            return True
+        return bool(request.user and request.user.is_authenticated)
+
+    def has_object_permission(self, request, view, obj):
+        return bool(
+            request.user.effective_role == "admin"
+            or (obj.user_id is not None and obj.user_id == request.user.id)
+        )
+
 def product_queryset(include_inactive: bool = False, list_mode: bool = False):
     queryset = Product.objects.all() if include_inactive else Product.objects.filter(is_active=True)
     primary_image = Subquery(
@@ -251,7 +264,7 @@ class BrandViewSet(viewsets.ReadOnlyModelViewSet):
 class ReviewViewSet(viewsets.ModelViewSet):
     queryset = Review.objects.select_related('product', 'user')
     serializer_class = ReviewSerializer
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [ReviewPermission]
     pagination_class = None
 
     def get_queryset(self):
