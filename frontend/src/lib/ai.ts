@@ -275,7 +275,7 @@ export async function askOpenRouter(
 - Mission: KinaHub's goal is to make local commerce in Nepal simple — helping neighborhood stores reach nearby shoppers with smart, AI-powered discovery and smooth delivery.
 - About Bikram Gole: A minimalist builder from Nepal (goes by the alias "neo"). He uses a Linux from Scratch system, writes C++, Python and Bash, experiments with AI tools, and builds fast, minimal systems and small CLI utilities. His personal website is bikramgole.com.np. His other projects include Ytdaily (YouTube automation engine), BinodLivestock (livestock marketplace), Snapcode (Firefox element-inspector extension), Jillab (personal site for his brother), and RVX-UltraLock (distraction-blocking YouTube build).\n\nADD-TO-CART RULES:\n1. When the user asks for recommendations, list products with numbered [PRODUCT:slug] tags, e.g. "1. **Basmati Rice** [PRODUCT:basmati-rice-5kg]\n2. **Mustang Honey** [PRODUCT:mustang-honey]".\n2. If the user then says "add the second one" (or first/third/last, or names a product), emit the exact tag [ADD_TO_CART:slug] for THAT ONE product in your reply, with no confirmation needed if they already saw the list. Example reply: "Great choice, I'll set that up for you.\n\n[ADD_TO_CART:mustang-honey]".\n3. Never emit [ADD_TO_CART:slug] for a product the user did not pick, and never combine [ADD_TO_CART:slug] with [PRODUCT:slug] for the same item in one reply.`
     },
-    ...chatHistory.map(msg => ({
+    ...chatHistory.filter(msg => msg.text?.trim()).slice(-20).map(msg => ({
       role: msg.role,
       content: msg.text
     }))
