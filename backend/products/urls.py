@@ -1,6 +1,6 @@
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from .views import ProductViewSet, CategoryViewSet, BrandViewSet, SearchSuggestionsView, ReviewViewSet, AiChatView, homepage_data
+from .views import ProductViewSet, CategoryViewSet, BrandViewSet, SearchSuggestionsView, ReviewViewSet, AiChatView, homepage_data, curation_view
 
 router = DefaultRouter()
 router.register(r'items', ProductViewSet)
@@ -12,5 +12,6 @@ urlpatterns = [
     path('homepage/', homepage_data, name='homepage_data'),
     path('suggestions/', SearchSuggestionsView.as_view()),
     path('ai/chat/', AiChatView.as_view(), name='ai_chat'),
+    path('curation/', curation_view, name='curation_view'),
     path('', include(router.urls)),
 ]
