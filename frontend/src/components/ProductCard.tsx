@@ -3,10 +3,7 @@ import { Link } from 'react-router-dom';
 import { ShoppingBag, Star, Store } from 'lucide-react';
 import { formatPrice, price, productImage } from '../lib/products';
 import type { ProductType } from '../lib/products';
-import { useTranslation } from '../i18n/LocaleContext';
-
-
-interface ProductCardProps {
+import { useTranslation } from '../i18n/LocaleContext';interface ProductCardProps {
   product: ProductType;
   compact?: boolean;
 }
@@ -29,6 +26,9 @@ function ProductCardComponent({ product, compact = false }: ProductCardProps) {
               alt={product.name}
               className="h-full w-full object-cover object-center transition-transform duration-300 ease-out group-hover:scale-110"
               loading="lazy"
+              decoding="async"
+              width={400}
+              height={320}
             />
           ) : (
             <div className="flex h-full w-full items-center justify-center text-secondary">{t('products.noImage', { defaultValue: 'No image' })}</div>
@@ -49,7 +49,8 @@ function ProductCardComponent({ product, compact = false }: ProductCardProps) {
           <div className="mb-2 flex items-center justify-between gap-3 text-xs text-secondary">
             <span className="truncate uppercase tracking-wide">{t(`categories.${product.category.slug}.name`, { defaultValue: product.category.name })}</span>
             <span className="flex shrink-0 items-center gap-1 transition-transform duration-300 hover:scale-110">
-              <Star className="h-3.5 w-3.5 fill-warning text-warning" />
+              <Star aria-hidden="true" className="h-3.5 w-3.5 fill-warning text-warning" />
+              <span className="sr-only">Rated</span>
               {Number(product.rating).toFixed(1)}
             </span>
           </div>
@@ -72,7 +73,7 @@ function ProductCardComponent({ product, compact = false }: ProductCardProps) {
               )}
               <p className="text-sm font-bold text-primary sm:text-base">{formatPrice(price(product))}</p>
             </div>
-            <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-background transition-all duration-300 group-hover:bg-accent group-hover:shadow-lg group-hover:-translate-y-1 sm:h-9 sm:w-9 btn-press-effect">
+            <span aria-hidden="true" className="flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-primary text-background transition-all duration-300 group-hover:bg-accent group-hover:shadow-lg group-hover:-translate-y-1 sm:h-9 sm:w-9 btn-press-effect">
               <ShoppingBag className="h-3.5 w-3.5 sm:h-4 sm:w-4 icon-hover-effect" />
             </span>
           </div>
