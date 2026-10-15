@@ -11,6 +11,28 @@ from django.shortcuts import get_object_or_404
 from .models import Product, Category, Brand, Review, ProductImage
 from .serializers import ProductSerializer, CategorySerializer, BrandSerializer, ReviewSerializer
 
+ALLOWED_UPLOAD_EXTENSIONS = frozenset({'.jpg', '.jpeg', '.png', '.webp', '.avif', '.gif'})
+MAX_UPLOAD_SIZE_BYTES = 5 * 1024 * 1024
+
+
+def validate_upload(file_obj, max_size: int = MAX_UPLOAD_SIZE_BYTES):
+    """Validate uploaded image: extension + size. Raises ValidationError if invalid."""
+    import os
+
+    name = getattr(file_obj, 'name', '') or ''
+    _, ext = os.path.splitext(name.lower())
+    if ext not in ALLOWED_UPLOAD_EXTENSIONS:
+        raise ValidationError({
+            'image': f'Unsupported file type "{ext or "unknown"}". Allowed: jpg, jpeg, png, webp, avif, gif.'
+        })
+    size = getattr(file_obj, 'size', None)
+    if size is not None and size > max_size:
+        raise ValidationError({'image': f'File too large ({size // 1024}KB). Max is {max_size // (1024 * 1024)}MB.'})
+    content_type = getattr(file_obj, 'content_type', '')
+    if content_type and not content_type.startswith('image/'):
+        raise ValidationError({'image': f'Invalid content type "{content_type}". Expected an image.'})
+    return True
+
 class ProductAccessPermission(permissions.BasePermission):
     def has_permission(self, request, view):
         if request.method in permissions.SAFE_METHODS:
@@ -153,8 +175,10 @@ class ProductViewSet(viewsets.ModelViewSet):
         import os
         from django.conf import settings as django_settings
         from django.core.files.storage import FileSystemStorage
+        from django.utils.text import get_valid_filename
 
         for idx, img_file in enumerate(files):
+            validate_upload(img_file)
             is_primary = idx == 0 and not product.images.exists()
             cloud_name = getattr(django_settings, 'CLOUDINARY_CLOUD_NAME', '')
             if cloud_name:
@@ -173,7 +197,8 @@ class ProductViewSet(viewsets.ModelViewSet):
                 upload_dir = os.path.join(django_settings.MEDIA_ROOT, 'products')
                 os.makedirs(upload_dir, exist_ok=True)
                 fs = FileSystemStorage(location=upload_dir)
-                filename = fs.save(img_file.name, img_file)
+                safe_name = get_valid_filename(os.path.basename(img_file.name))
+                filename = fs.save(safe_name, img_file)
                 url = f"/media/products/{filename}"
             if url:
                 ProductImage.objects.create(
@@ -289,23 +314,31 @@ class ReviewViewSet(viewsets.ModelViewSet):
         rating = int(self.request.data.get('rating') or 5)
         rating = max(1, min(rating, 5))
         from django.core.files.storage import FileSystemStorage
+        from django.utils.text import get_valid_filename
         import os
         from django.conf import settings
 
         # Handle files
         image_url = ''
         video_url = ''
+        allowed_video_exts = frozenset({'.mp4', '.webm', '.mov'})
         
         image_file = self.request.FILES.get('image')
         if image_file:
+            validate_upload(image_file)
             fs = FileSystemStorage(location=os.path.join(settings.MEDIA_ROOT, 'reviews'))
-            filename = fs.save(image_file.name, image_file)
+            filename = fs.save(get_valid_filename(os.path.basename(image_file.name)), image_file)
             image_url = f"/media/reviews/{filename}"
             
         video_file = self.request.FILES.get('video')
         if video_file:
+            _, vext = os.path.splitext(getattr(video_file, 'name', '').lower())
+            if vext not in allowed_video_exts:
+                raise ValidationError({'video': f'Unsupported video type "{vext}". Allowed: mp4, webm, mov.'})
+            if getattr(video_file, 'size', 0) > 20 * 1024 * 1024:
+                raise ValidationError({'video': 'Video too large. Max is 20MB.'})
             fs = FileSystemStorage(location=os.path.join(settings.MEDIA_ROOT, 'reviews'))
-            filename = fs.save(video_file.name, video_file)
+            filename = fs.save(get_valid_filename(os.path.basename(video_file.name)), video_file)
             video_url = f"/media/reviews/{filename}"
 
         serializer.save(
@@ -378,10 +411,11 @@ class SearchSuggestionsView(APIView):
 from django.conf import settings
 from django.core.files.storage import FileSystemStorage
 from django.shortcuts import render, redirect
-from django.views.decorators.csrf import csrf_exempt
+from django.contrib.admin.views.decorators import staff_member_required
+from django.utils.text import get_valid_filename
 from .models import ImageCurationRating
 
-@csrf_exempt
+@staff_member_required(login_url='/admin/login/')
 def curation_view(request):
     total = Product.objects.count()
     count = ImageCurationRating.objects.count()
@@ -403,6 +437,7 @@ def curation_view(request):
             product = Product.objects.get(id=product_id)
             
             if new_image:
+                validate_upload(new_image)
                 upload_to_cloudinary = bool(getattr(settings, 'CLOUDINARY_CLOUD_NAME', ''))
                 if upload_to_cloudinary:
                     import cloudinary.uploader
@@ -419,8 +454,11 @@ def curation_view(request):
                     project_root = os.path.dirname(base_dir)
                     target_dir = os.path.join(project_root, 'frontend', 'public', 'product-media')
                     os.makedirs(target_dir, exist_ok=True)
-                    ext = new_image.name.split('.')[-1] or 'jpg'
-                    filename = f"{product.slug}.{ext}"
+                    _, ext = os.path.splitext(getattr(new_image, 'name', '').lower())
+                    ext = ext.lstrip('.') or 'jpg'
+                    if f'.{ext}' not in ALLOWED_UPLOAD_EXTENSIONS:
+                        raise ValidationError({'image': f'Unsupported file type ".{ext}".'})
+                    filename = get_valid_filename(f"{product.slug}.{ext}")
                     filepath = os.path.join(target_dir, filename)
                     if os.path.exists(filepath):
                         os.remove(filepath)
@@ -438,12 +476,16 @@ def curation_view(request):
                 rating = "good"
                 
             if rating:
+                if rating not in ('good', 'could_be_better', 'wrong'):
+                    raise ValidationError({'rating': 'Invalid rating choice.'})
                 ImageCurationRating.objects.update_or_create(
                     product=product,
                     defaults={'rating': rating}
                 )
                 
         except Product.DoesNotExist:
+            pass
+        except ValidationError:
             pass
             
         return redirect('curation_view')
