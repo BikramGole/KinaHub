@@ -99,9 +99,9 @@ function SearchBar({ mobile = false, onSearch }: { mobile?: boolean; onSearch?: 
     if (!isOpen || suggestions.length === 0) return null;
     return (
       <div className="absolute left-0 right-0 top-full z-50 mt-1 overflow-hidden rounded-md border border-border bg-surface shadow-xl">
-        <ul className="max-h-[70vh] overflow-y-auto py-1">
+        <ul id="search-suggestions" role="listbox" aria-label="Search suggestions" className="max-h-[70vh] overflow-y-auto py-1">
           {suggestions.map((suggestion, index) => (
-            <li key={index}>
+            <li key={index} role="option" aria-selected={index === focusedIndex}>
               <button
                 type="button"
                 onClick={() => {
@@ -176,9 +176,9 @@ function SearchBar({ mobile = false, onSearch }: { mobile?: boolean; onSearch?: 
 
   return (
     <div ref={containerRef} className="relative hidden min-w-0 flex-1 md:block">
-      <form onSubmit={submitSearch}>
+      <form onSubmit={submitSearch} role="search">
         <div className="relative">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary" />
+          <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-secondary" />
           <input
             ref={inputRef}
             value={search}
@@ -187,8 +187,13 @@ function SearchBar({ mobile = false, onSearch }: { mobile?: boolean; onSearch?: 
               if (suggestions.length > 0) setIsOpen(true);
             }}
             onKeyDown={handleInputKeyDown}
+            role="combobox"
+            aria-expanded={isOpen}
+            aria-controls="search-suggestions"
+            aria-autocomplete="list"
             className="h-11 w-full rounded-md border border-border bg-background pl-10 pr-12 text-base outline-none transition-colors focus:border-accent"
             placeholder={t('nav.searchProducts', { defaultValue: 'Search products' })}
+            aria-label={t('nav.searchProducts', { defaultValue: 'Search products' })}
           />
           <div className="pointer-events-none absolute right-3 top-1/2 flex -translate-y-1/2 items-center">
             <kbd className="hidden rounded border border-border bg-muted px-2 py-0.5 text-xs font-semibold text-secondary sm:block">
@@ -218,7 +223,7 @@ export default function Navbar() {
   }
 
   return (
-    <nav className="sticky top-0 z-50 border-b border-border bg-surface/95 backdrop-blur">
+    <nav aria-label="Main navigation" className="sticky top-0 z-50 border-b border-border bg-surface/95 backdrop-blur">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
         <div className="flex h-14 items-center gap-3 md:h-16 md:gap-4">
           <Link 
@@ -286,7 +291,7 @@ export default function Navbar() {
 
         {/* ── Mobile hamburger drawer (Off-canvas) ── */}
         {menuOpen && (
-          <div className="fixed inset-0 z-[100] md:hidden">
+          <div className="fixed inset-0 z-[100] md:hidden" role="dialog" aria-modal="true" aria-label="Menu">
             {/* Backdrop overlay */}
             <div 
               className="absolute inset-0 bg-background/80 backdrop-blur-sm transition-opacity"
