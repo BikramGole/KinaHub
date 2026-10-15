@@ -254,6 +254,13 @@ textarea {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
   .demo-card,
   .demo-toast,
   .demo-cursor,
@@ -268,4 +275,10 @@ textarea {
   .demo-toast,
   .demo-cursor,
   .demo-progress { opacity: 0; }
+}
+
+/* Performance: skip offscreen rendering for long product grids */
+.product-grid-item {
+  content-visibility: auto;
+  contain-intrinsic-size: auto 320px;
 }
