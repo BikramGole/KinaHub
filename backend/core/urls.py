@@ -24,6 +24,7 @@ urlpatterns = [
     path('api/sellers/', include('sellers.urls')),
     path('api/', include('orders.urls')),
     path('api/crm/', include('crm.urls')),
+    path('api/wishlist/', include('wishlist.urls')),
     path('api/token/', LoginWithOTPView.as_view(), name='token_obtain_pair'),
     path('api/auth/google/', GoogleLoginView.as_view(), name='google_login'),
     path('api/token/verify-2fa/', VerifyOTPView.as_view(), name='token_verify_2fa'),
