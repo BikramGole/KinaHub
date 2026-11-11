@@ -117,15 +117,16 @@ START_TIME=$(date +%s.%N)
 echo -e "${BOLD}[1/2] Backend (Django)${NC}"
 cd backend || exit
 
+VENV_DIR="$HOME/KinaHub-venv"
 # Create virtual environment if it doesn't exist
-if [ ! -d "venv" ]; then
+if [ ! -d "$VENV_DIR" ]; then
     echo -e "${YELLOW}  Creating virtual environment and installing dependencies...${NC}"
-    python3 -m venv venv
-    source venv/bin/activate
+    python3 -m venv "$VENV_DIR"
+    source "$VENV_DIR/bin/activate"
     pip install -r requirements.txt > ../logs/backend_install.log 2>&1
     echo -e "${GREEN}  ✓ Dependencies installed${NC}"
 else
-    source venv/bin/activate
+    source "$VENV_DIR/bin/activate"
 fi
 python manage.py runserver > ../logs/backend.log 2>&1 &
 BACKEND_PID=$!
@@ -144,9 +145,16 @@ fi
 
 # 2. Frontend
 echo -e "${BOLD}[2/2] Frontend (Vite)${NC}"
+FRONTEND_HOME="$HOME/KinaHub-frontend"
+if [ ! -d "$FRONTEND_HOME/node_modules" ]; then
+    mkdir -p "$FRONTEND_HOME"
+    cp frontend/package.json frontend/package-lock.json "$FRONTEND_HOME/" 2>/dev/null
+    cd "$FRONTEND_HOME" && npm install > /run/media/neo/SHINIGAMI/KinaHub/logs/frontend.log 2>&1
+    cd /run/media/neo/SHINIGAMI/KinaHub
+fi
+# Run vite from source dir but use node_modules from home
 cd frontend || exit
-npm install > ../logs/frontend.log 2>&1
-npm run dev >> ../logs/frontend.log 2>&1 &
+PATH="$FRONTEND_HOME/node_modules/.bin:$PATH" npx --prefix "$FRONTEND_HOME" vite >> ../logs/frontend.log 2>&1 &
 FRONTEND_PID=$!
 cd ..
 
@@ -187,7 +195,7 @@ trap cleanup SIGINT SIGTERM
 
 # --- Final Summary Dashboard ---
 END_TIME=$(date +%s.%N)
-DURATION=$(echo "$END_TIME - $START_TIME" | bc | awk '{printf "%.1f", $1}')
+DURATION=$(awk "BEGIN {printf \"%.1f\", $END_TIME - $START_TIME}")
 
 echo -e "${DIM}━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━${NC}"
 echo -e "✅ ${BOLD}Dukan is ready!${NC}\n"
